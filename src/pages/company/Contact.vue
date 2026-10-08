@@ -27,23 +27,23 @@ const contactText = computed(() => content.text('contact_text', 'Hubungi kami le
         <p class="mt-3 text-muted">{{ contactText }}</p>
         <ul class="mt-6 space-y-3 text-sm">
           <li class="card flex items-center justify-between gap-3 p-4">
-            <span class="text-muted">WhatsApp</span>
+            <span class="text-muted">{{ copy.company.contactLabels.whatsapp }}</span>
             <a :href="whatsappLink()" target="_blank" rel="noopener" class="font-semibold text-brand hover:underline">{{ company.whatsapp }}</a>
           </li>
           <li class="card flex items-center justify-between gap-3 p-4">
-            <span class="text-muted">Email</span>
+            <span class="text-muted">{{ copy.company.contactLabels.email }}</span>
             <a :href="`mailto:${company.email}`" class="font-semibold text-brand hover:underline">{{ company.email }}</a>
           </li>
           <li class="card flex items-center justify-between gap-3 p-4">
-            <span class="text-muted">Instagram</span>
+            <span class="text-muted">{{ copy.company.contactLabels.instagram }}</span>
             <span class="font-semibold">@{{ company.instagram }}</span>
           </li>
           <li class="card flex items-center justify-between gap-3 p-4">
-            <span class="text-muted">Alamat</span>
+            <span class="text-muted">{{ copy.company.contactLabels.address }}</span>
             <span class="text-right font-medium">{{ company.address }}</span>
           </li>
           <li class="card flex items-center justify-between gap-3 p-4">
-            <span class="text-muted">Jam layanan</span>
+            <span class="text-muted">{{ copy.company.contactLabels.hours }}</span>
             <span class="font-medium">{{ copy.company.contactHours }}</span>
           </li>
         </ul>

@@ -267,6 +267,14 @@ export const copy = {
     contactHeading: 'Kontak',
     contactHours: 'Setiap hari, 09.00–21.00 WIB',
     chatWhatsapp: 'Chat via WhatsApp',
+    contactLabels: { whatsapp: 'WhatsApp', email: 'Email', instagram: 'Instagram', address: 'Alamat', hours: 'Jam layanan' },
+    priceFrom: 'Mulai',
+    priceAsk: 'Tanya harga',
+    chooseTier: 'Pilih',
+    tierInterest: 'Halo, saya tertarik dengan {name}.',
+    notFoundTitle: 'Halaman tidak ditemukan',
+    notFoundSubtitle: 'Alamat yang Anda buka tidak tersedia.',
+    backHome: 'Kembali ke beranda',
   },
 } as const
 

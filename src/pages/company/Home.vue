@@ -9,6 +9,7 @@ import { copy } from '@/config/copy'
 import { SITE } from '@/config/seoPrerender'
 import { useCatalogStore } from '@/stores/catalog'
 import { useContentStore } from '@/stores/content'
+import { invitationService } from '@/services/invitations'
 import { getTheme, themeList } from '@/themes'
 
 const hero = ref<HTMLElement | null>(null)
@@ -19,7 +20,13 @@ const catalog = useCatalogStore()
 const content = useContentStore()
 useScrollReveal(page, () => 'rise')
 
-const loadData = () => Promise.allSettled([catalog.load(), content.load(false)])
+const loadData = async () => {
+  const [, inv] = await Promise.allSettled([
+    Promise.all([catalog.load(), content.load(false)]),
+    invitationService.list().catch(() => []),
+  ])
+  slugs.value = new Set(((inv.status === 'fulfilled' ? inv.value : []) as { slug: string }[]).map((i) => i.slug))
+}
 onServerPrefetch(loadData)
 onMounted(async () => {
   await loadData()
@@ -62,7 +69,8 @@ const stats = computed(() => [
   { value: '24/7', label: 'Undangan selalu online' },
 ])
 const monogram = (name: string) => name.split(/[\s&]+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('')
-const demo = (id: string) => `/invite/demo-${id}`
+const slugs = ref<Set<string>>(new Set())
+const demoSlug = (id: string) => `demo-${id}`
 </script>
 
 <template>
@@ -128,7 +136,7 @@ const demo = (id: string) => `/invite/demo-${id}`
       <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <li v-for="t in cards.slice(0, 4)" :key="t.id" class="card group overflow-hidden transition-transform duration-300 hover:-translate-y-1">
           <div class="flex h-28"><span v-for="c in t.swatches" :key="c" class="flex-1" :style="{ background: c }" /></div>
-          <div class="space-y-1 p-4"><p class="font-semibold">{{ t.name }}</p><p class="text-xs text-muted">{{ t.description }}</p><RouterLink :to="demo(t.id)" class="inline-block pt-1 text-sm font-medium text-brand hover:underline">Lihat Demo</RouterLink></div>
+          <div class="space-y-1 p-4"><p class="font-semibold">{{ t.name }}</p><p class="text-xs text-muted">{{ t.description }}</p><RouterLink v-if="slugs.has(demoSlug(t.id))" :to="`/invite/${demoSlug(t.id)}`" class="inline-block pt-1 text-sm font-medium text-brand hover:underline">{{ copy.company.viewDemo }}</RouterLink><RouterLink v-else to="/portfolio" class="inline-block pt-1 text-sm font-medium text-brand hover:underline">{{ copy.company.viewSample }}</RouterLink></div>
         </li>
       </ul>
     </section>

@@ -27,7 +27,7 @@ const premiumPrice = computed(() => {
 })
 const tierPrice = (kind: 'all' | 'premium') => {
   const p = kind === 'premium' ? premiumPrice.value : minPrice.value
-  return p > 0 ? `Mulai ${formatCurrency(p)}` : 'Tanya harga'
+  return p > 0 ? `${copy.company.priceFrom} ${formatCurrency(p)}` : copy.company.priceAsk
 }
 </script>
 
@@ -53,7 +53,7 @@ const tierPrice = (kind: 'all' | 'premium') => {
           <ul class="mt-4 flex-1 space-y-2">
             <li v-for="f in t.features" :key="f" class="flex gap-2 text-sm text-muted"><span aria-hidden="true" class="text-brand">✓</span>{{ f }}</li>
           </ul>
-          <a :href="whatsappLink(`Halo, saya tertarik dengan ${t.name}.`)" target="_blank" rel="noopener" class="mt-5 rounded-lg border border-line bg-panel px-4 py-2.5 text-center text-sm font-medium hover:bg-paper">Pilih {{ t.name }}</a>
+          <a :href="whatsappLink(copy.company.tierInterest.replace('{name}', t.name))" target="_blank" rel="noopener" class="mt-5 rounded-lg border border-line bg-panel px-4 py-2.5 text-center text-sm font-medium hover:bg-paper">{{ copy.company.chooseTier }} {{ t.name }}</a>
         </li>
       </ul>
     </section>
