@@ -37,7 +37,7 @@ function move(from: number, to: number) {
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.events" description="Tanggal acara paling awal dipakai untuk hitung mundur.">
+  <BuilderSection :title="copy.builder.sections.events" :description="copy.builder.events.desc">
     <EmptyState v-if="!inv.events.length" :message="copy.empty.events" />
     <div v-else class="space-y-3">
       <EventEditor
@@ -53,9 +53,9 @@ function move(from: number, to: number) {
       />
     </div>
     <div class="flex flex-wrap gap-2">
-      <AppButton variant="secondary" size="sm" @click="add('Akad Nikah')"><Plus class="size-4" /> Akad Nikah</AppButton>
-      <AppButton variant="secondary" size="sm" @click="add('Resepsi')"><Plus class="size-4" /> Resepsi</AppButton>
-      <AppButton variant="ghost" size="sm" @click="add()"><Plus class="size-4" /> Acara lain</AppButton>
+      <AppButton variant="secondary" size="sm" @click="add(copy.builder.events.akad)"><Plus class="size-4" /> {{ copy.builder.events.akad }}</AppButton>
+      <AppButton variant="secondary" size="sm" @click="add(copy.builder.events.resepsi)"><Plus class="size-4" /> {{ copy.builder.events.resepsi }}</AppButton>
+      <AppButton variant="ghost" size="sm" @click="add()"><Plus class="size-4" /> {{ copy.builder.events.other }}</AppButton>
     </div>
   </BuilderSection>
 </template>

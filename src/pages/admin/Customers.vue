@@ -49,7 +49,7 @@ async function save(input: CustomerInput) {
   try {
     if (editing.value) await store.update(editing.value.id, input)
     else await store.create(input)
-    toast.success('Pelanggan disimpan')
+    toast.success(copy.customers.saved)
     formOpen.value = false
   } catch (e) {
     toast.error(e instanceof Error ? e.message : copy.common.genericError)
@@ -63,7 +63,7 @@ async function confirmDelete() {
   if (!c) return
   try {
     await store.remove(c.id)
-    toast.success('Pelanggan dihapus')
+    toast.success(copy.customers.deleted)
   } catch (e) {
     toast.error(e instanceof Error ? e.message : copy.common.genericError)
   }
@@ -75,37 +75,37 @@ async function confirmDelete() {
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 class="font-display text-3xl font-semibold">{{ copy.nav.customers }}</h1>
-        <p class="text-sm text-muted">{{ store.items.length }} pelanggan</p>
+        <p class="text-sm text-muted">{{ store.items.length }} {{ copy.nav.customers.toLowerCase() }}</p>
       </div>
-      <AppButton @click="openCreate"><Plus class="size-4" /> Tambah pelanggan</AppButton>
+      <AppButton @click="openCreate"><Plus class="size-4" /> {{ copy.customers.add }}</AppButton>
     </div>
 
     <div class="relative max-w-sm">
       <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-      <input v-model="query" class="field-input !pl-9" placeholder="Cari nama, telepon, atau email" aria-label="Cari pelanggan" />
+      <input v-model="query" class="field-input !pl-9" :placeholder="copy.customers.searchPh" :aria-label="copy.customers.searchAria" />
     </div>
 
     <LoadingState v-if="store.loading && !store.loaded" />
-    <EmptyState v-else-if="!store.items.length" :message="copy.empty.customers"><AppButton @click="openCreate">Tambah pelanggan</AppButton></EmptyState>
-    <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">Tidak ada pelanggan yang cocok dengan “{{ query }}”.</p>
+    <EmptyState v-else-if="!store.items.length" :message="copy.empty.customers"><AppButton @click="openCreate">{{ copy.customers.add }}</AppButton></EmptyState>
+    <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">{{ copy.customers.noMatch }} “{{ query }}”.</p>
     <ul v-else class="card divide-y divide-line">
       <li v-for="c in paged.rows" :key="c.id" class="flex items-center justify-between gap-3 px-4 py-3">
         <RouterLink :to="`/admin/customers/${c.id}`" class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium hover:underline">{{ c.name }}</p>
-          <p class="truncate text-xs text-muted">{{ [c.phone, c.email].filter(Boolean).join(' · ') || 'Tanpa kontak' }}</p>
+          <p class="truncate text-xs text-muted">{{ [c.phone, c.email].filter(Boolean).join(' · ') || copy.customers.noContact }}</p>
         </RouterLink>
-        <span class="hidden text-xs text-muted sm:block">{{ countFor(c.id) }} undangan</span>
+        <span class="hidden text-xs text-muted sm:block">{{ countFor(c.id) }} {{ copy.customers.invitationUnit }}</span>
         <div class="flex">
-          <button type="button" class="rounded-lg p-2 text-muted hover:bg-black/5" :aria-label="`Edit ${c.name}`" @click="openEdit(c)"><Pencil class="size-4" /></button>
-          <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" :aria-label="`Hapus ${c.name}`" @click="toDelete = c"><Trash2 class="size-4" /></button>
+          <button type="button" class="rounded-lg p-2 text-muted hover:bg-black/5" :aria-label="`${copy.common.edit} ${c.name}`" @click="openEdit(c)"><Pencil class="size-4" /></button>
+          <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" :aria-label="`${copy.common.delete} ${c.name}`" @click="toDelete = c"><Trash2 class="size-4" /></button>
         </div>
       </li>
     </ul>
     <Pagination :page="paged.page" :total="paged.total" @prev="pager.prev()" @next="pager.next()" />
 
-    <Modal :open="formOpen" :title="editing ? 'Edit pelanggan' : 'Tambah pelanggan'" @close="formOpen = false">
+    <Modal :open="formOpen" :title="editing ? copy.customers.edit : copy.customers.add" @close="formOpen = false">
       <CustomerForm :customer="editing" :saving="saving" @submit="save" @cancel="formOpen = false" />
     </Modal>
-    <ConfirmDialog :open="!!toDelete" title="Hapus pelanggan?" :message="`${toDelete?.name ?? ''} akan dihapus permanen. Pelanggan yang masih punya undangan tidak bisa dihapus.`" confirm-label="Hapus" @confirm="confirmDelete" @cancel="toDelete = null" />
+    <ConfirmDialog :open="!!toDelete" :title="copy.customers.deleteTitle" :message="`${toDelete?.name ?? ''} ${copy.customers.deleteMsg}`" :confirm-label="copy.common.delete" @confirm="confirmDelete" @cancel="toDelete = null" />
   </div>
 </template>

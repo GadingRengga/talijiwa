@@ -40,6 +40,8 @@ const payOpen = ref(false)
 const paySaving = ref(false)
 const toDeletePay = ref<string | null>(null)
 const making = ref(false)
+const makeOpen = ref(false)
+const makeTitle = ref('')
 
 const formInitial = ref<OrderInput>({ customer_id: '', invitation_id: null, theme: themeList[0]!.id, amount: 0, paid: 0, status: 'pending', due_date: '', notes: '' })
 const payForm = ref({ amount: 0, method: 'transfer' as PaymentMethod, paid_at: new Date().toISOString().slice(0, 10), note: '' })
@@ -69,15 +71,21 @@ const isPublished = computed(() => inv.value?.status === 'published')
 const steps = computed(() => [
   { label: copy.orders.steps[0], done: true, hint: `${customerName.value} · ${order.value ? formatCurrency(order.value.amount) : ''}` },
   { label: copy.orders.steps[1], done: !!order.value?.invitation_id, hint: inv.value ? coupleLabel(inv.value) : copy.orders.noInvitation },
-  { label: copy.orders.steps[2], done: isPublished.value, hint: inv.value ? (isPublished.value ? 'Terbit' : 'Draf') : '—' },
-  { label: copy.orders.steps[3], done: !!order.value?.delivered_at, hint: order.value?.delivered_at ? formatDateTime(order.value.delivered_at) : 'Belum dikirim' },
+  { label: copy.orders.steps[2], done: isPublished.value, hint: inv.value ? (isPublished.value ? copy.orders.publishedShort : copy.orders.draftShort) : '—' },
+  { label: copy.orders.steps[3], done: !!order.value?.delivered_at, hint: order.value?.delivered_at ? formatDateTime(order.value.delivered_at) : copy.orders.notDelivered },
 ])
 
-async function makeInvitation() {
+function openMake() {
   if (!order.value) return
+  makeTitle.value = customerName.value === '—' ? '' : customerName.value
+  makeOpen.value = true
+}
+
+async function makeInvitation() {
+  if (!order.value || !makeTitle.value.trim()) return
   making.value = true
   try {
-    const created = await invitations.create(order.value.customer_id, `${customerName.value} & Pasangan`, order.value.theme)
+    const created = await invitations.create(order.value.customer_id, makeTitle.value.trim(), order.value.theme)
     const updated = await orderService.update(order.value.id, {
       customer_id: order.value.customer_id, invitation_id: created.id, theme: order.value.theme,
       amount: order.value.amount, paid: order.value.paid, status: order.value.status,
@@ -85,7 +93,8 @@ async function makeInvitation() {
     })
     order.value = updated
     inv.value = created
-    toast.success('Undangan dibuat, silakan lengkapi di builder')
+    makeOpen.value = false
+    toast.success(copy.orders.createdGoBuilder)
     router.push(`/admin/invitations/${created.id}/edit`)
   } catch (e) {
     toast.error(e instanceof Error ? e.message : copy.common.genericError)
@@ -172,10 +181,10 @@ const statusClass = (s: string) =>
           <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="statusClass(order.status)">{{ copy.orders.statuses[order.status] }}</span>
             <span class="tabular-nums">{{ formatCurrency(order.paid) }} / {{ formatCurrency(order.amount) }}</span>
-            <span v-if="order.due_date">· Tenggat {{ formatDate(order.due_date) }}</span>
+            <span v-if="order.due_date">· {{ copy.orders.dueDate }} {{ formatDate(order.due_date) }}</span>
           </p>
         </div>
-        <AppButton variant="secondary" size="sm" @click="openEdit"><Pencil class="size-4" /> Edit pesanan</AppButton>
+        <AppButton variant="secondary" size="sm" @click="openEdit"><Pencil class="size-4" /> {{ copy.orders.editOrder }}</AppButton>
       </div>
 
       <!-- Stepper -->
@@ -191,18 +200,18 @@ const statusClass = (s: string) =>
       <!-- Step actions -->
       <div class="card space-y-3 p-4">
         <div v-if="!order.invitation_id" class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm">Undangan digital belum dibuat untuk pesanan ini.</p>
-          <AppButton size="sm" :loading="making" @click="makeInvitation"><FileHeart class="size-4" /> {{ copy.orders.makeInvitation }}</AppButton>
+          <p class="text-sm">{{ copy.orders.noInvitationYet }}</p>
+          <AppButton size="sm" @click="openMake"><FileHeart class="size-4" /> {{ copy.orders.makeInvitation }}</AppButton>
         </div>
         <div v-else class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm">Undangan: <span class="font-semibold">{{ inv ? coupleLabel(inv) : '…' }}</span> · {{ inv?.status === 'published' ? 'Terbit' : 'Draf' }}</p>
+          <p class="text-sm">{{ copy.orders.invitationIs }} <span class="font-semibold">{{ inv ? coupleLabel(inv) : '…' }}</span> · {{ inv?.status === 'published' ? copy.orders.publishedShort : copy.orders.draftShort }}</p>
           <RouterLink :to="`/admin/invitations/${order.invitation_id}/edit`"><AppButton size="sm" variant="secondary"><FileHeart class="size-4" /> {{ copy.orders.openBuilder }}</AppButton></RouterLink>
         </div>
         <p v-if="order.invitation_id && !isPaidOff" class="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn" role="status">
           {{ copy.orders.unpaidWarning }} {{ formatCurrency(remaining) }}.
         </p>
         <div v-if="order.invitation_id && !order.delivered_at" class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
-          <p class="text-sm">Tautan undangan sudah dikirim ke pelanggan?</p>
+          <p class="text-sm">{{ copy.orders.handoverAsk }}</p>
           <AppButton size="sm" variant="secondary" @click="markDelivered"><Check class="size-4" /> {{ copy.orders.markDelivered }}</AppButton>
         </div>
         <p v-else-if="order.delivered_at" class="border-t border-line pt-3 text-sm text-sage">✓ {{ copy.orders.delivered }} · {{ formatDateTime(order.delivered_at) }}</p>
@@ -214,17 +223,27 @@ const statusClass = (s: string) =>
           <h2 class="text-base font-semibold">{{ copy.orders.payments }} · <span class="tabular-nums">{{ formatCurrency(order.paid) }}</span></h2>
           <AppButton size="sm" @click="payOpen = true"><Plus class="size-4" /> {{ copy.orders.recordPayment }}</AppButton>
         </div>
-        <p v-if="!payments.items.length" class="py-4 text-center text-sm text-muted">Belum ada pembayaran tercatat.</p>
+        <p v-if="!payments.items.length" class="py-4 text-center text-sm text-muted">{{ copy.orders.noPayments }}</p>
         <ul v-else class="card divide-y divide-line">
           <li v-for="p in payments.items" :key="p.id" class="flex items-center justify-between gap-3 px-4 py-3">
             <div class="min-w-0">
               <p class="text-sm font-semibold tabular-nums">{{ formatCurrency(p.amount) }} <span class="font-normal text-muted">· {{ copy.orders.methods[p.method] }}</span></p>
               <p class="truncate text-xs text-muted">{{ formatDate(p.paid_at) }}{{ p.note ? ` · ${p.note}` : '' }}</p>
             </div>
-            <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" aria-label="Hapus pembayaran" @click="toDeletePay = p.id"><Trash2 class="size-4" /></button>
+            <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" :aria-label="copy.orders.deletePayment" @click="toDeletePay = p.id"><Trash2 class="size-4" /></button>
           </li>
         </ul>
       </section>
+
+      <Modal :open="makeOpen" :title="copy.orders.makeInvitation" @close="makeOpen = false">
+        <form class="space-y-4" @submit.prevent="makeInvitation">
+          <FormField :label="copy.orders.invitationTitle" v-slot="{ id }"><input :id="id" v-model="makeTitle" class="field-input" placeholder="Raka & Sinta" maxlength="80" required /></FormField>
+          <div class="flex justify-end gap-2">
+            <AppButton variant="secondary" @click="makeOpen = false">{{ copy.common.cancel }}</AppButton>
+            <AppButton type="submit" :loading="making">{{ copy.orders.makeInvitation }}</AppButton>
+          </div>
+        </form>
+      </Modal>
 
       <Modal :open="editOpen" :title="copy.orders.edit" @close="editOpen = false">
         <OrderForm :initial="formInitial" :customers="customers.items" :invitations="invitations.items" :saving="saving" @submit="saveEdit">
@@ -243,14 +262,14 @@ const statusClass = (s: string) =>
             </FormField>
             <FormField :label="copy.orders.paymentDate" v-slot="{ id }"><input :id="id" v-model="payForm.paid_at" type="date" class="field-input" /></FormField>
           </div>
-          <FormField :label="copy.orders.paymentNote" optional v-slot="{ id }"><input :id="id" v-model="payForm.note" class="field-input" placeholder="DP / pelunasan" /></FormField>
+          <FormField :label="copy.orders.paymentNote" optional v-slot="{ id }"><input :id="id" v-model="payForm.note" class="field-input" :placeholder="copy.orders.payNotePh" /></FormField>
           <div class="flex justify-end gap-2">
             <AppButton variant="secondary" @click="payOpen = false">{{ copy.common.cancel }}</AppButton>
             <AppButton type="submit" :loading="paySaving">{{ copy.common.save }}</AppButton>
           </div>
         </form>
       </Modal>
-      <ConfirmDialog :open="!!toDeletePay" title="Hapus pembayaran?" message="Total terbayar akan dikurangi sejumlah nominal ini." confirm-label="Hapus" @confirm="confirmDeletePay" @cancel="toDeletePay = null" />
+      <ConfirmDialog :open="!!toDeletePay" :title="copy.orders.deletePaymentTitle" :message="copy.orders.deletePaymentMsg" :confirm-label="copy.common.delete" @confirm="confirmDeletePay" @cancel="toDeletePay = null" />
     </template>
   </div>
 </template>

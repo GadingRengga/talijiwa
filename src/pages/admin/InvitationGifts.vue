@@ -30,8 +30,7 @@ onMounted(async () => {
 const total = computed(() => items.value.reduce((n, g) => n + (g.amount ?? 0), 0))
 const pager = usePagination(10)
 const paged = computed(() => pager.paginate(items.value))
-const giftTypeLabel = (t: GiftConfirmation['gift_type']) =>
-  t === 'bank_transfer' ? 'Transfer bank' : t === 'e_wallet' ? 'E-wallet' : t === 'cash' ? 'Tunai' : 'Lainnya'
+const giftTypeLabel = (t: GiftConfirmation['gift_type']) => copy.giftsAdmin.types[t]
 </script>
 
 <template>
@@ -47,9 +46,9 @@ const giftTypeLabel = (t: GiftConfirmation['gift_type']) =>
         <h2 class="mb-2 text-sm font-semibold">{{ copy.giftsAdmin.accounts }}</h2>
         <ul class="grid gap-3 sm:grid-cols-2">
           <li v-for="a in inv.gifts" :key="a.id" class="card p-4">
-            <p class="text-xs text-muted">{{ a.kind === 'bank' ? 'Transfer Bank' : 'E-Wallet' }} · {{ a.provider }}</p>
+            <p class="text-xs text-muted">{{ copy.giftsAdmin.kinds[a.kind] }} · {{ a.provider }}</p>
             <p class="mt-1 break-all font-semibold tabular-nums">{{ a.number }}</p>
-            <p class="text-xs text-muted">a.n. {{ a.holder }}</p>
+            <p class="text-xs text-muted">{{ copy.giftsAdmin.holderPrefix }} {{ a.holder }}</p>
           </li>
         </ul>
       </section>

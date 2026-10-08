@@ -55,7 +55,12 @@ const link = computed(() => (inv.value ? publicUrl(inv.value.slug) : ''))
 async function copyLink() {
   if (await copyText(link.value)) toast.success(copy.common.copied)
 }
-const revisionText = computed(() => `Halo ${company.company_name}, saya ingin minta revisi undangan ${inv.value ? coupleLabel(inv.value) : ''} (${link.value}). Detailnya: `)
+const revisionText = computed(() =>
+  copy.couple.revisionMsg
+    .replace('{company}', company.company_name)
+    .replace('{couple}', inv.value ? coupleLabel(inv.value) : '')
+    .replace('{link}', link.value),
+)
 </script>
 
 <template>
@@ -64,22 +69,22 @@ const revisionText = computed(() => `Halo ${company.company_name}, saya ingin mi
     <template v-else-if="inv">
       <div>
         <h1 class="font-display text-3xl font-semibold">{{ coupleLabel(inv) }}</h1>
-        <p class="text-sm text-muted">{{ inv.status === 'published' ? 'Terbit' : 'Draf' }}</p>
+        <p class="text-sm text-muted">{{ inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ attending.length }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.attending }}</p></div>
         <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ rsvps.length - attending.length }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.notAttending }}</p></div>
-        <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ invitedTotal ? pending : '—' }}</p><p class="text-xs text-muted">Belum respons</p></div>
+        <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ invitedTotal ? pending : '—' }}</p><p class="text-xs text-muted">{{ copy.couple.pendingResponse }}</p></div>
         <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ guests }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.guests }}</p></div>
       </div>
 
       <section class="card space-y-3 p-4">
-        <h2 class="text-sm font-semibold">Tautan undangan</h2>
+        <h2 class="text-sm font-semibold">{{ copy.couple.detailLink }}</h2>
         <p class="break-all text-xs text-muted">{{ link }}</p>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] font-medium hover:bg-paper" @click="copyLink"><Copy class="size-4" /> {{ copy.common.copyLink }}</button>
-          <a :href="whatsappLink(revisionText)" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-lg bg-sage px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90"><MessageCircle class="size-4" /> Minta revisi</a>
+          <a :href="whatsappLink(revisionText)" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-lg bg-sage px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90"><MessageCircle class="size-4" /> {{ copy.couple.revisionCta }}</a>
         </div>
       </section>
 
@@ -118,7 +123,7 @@ const revisionText = computed(() => `Halo ${company.company_name}, saya ingin mi
         </ul>
       </section>
 
-      <p v-if="rsvps.length" class="flex items-center gap-1.5 text-xs text-muted"><Check class="size-3.5 text-sage" /> Data diperbarui otomatis setiap Anda membuka halaman ini.</p>
+      <p v-if="rsvps.length" class="flex items-center gap-1.5 text-xs text-muted"><Check class="size-3.5 text-sage" /> {{ copy.couple.dataFresh }}</p>
     </template>
   </main>
 </template>

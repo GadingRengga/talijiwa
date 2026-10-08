@@ -47,15 +47,15 @@ watch([query, filter], () => pager.reset())
 const paged = computed(() => pager.paginate(filtered.value))
 
 function downloadCsv() {
-  const head = ['Nama', 'WhatsApp', 'Kehadiran', 'Jumlah', 'Pesan', 'Waktu']
+  const head = [...copy.rsvpAdmin.csvHeaders]
   const esc = (v: string | number) => `"${String(v).replaceAll('"', '""')}"`
   const lines = filtered.value.map((r) =>
-    [r.name, r.whatsapp, r.attendance === 'attending' ? 'Hadir' : 'Tidak hadir', r.guest_count, r.message, r.created_at].map(esc).join(','),
+    [r.name, r.whatsapp, r.attendance === 'attending' ? copy.rsvpAdmin.attending : copy.rsvpAdmin.notAttending, r.guest_count, r.message, r.created_at].map(esc).join(','),
   )
   const blob = new Blob([`\uFEFF${head.join(',')}\n${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `rsvp-${inv.value?.slug ?? 'undangan'}.csv`
+  a.download = `rsvp-${inv.value?.slug ?? copy.rsvpAdmin.csvFallback}.csv`
   a.click()
   URL.revokeObjectURL(a.href)
 }
@@ -65,7 +65,7 @@ function downloadCsv() {
   <div class="space-y-6">
     <div>
       <h1 class="font-display text-3xl font-semibold">{{ copy.rsvpAdmin.title }}</h1>
-      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }} · {{ attending.length }} hadir · {{ guests }} {{ copy.rsvpAdmin.guests }}</p>
+      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }} · {{ attending.length }} {{ copy.rsvpAdmin.attending.toLowerCase() }} · {{ guests }} {{ copy.rsvpAdmin.guests }}</p>
     </div>
 
     <LoadingState v-if="loading" />
@@ -79,16 +79,16 @@ function downloadCsv() {
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative w-full flex-1 sm:min-w-60 sm:max-w-sm">
           <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-          <input v-model="query" class="field-input !pl-9" :placeholder="copy.rsvpAdmin.search" aria-label="Cari RSVP" />
+          <input v-model="query" class="field-input !pl-9" :placeholder="copy.rsvpAdmin.search" :aria-label="copy.rsvpAdmin.searchAria" />
         </div>
-        <div class="flex flex-wrap gap-1" role="group" aria-label="Filter kehadiran">
-          <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'all' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" @click="filter = 'all'">Semua</button>
+        <div class="flex flex-wrap gap-1" role="group" :aria-label="copy.rsvpAdmin.filterAria">
+          <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'all' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" @click="filter = 'all'">{{ copy.common.all }}</button>
           <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'attending' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" @click="filter = 'attending'">{{ copy.rsvpAdmin.attending }}</button>
           <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'not_attending' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" @click="filter = 'not_attending'">{{ copy.rsvpAdmin.notAttending }}</button>
         </div>
-        <div class="flex gap-1" role="group" aria-label="Urutkan">
+        <div class="flex gap-1" role="group" :aria-label="copy.rsvpAdmin.sortAria">
           <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[13px] font-medium text-muted hover:text-ink" @click="sort = sort === 'newest' ? 'name' : 'newest'">
-            <ArrowDownWideNarrow class="size-3.5" /> {{ sort === 'newest' ? 'Terbaru' : 'Nama A–Z' }}
+            <ArrowDownWideNarrow class="size-3.5" /> {{ sort === 'newest' ? copy.rsvpAdmin.newest : copy.rsvpAdmin.nameAz }}
           </button>
           <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[13px] font-medium text-muted hover:text-ink" @click="downloadCsv">
             <Download class="size-3.5" /> CSV
@@ -97,7 +97,7 @@ function downloadCsv() {
       </div>
 
       <EmptyState v-if="!items.length" :message="copy.empty.rsvps" />
-      <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">Tidak ada yang cocok.</p>
+      <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">{{ copy.rsvpAdmin.noMatch }}</p>
       <ul v-else class="card divide-y divide-line">
         <li v-for="r in paged.rows" :key="r.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
           <div class="min-w-0 flex-1 basis-48">

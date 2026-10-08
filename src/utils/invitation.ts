@@ -1,5 +1,6 @@
 import { SECTION_KEYS } from '@/types'
 import type { FontChoice, InvitationData, InvitationSettings, InvitationStyle, Person, SectionKey, ThemeId } from '@/types'
+import { copy } from '@/config/copy'
 import { uid } from './format'
 
 /** Offline-safe placeholder image (SVG data URI). */
@@ -89,16 +90,17 @@ export function sectionProgress(inv: InvitationData) {
     theme: 100,
     seo: inv.settings.seo_title || inv.settings.seo_description ? 100 : 0,
     publish: inv.status === 'published' ? 100 : 0,
+    share: inv.settings.guest_names?.trim() || inv.settings.share_template?.trim() ? 100 : 0,
   } as Record<string, number>
 }
 
 /** Blocking problems that prevent publishing (used by the list view; the builder adds slug-availability checks). */
 export function publishErrors(inv: InvitationData): string[] {
   const errors: string[] = []
-  if (!inv.title.trim() || !inv.slug) errors.push('Judul dan slug belum diisi.')
-  if (!inv.bride.name.trim() || !inv.groom.name.trim()) errors.push('Nama mempelai belum lengkap.')
-  if (!inv.events.some((e) => e.date && e.venue.trim())) errors.push('Belum ada acara lengkap (tanggal dan tempat).')
-  if (inv.settings.music_enabled && !inv.settings.music_url) errors.push('Tautan musik belum diisi.')
+  if (!inv.title.trim() || !inv.slug) errors.push(copy.invitations.publishErrTitle)
+  if (!inv.bride.name.trim() || !inv.groom.name.trim()) errors.push(copy.invitations.publishErrCouple)
+  if (!inv.events.some((e) => e.date && e.venue.trim())) errors.push(copy.invitations.publishErrEvents)
+  if (inv.settings.music_enabled && !inv.settings.music_url) errors.push(copy.invitations.publishErrMusic)
   return errors
 }
 

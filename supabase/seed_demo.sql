@@ -1,4 +1,4 @@
--- Demo seed: 1 customer + 1 published invitation. Run in SQL editor after 001–007.
+-- Demo seed: 1 customer + 1 published invitation. Run in SQL editor after 001–011.
 -- Idempotent (on conflict do nothing / fixed UUIDs).
 
 insert into customers (id, name, phone, email, notes) values

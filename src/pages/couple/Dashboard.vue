@@ -58,7 +58,7 @@ const totals = computed(() => ({
     <LoadingState v-if="loading" />
     <template v-else>
       <div class="grid grid-cols-3 gap-3">
-        <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ rows.length }}</p><p class="text-xs text-muted">Undangan</p></div>
+        <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ rows.length }}</p><p class="text-xs text-muted">{{ copy.couple.invitationUnit }}</p></div>
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ totals.attending }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.attending }}</p></div>
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ totals.guests }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.guests }}</p></div>
       </div>
@@ -69,10 +69,10 @@ const totals = computed(() => ({
           <RouterLink :to="`/pasangan/undangan/${r.inv.id}`" class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-paper">
             <div class="min-w-0">
               <p class="truncate text-sm font-medium">{{ coupleLabel(r.inv) }}</p>
-              <p class="text-xs text-muted">{{ formatDate(weddingDate(r.inv)) }} · {{ r.attending }} hadir · {{ r.guests }} tamu</p>
+              <p class="text-xs text-muted">{{ formatDate(weddingDate(r.inv)) }} · {{ r.attending }} {{ copy.rsvpAdmin.attending.toLowerCase() }} · {{ r.guests }} {{ copy.rsvpAdmin.guests }}</p>
             </div>
             <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" :class="r.inv.status === 'published' ? 'bg-sage-soft text-sage' : 'bg-warn-soft text-warn'">
-              {{ r.inv.status === 'published' ? 'Terbit' : 'Draf' }}
+              {{ r.inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}
             </span>
           </RouterLink>
         </li>

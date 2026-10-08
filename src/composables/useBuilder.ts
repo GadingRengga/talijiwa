@@ -123,7 +123,7 @@ export function useBuilder(idRef: Ref<string>) {
 
     if (!isValidSlug(inv.slug) || slugState.value === 'taken') {
       saveState.value = 'error'
-      lastError.value = slugState.value === 'taken' ? 'Slug sudah dipakai undangan lain.' : 'Slug belum valid.'
+      lastError.value = slugState.value === 'taken' ? copy.builder.saveSlugTaken : copy.builder.saveSlugInvalid
       if (!opts.silent) toast.error(lastError.value)
       return false
     }
@@ -151,18 +151,18 @@ export function useBuilder(idRef: Ref<string>) {
     const inv = draft.value
     if (!inv) return []
     const list: PublishIssue[] = []
-    if (!inv.title.trim()) list.push({ level: 'error', message: 'Judul undangan belum diisi.', section: 'basic' })
+    if (!inv.title.trim()) list.push({ level: 'error', message: copy.builder.issues.title, section: 'basic' })
     if (!isValidSlug(inv.slug) || slugState.value === 'taken')
-      list.push({ level: 'error', message: 'Slug belum valid atau sudah dipakai.', section: 'basic' })
+      list.push({ level: 'error', message: copy.builder.issues.slug, section: 'basic' })
     if (!inv.bride.name.trim() || !inv.groom.name.trim())
-      list.push({ level: 'error', message: 'Nama mempelai pria dan wanita wajib diisi.', section: 'couple' })
+      list.push({ level: 'error', message: copy.builder.issues.couple, section: 'couple' })
     if (!inv.events.some((e) => e.date && e.venue.trim()))
-      list.push({ level: 'error', message: 'Tambahkan minimal satu acara lengkap dengan tanggal dan tempat.', section: 'events' })
+      list.push({ level: 'error', message: copy.builder.issues.events, section: 'events' })
     if (!inv.bride.photo || !inv.groom.photo)
-      list.push({ level: 'warning', message: 'Foto mempelai belum lengkap.', section: 'couple' })
-    if (!inv.gallery.length) list.push({ level: 'warning', message: 'Galeri masih kosong. Foto cover memakai gambar bawaan.', section: 'gallery' })
+      list.push({ level: 'warning', message: copy.builder.issues.photos, section: 'couple' })
+    if (!inv.gallery.length) list.push({ level: 'warning', message: copy.builder.issues.gallery, section: 'gallery' })
     if (inv.settings.music_enabled && !inv.settings.music_url)
-      list.push({ level: 'error', message: 'Musik diaktifkan tetapi tautan belum diisi.', section: 'music' })
+      list.push({ level: 'error', message: copy.builder.issues.music, section: 'music' })
     return list
   })
   const blockers = computed(() => issues.value.filter((i) => i.level === 'error'))

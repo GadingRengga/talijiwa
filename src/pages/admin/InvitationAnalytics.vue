@@ -39,22 +39,27 @@ const totalViews = computed(() => points.value.reduce((n, p) => n + p.views, 0))
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="font-display text-3xl font-semibold">Analitik</h1>
+      <h1 class="font-display text-3xl font-semibold">{{ copy.nav.analytics }}</h1>
       <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }}</p>
     </div>
     <LoadingState v-if="loading" />
+    <p v-else-if="!inv" class="text-sm text-danger">{{ copy.invitation.notFound }}</p>
     <template v-else>
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ totalViews }}</p><p class="text-xs text-muted">Dilihat (14 hari)</p></div>
+        <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ totalViews }}</p><p class="text-xs text-muted">{{ copy.analytics.viewsDays }}</p></div>
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ attending }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.attending }}</p></div>
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ notAttending }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.notAttending }}</p></div>
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ guests }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.guests }}</p></div>
       </div>
       <section class="card p-4 sm:p-5">
-        <h2 class="mb-4 text-base font-semibold">14 hari terakhir</h2>
-        <BarChart :points="points" label="Grafik dilihat dan RSVP undangan ini" />
+        <h2 class="mb-4 text-base font-semibold">{{ copy.analytics.rangeTitle }}</h2>
+        <BarChart :points="points" :label="copy.analytics.chartLabelOne" />
       </section>
-      <RouterLink :to="`/admin/invitations/${id}/rsvp`" class="text-sm font-medium text-brand hover:underline">Lihat daftar RSVP →</RouterLink>
+      <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Data tamu">
+        <RouterLink :to="`/admin/invitations/${id}/rsvp`" class="font-medium text-brand hover:underline">{{ copy.rsvpAdmin.title }} →</RouterLink>
+        <RouterLink :to="`/admin/invitations/${id}/messages`" class="font-medium text-brand hover:underline">{{ copy.messagesAdmin.title }} →</RouterLink>
+        <RouterLink :to="`/admin/invitations/${id}/gifts`" class="font-medium text-brand hover:underline">{{ copy.giftsAdmin.title }} →</RouterLink>
+      </nav>
     </template>
   </div>
 </template>

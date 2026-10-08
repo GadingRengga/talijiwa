@@ -19,17 +19,17 @@ function remove(id: string) {
   inv.value.stories = inv.value.stories.filter((s) => s.id !== id)
   if (gone?.image) void storageService.removeUrl(gone.image)
 }
-const presets = ['Pertemuan Pertama', 'Lamaran', 'Hari Pernikahan']
+const presets = copy.builder.story.presets
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.story" description="Tampil sebagai timeline, diurutkan otomatis berdasarkan tanggal.">
+  <BuilderSection :title="copy.builder.sections.story" :description="copy.builder.story.desc">
     <EmptyState v-if="!inv.stories.length" :message="copy.empty.stories" />
     <div v-else class="space-y-3">
       <StoryEditor v-for="(s, i) in inv.stories" :key="s.id" v-model="inv.stories[i]" :invitation-id="inv.id" @remove="remove(s.id)" />
     </div>
     <div class="flex flex-wrap gap-2">
-      <AppButton variant="secondary" size="sm" @click="add()"><Plus class="size-4" /> Tambah kisah</AppButton>
+      <AppButton variant="secondary" size="sm" @click="add()"><Plus class="size-4" /> {{ copy.builder.story.add }}</AppButton>
       <AppButton v-for="p in presets" :key="p" variant="ghost" size="sm" @click="add(p)">+ {{ p }}</AppButton>
     </div>
   </BuilderSection>

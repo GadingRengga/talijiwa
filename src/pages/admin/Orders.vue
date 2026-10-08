@@ -95,7 +95,7 @@ function openEdit(o: Order) {
 }
 
 async function save(input: OrderInput) {
-  if (!input.customer_id) return void toast.error('Pilih pelanggan terlebih dahulu.')
+  if (!input.customer_id) return void toast.error(copy.orders.makeFailed)
   saving.value = true
   try {
     if (editing.value) await store.update(editing.value.id, input)
@@ -130,7 +130,7 @@ const statusClass = (s: PaymentStatus) =>
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 class="font-display text-3xl font-semibold">{{ copy.orders.title }}</h1>
-        <p class="text-sm text-muted">{{ store.items.length }} pesanan · Pesanan = transaksi (pembayaran), Undangan = hasil digitalnya (tautan)</p>
+        <p class="text-sm text-muted">{{ store.items.length }} {{ copy.orders.countUnit }} · {{ copy.orders.subtitle }}</p>
       </div>
       <AppButton @click="openCreate()"><Plus class="size-4" /> {{ copy.orders.add }}</AppButton>
     </div>
@@ -144,17 +144,17 @@ const statusClass = (s: PaymentStatus) =>
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative w-full flex-1 sm:min-w-60 sm:max-w-sm">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-        <input v-model="query" class="field-input !pl-9" placeholder="Cari pelanggan, undangan, atau catatan" aria-label="Cari pesanan" />
+        <input v-model="query" class="field-input !pl-9" :placeholder="copy.orders.searchPh" :aria-label="copy.orders.searchAria" />
       </div>
-      <div class="flex flex-wrap gap-1" role="group" aria-label="Filter status">
-        <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'all' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" :aria-pressed="filter === 'all'" @click="filter = 'all'">Semua</button>
+      <div class="flex flex-wrap gap-1" role="group" :aria-label="copy.orders.filterAria">
+        <button type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === 'all' ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" :aria-pressed="filter === 'all'" @click="filter = 'all'">{{ copy.common.all }}</button>
         <button v-for="s in statuses" :key="s" type="button" class="rounded-full border px-3 py-1.5 text-[13px] font-medium" :class="filter === s ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted'" :aria-pressed="filter === s" @click="filter = s">{{ copy.orders.statuses[s] }}</button>
       </div>
     </div>
 
     <LoadingState v-if="store.loading && !store.loaded" />
     <EmptyState v-else-if="!store.items.length" :message="copy.empty.orders"><AppButton @click="openCreate()">{{ copy.orders.add }}</AppButton></EmptyState>
-    <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">Tidak ada pesanan yang cocok.</p>
+    <p v-else-if="!filtered.length" class="py-8 text-center text-sm text-muted">{{ copy.orders.noMatch }}</p>
 
     <ul v-else class="card divide-y divide-line">
       <li v-for="o in paged.rows" :key="o.id" class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
@@ -162,17 +162,17 @@ const statusClass = (s: PaymentStatus) =>
           <p class="truncate text-sm font-medium">{{ customerName(o.customer_id) }}
             <span v-if="isOverdue(o)" class="ml-1 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-medium text-danger">{{ copy.orders.overdue }}</span>
           </p>
-          <p class="truncate text-xs text-muted">{{ invitationName(o.invitation_id) }}{{ o.due_date ? ` · Tenggat ${formatDate(o.due_date)}` : '' }}</p>
+          <p class="truncate text-xs text-muted">{{ invitationName(o.invitation_id) }}{{ o.due_date ? ` · ${copy.orders.dueDate} ${formatDate(o.due_date)}` : '' }}</p>
         </RouterLink>
         <div class="text-right">
           <p class="text-sm font-semibold tabular-nums">{{ formatCurrency(o.amount) }}</p>
-          <p class="text-xs text-muted">Sisa {{ formatCurrency(Math.max(0, o.amount - o.paid)) }}</p>
+          <p class="text-xs text-muted">{{ copy.orders.remainingOf }} {{ formatCurrency(Math.max(0, o.amount - o.paid)) }}</p>
         </div>
         <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="statusClass(o.status)">{{ copy.orders.statuses[o.status] }}</span>
         <div class="flex">
-          <RouterLink :to="`/admin/orders/${o.id}`" class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[13px] font-medium text-muted hover:bg-paper"><FileHeart class="size-3.5" /> Detail</RouterLink>
-          <button type="button" class="rounded-lg p-2 text-muted hover:bg-black/5" :aria-label="`Edit pesanan ${customerName(o.customer_id)}`" @click="openEdit(o)"><Pencil class="size-4" /></button>
-          <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" :aria-label="`Hapus pesanan ${customerName(o.customer_id)}`" @click="toDelete = o"><Trash2 class="size-4" /></button>
+          <RouterLink :to="`/admin/orders/${o.id}`" class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[13px] font-medium text-muted hover:bg-paper"><FileHeart class="size-3.5" /> {{ copy.orders.detail }}</RouterLink>
+          <button type="button" class="rounded-lg p-2 text-muted hover:bg-black/5" :aria-label="`${copy.common.edit} ${customerName(o.customer_id)}`" @click="openEdit(o)"><Pencil class="size-4" /></button>
+          <button type="button" class="rounded-lg p-2 text-danger hover:bg-danger-soft" :aria-label="`${copy.orders.deleteAria} ${customerName(o.customer_id)}`" @click="toDelete = o"><Trash2 class="size-4" /></button>
         </div>
       </li>
     </ul>
@@ -183,6 +183,6 @@ const statusClass = (s: PaymentStatus) =>
         <template #cancel><AppButton variant="secondary" @click="formOpen = false">{{ copy.common.cancel }}</AppButton></template>
       </OrderForm>
     </Modal>
-    <ConfirmDialog :open="!!toDelete" :title="copy.orders.deleteTitle" :message="copy.orders.deleteMessage" confirm-label="Hapus" @confirm="confirmDelete" @cancel="toDelete = null" />
+    <ConfirmDialog :open="!!toDelete" :title="copy.orders.deleteTitle" :message="copy.orders.deleteMessage" :confirm-label="copy.common.delete" @confirm="confirmDelete" @cancel="toDelete = null" />
   </div>
 </template>

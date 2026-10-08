@@ -43,7 +43,7 @@ function submit() {
   <form class="space-y-4" @submit.prevent="submit">
     <FormField :label="copy.orders.customer" v-slot="{ id }">
       <select :id="id" v-model="form.customer_id" class="field-input" required @change="onCustomer">
-        <option value="" disabled>Pilih pelanggan</option>
+        <option value="" disabled>{{ copy.orders.selectCustomer }}</option>
         <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
     </FormField>

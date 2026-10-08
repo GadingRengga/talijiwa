@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest'
+import { contrastOn, contrastRatio, resolveOrder, resolveStyle } from '@/utils/invitation'
+import { DEFAULT_STYLE } from '@/utils/invitation'
+import type { InvitationSettings } from '@/types'
+
+const baseSettings = (): InvitationSettings => ({
+  sections: { couple: true, date: true, countdown: true, profile: true, story: true, events: true, maps: true, gallery: true, rsvp: true, messages: true, gift: true },
+  rsvp_deadline: '',
+  music_enabled: false,
+  music_url: '',
+  seo_title: '',
+  seo_description: '',
+  seo_noindex: false,
+  show_in_portfolio: false,
+})
+
+describe('contrast', () => {
+  it('ranks black-on-white above gray-on-white', () => {
+    expect(contrastRatio('#000000', '#ffffff')).toBeGreaterThan(contrastRatio('#8a7566', '#ffffff'))
+    expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 0)
+  })
+  it('picks readable text color', () => {
+    expect(contrastOn('#ffffff')).toBe('#1b1b1b')
+    expect(contrastOn('#1b1b1b')).toBe('#ffffff')
+  })
+  it('handles invalid hex safely', () => {
+    expect(contrastRatio('nonsense', '#ffffff')).toBeGreaterThan(0)
+  })
+})
+
+describe('resolveStyle', () => {
+  it('fills defaults for legacy settings', () => {
+    expect(resolveStyle(baseSettings())).toEqual(DEFAULT_STYLE)
+  })
+  it('keeps custom overrides', () => {
+    const s = resolveStyle({ ...baseSettings(), style: { accent: '#b99a5b' } })
+    expect(s.accent).toBe('#b99a5b')
+    expect(s.font).toBe('theme')
+  })
+})
+
+describe('resolveOrder', () => {
+  it('falls back to default key order', () => {
+    expect(resolveOrder(baseSettings())).toEqual([
+      'couple', 'date', 'countdown', 'profile', 'story', 'events', 'maps', 'gallery', 'rsvp', 'messages', 'gift',
+    ])
+  })
+  it('respects custom order and drops unknown keys', () => {
+    const s = resolveOrder({ ...baseSettings(), section_order: ['gift', 'nope' as never, 'couple'] })
+    expect(s[0]).toBe('gift')
+    expect(s).toContain('couple')
+    expect(s).not.toContain('nope')
+    expect(new Set(s).size).toBe(s.length)
+  })
+})

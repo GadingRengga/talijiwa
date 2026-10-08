@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
+import { copy } from '@/config/copy'
 
 const props = defineProps<{ open: boolean; title: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -23,7 +24,7 @@ watch(
     <div v-if="open">
       <header class="flex items-center justify-between border-b border-line px-5 py-3.5">
         <h2 class="text-base font-semibold">{{ title }}</h2>
-        <button type="button" class="rounded-lg p-1 text-muted hover:bg-black/5" aria-label="Tutup" @click="emit('close')"><X class="size-5" /></button>
+        <button type="button" class="rounded-lg p-1 text-muted hover:bg-black/5" :aria-label="copy.common.close" @click="emit('close')"><X class="size-5" /></button>
       </header>
       <div class="p-5"><slot /></div>
     </div>

@@ -142,9 +142,9 @@ preview share WA/FB/Telegram tidak berfungsi.
 
 ## 7. Routing: SPA vs direct vs crawler (`/invite/andi-rina`)
 
-Router memakai `createWebHistory` (`src/router/index.ts`). Tidak ada file
-`_redirects`/`_headers`/`vercel.json`/`wrangler` di repo — **SPA fallback belum
-dikonfigurasi di mana pun.**
+Router memakai `createWebHistory` (`src/router/index.ts`). SPA fallback dikonfigurasi
+di `public/_redirects` (hanya rute dinamis → `/index.html 200`) + `netlify.toml`
+(mirror, menang bila keduanya ada); header cache di `public/_headers`.
 
 | Akses | Hasil |
 |---|---|
@@ -202,12 +202,12 @@ saat itu solusinya ISR/edge-SSR per slug (atau Nuxt), bukan prerender penuh.
 |---|---|
 | HTML statis langsung diserve | ✅ `*.html` + aset tanpa proses server |
 | Clean URL (`/templates` → `templates.html`) | ✅ didukung Pages |
-| Dynamic route (`/invite/x`, `/admin/*`, `/pasangan/*`) | ⚠️ butuh SPA fallback — **belum ada**: tambahkan `public/_redirects` berisi `/*  /index.html  200` (file statis tetap diutamakan) |
+| Dynamic route (`/invite/x`, `/admin/*`, `/pasangan/*`) | ✅ fallback via `public/_redirects` (+ `netlify.toml`) |
 | Worker/Function | ❌ tidak wajib untuk app; hanya bila memakai `invite-preview` sebagai Pages Function/Worker atau proxy bot (lihat `docs/WA_PREVIEW.md`) |
-| Caching | ⚠️ perlu `public/_headers`: `index.html` + HTML prerender `Cache-Control: public, max-age=0, must-revalidate` (agar konten CMS/SEO baru cepat tampil), `assets/*` immutable panjang (nama file ber-hash, aman). **File ini belum ada.** |
+| Caching | ✅ `public/_headers`: HTML revalidate, `assets/*` immutable, robots/sitemap 1 jam |
 | Batas Free | ✅ aman: 6 halaman statis, tanpa build berat, tanpa function wajib |
 
-Urutan deploy yang benar: `npm run build` → publish `dist/` → tambah `_redirects` + `_headers`
+Urutan deploy yang benar: `npm run build` → publish `dist/` (redirect + header ikut)
 → (opsional) deploy `invite-preview` untuk share WA.
 
 ## 12. Kesimpulan
@@ -223,10 +223,10 @@ Urutan deploy yang benar: `npm run build` → publish `dist/` → tambah `_redir
 **5 improvement terpenting tanpa Nuxt:**
 
 1. **Deploy `invite-preview` + arahkan crawler** (WA share 0→berfungsi; satu-satunya penutup lubang sosial).
-2. **Tambah `public/_redirects` (`/* /index.html 200`) + `public/_headers`** (direct link anti-404; caching benar; syarat bagian 7/11).
-3. **Satukan sumber SEO** — `seoPrerender.ts` impor dari `copy.site` (atau sebaliknya) agar judul/deskripsi tak ditulis di dua tempat yang bisa drift.
-4. **Gambar: `width/height` + `fetchpriority`/lazy + AVIF/WebP via Storage transform** — LCP/CLS termurah yang tersisa (undangan sangat visual).
-5. **Sitemap dinamis saat build** — bangkitkan `sitemap.xml` dari rute prerender + domain env (`VITE_SITE_URL`), bukan file statis ber-domain placeholder; sekalian daftarkan Search Console + ukur LCP/INP lapangan sebelum optimasi lanjutan.
+2. ~~Tambah `public/_redirects` + `public/_headers`~~ — selesai (`public/_redirects`, `netlify.toml`, `public/_headers`).
+3. ~~Satukan sumber SEO~~ — selesai (`seoPrerender.ts` impor dari `copy.site`).
+4. ~~Gambar `width/height` + `fetchpriority`/lazy~~ — selesai di undangan + company. Sisa: AVIF/WebP via Storage transform + ukur LCP/INP lapangan.
+5. ~~Sitemap dinamis~~ — selesai (plugin Vite dari `SITE_URL` env). Sisa: daftarkan Search Console.
 
 ---
 
@@ -252,9 +252,9 @@ Urutan deploy yang benar: `npm run build` → publish `dist/` → tambah `_redir
                     └──────────┬──────────┘   snapshot build + meta crawler
                                ▼
                     ┌─────────────────────┐
-                    │     Cloudflare      │
-                    │  Pages (statis)     │  ← serve file / fallback ke
-                    │  + _redirects*      │    index.html (*belum ada)
+                    │  Hosting statis     │
+                    │  (Netlify/CF Pages) │  ← serve file / fallback ke
+                    │  + _redirects       │    index.html via rewrite
                     └──────┬──────┬───────┘
                            │      │
               ┌────────────┘      └──────────────┐

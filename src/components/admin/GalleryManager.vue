@@ -28,7 +28,7 @@ async function addFiles(files: FileList | null) {
   error.value = ''
   busy.value = true
   const room = MAX_PHOTOS - items.value.length
-  if (files.length > room) error.value = `Maksimal ${MAX_PHOTOS} foto. Sebagian file dilewati.`
+  if (files.length > room) error.value = copy.builder.gallery.tooMany.replace('{max}', String(MAX_PHOTOS))
   for (const file of Array.from(files).slice(0, Math.max(room, 0))) {
     try {
       const url = useMock
@@ -36,7 +36,7 @@ async function addFiles(files: FileList | null) {
         : await storageService.uploadImage(props.invitationId, 'gallery', file)
       items.value.push({ id: uid('gl'), url, caption: '', is_cover: items.value.length === 0 })
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Gagal memproses gambar.'
+      error.value = e instanceof Error ? e.message : copy.builder.gallery.failed
     }
   }
   busy.value = false
@@ -70,7 +70,7 @@ async function onCropped(url: string) {
     item.url = useMock ? url : await storageService.uploadImage(props.invitationId, 'gallery', url)
     if (old && item.url !== old) void storageService.removeUrl(old)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Gagal mengunggah gambar.'
+    error.value = e instanceof Error ? e.message : copy.builder.gallery.uploadFailed
   } finally {
     busy.value = false
   }
@@ -84,11 +84,11 @@ function onDrop(to: number) {
 <template>
   <div class="space-y-3">
     <div class="flex items-center justify-between gap-3">
-      <p class="text-xs text-muted">{{ items.length }}/{{ MAX_PHOTOS }} foto. Seret untuk mengurutkan, bintang untuk cover.</p>
+      <p class="text-xs text-muted">{{ items.length }}/{{ MAX_PHOTOS }} {{ copy.builder.gallery.counter }}</p>
       <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-panel px-3 py-1.5 text-[13px] font-medium hover:bg-paper">
         <Loader2 v-if="busy" class="size-4 animate-spin" />
         <ImagePlus v-else class="size-4" />
-        Unggah foto
+        {{ copy.builder.gallery.upload }}
         <input ref="input" type="file" multiple class="sr-only" :accept="ACCEPTED_TYPES.join(',')" :disabled="busy" @change="addFiles(($event.target as HTMLInputElement).files)" />
       </label>
     </div>
@@ -107,17 +107,17 @@ function onDrop(to: number) {
         @dragend="dragIndex = overIndex = null"
         @drop.prevent="onDrop(i)"
       >
-        <img :src="g.url" :alt="g.caption || `Foto ${i + 1}`" class="aspect-[4/5] w-full object-cover" draggable="false" />
-        <span v-if="g.is_cover" class="absolute left-2 top-2 rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-white">Cover</span>
+        <img :src="g.url" :alt="g.caption || `${copy.builder.gallery.photoAlt} ${i + 1}`" class="aspect-[4/5] w-full object-cover" draggable="false" />
+        <span v-if="g.is_cover" class="absolute left-2 top-2 rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-white">{{ copy.builder.gallery.cover }}</span>
         <div class="flex items-center justify-between gap-1 p-1.5">
           <div class="flex">
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === 0" aria-label="Geser ke kiri" @click="move(i, i - 1)"><ArrowLeft class="size-3.5" /></button>
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === items.length - 1" aria-label="Geser ke kanan" @click="move(i, i + 1)"><ArrowRight class="size-3.5" /></button>
+            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === 0" :aria-label="copy.builder.gallery.moveLeft" @click="move(i, i - 1)"><ArrowLeft class="size-3.5" /></button>
+            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === items.length - 1" :aria-label="copy.builder.gallery.moveRight" @click="move(i, i + 1)"><ArrowRight class="size-3.5" /></button>
           </div>
           <div class="flex">
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5" aria-label="Potong foto" @click="cropId = g.id"><Crop class="size-3.5" /></button>
-            <button type="button" class="rounded p-2 hover:bg-black/5" :class="g.is_cover ? 'text-brand' : 'text-muted'" :aria-pressed="g.is_cover" aria-label="Jadikan cover" @click="setCover(g.id)"><Star class="size-3.5" :fill="g.is_cover ? 'currentColor' : 'none'" /></button>
-            <button type="button" class="rounded p-2 text-danger hover:bg-danger-soft" aria-label="Hapus foto" @click="remove(g.id)"><Trash2 class="size-3.5" /></button>
+            <button type="button" class="rounded p-2 text-muted hover:bg-black/5" :aria-label="copy.builder.gallery.crop" @click="cropId = g.id"><Crop class="size-3.5" /></button>
+            <button type="button" class="rounded p-2 hover:bg-black/5" :class="g.is_cover ? 'text-brand' : 'text-muted'" :aria-pressed="g.is_cover" :aria-label="copy.builder.gallery.setCover" @click="setCover(g.id)"><Star class="size-3.5" :fill="g.is_cover ? 'currentColor' : 'none'" /></button>
+            <button type="button" class="rounded p-2 text-danger hover:bg-danger-soft" :aria-label="copy.builder.gallery.removePhoto" @click="remove(g.id)"><Trash2 class="size-3.5" /></button>
           </div>
         </div>
       </li>

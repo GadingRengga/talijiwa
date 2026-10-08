@@ -12,20 +12,20 @@ const b = inject(BUILDER_KEY)!
 
 const slugMessage = {
   idle: '',
-  checking: 'Memeriksa ketersediaan…',
-  ok: 'Slug tersedia.',
-  taken: 'Slug sudah dipakai undangan lain.',
-  invalid: 'Gunakan huruf kecil, angka, dan tanda hubung (minimal 3 karakter, bukan kata yang dicadangkan).',
+  checking: copy.builder.slugChecking,
+  ok: copy.builder.slugOk,
+  taken: copy.builder.slugTaken,
+  invalid: copy.builder.slugInvalid,
 } as const
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.basic" description="Judul, alamat undangan, dan teks sambutan.">
-    <FormField label="Judul undangan" hint="Biasanya nama panggilan pasangan, mis. Raka & Sinta." v-slot="{ id }">
-      <input :id="id" v-model="inv.title" class="field-input" placeholder="Raka & Sinta" maxlength="80" />
+  <BuilderSection :title="copy.builder.sections.basic" :description="copy.builder.basic.desc">
+    <FormField :label="copy.builder.basic.titleLabel" :hint="copy.builder.basic.titleHint" v-slot="{ id }">
+      <input :id="id" v-model="inv.title" class="field-input" :placeholder="copy.builder.basic.titlePh" maxlength="80" />
     </FormField>
 
-    <FormField label="Alamat undangan (slug)" :error="b.slugState.value === 'taken' || b.slugState.value === 'invalid' ? slugMessage[b.slugState.value] : ''" v-slot="{ id, invalid }">
+    <FormField :label="copy.builder.basic.slugLabel" :error="b.slugState.value === 'taken' || b.slugState.value === 'invalid' ? slugMessage[b.slugState.value] : ''" v-slot="{ id, invalid }">
       <div class="flex items-stretch gap-2">
         <div class="flex min-w-0 flex-1 items-center rounded-lg border bg-panel focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/15" :class="invalid ? 'border-danger' : 'border-line'">
           <span class="select-none pl-3 text-sm text-muted">/invite/</span>
@@ -37,14 +37,14 @@ const slugMessage = {
           </span>
         </div>
         <button v-if="b.slugTouched.value" type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel px-3 text-[13px] hover:bg-paper" @click="b.resetSlugFromTitle()">
-          <RotateCcw class="size-3.5" /> Ikuti judul
+          <RotateCcw class="size-3.5" /> {{ copy.builder.basic.followTitle }}
         </button>
       </div>
       <p v-if="b.slugState.value === 'ok' || b.slugState.value === 'checking'" class="mt-1.5 text-xs text-muted">{{ slugMessage[b.slugState.value] }}</p>
     </FormField>
 
-    <FormField label="Salam pembuka" v-slot="{ id }"><input :id="id" v-model="inv.greeting" class="field-input" /></FormField>
-    <FormField label="Teks pembuka" v-slot="{ id }"><textarea :id="id" v-model="inv.opening_text" rows="3" class="field-input" /></FormField>
-    <FormField label="Teks penutup" v-slot="{ id }"><textarea :id="id" v-model="inv.closing_text" rows="3" class="field-input" /></FormField>
+    <FormField :label="copy.builder.basic.greeting" v-slot="{ id }"><input :id="id" v-model="inv.greeting" class="field-input" /></FormField>
+    <FormField :label="copy.builder.basic.opening" v-slot="{ id }"><textarea :id="id" v-model="inv.opening_text" rows="3" class="field-input" /></FormField>
+    <FormField :label="copy.builder.basic.closing" v-slot="{ id }"><textarea :id="id" v-model="inv.closing_text" rows="3" class="field-input" /></FormField>
   </BuilderSection>
 </template>

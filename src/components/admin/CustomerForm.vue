@@ -20,8 +20,8 @@ watch(
 
 const nameInput = ref<HTMLInputElement | null>(null)
 function submit() {
-  errors.name = form.name.trim() ? '' : 'Nama wajib diisi.'
-  errors.email = !form.email || /^\S+@\S+\.\S+$/.test(form.email) ? '' : 'Format email tidak valid.'
+  errors.name = form.name.trim() ? '' : copy.customers.formNameError
+  errors.email = !form.email || /^\S+@\S+\.\S+$/.test(form.email) ? '' : copy.customers.formEmailError
   if (errors.name || errors.email) return nameInput.value?.focus()
   emit('submit', { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), notes: form.notes.trim() })
 }
@@ -29,12 +29,12 @@ function submit() {
 
 <template>
   <form class="space-y-4" novalidate @submit.prevent="submit">
-    <FormField label="Nama" :error="errors.name" v-slot="{ id, invalid }"><input :id="id" ref="nameInput" v-model="form.name" class="field-input" :aria-invalid="invalid" autocomplete="off" /></FormField>
+    <FormField :label="copy.customers.formName" :error="errors.name" v-slot="{ id, invalid }"><input :id="id" ref="nameInput" v-model="form.name" class="field-input" :aria-invalid="invalid" autocomplete="off" /></FormField>
     <div class="grid gap-4 sm:grid-cols-2">
-      <FormField label="Telepon / WhatsApp" optional v-slot="{ id }"><input :id="id" v-model="form.phone" class="field-input" inputmode="tel" /></FormField>
-      <FormField label="Email" optional :error="errors.email" v-slot="{ id, invalid }"><input :id="id" v-model="form.email" type="email" class="field-input" :aria-invalid="invalid" /></FormField>
+      <FormField :label="copy.customers.formPhone" optional v-slot="{ id }"><input :id="id" v-model="form.phone" class="field-input" inputmode="tel" /></FormField>
+      <FormField :label="copy.customers.formEmail" optional :error="errors.email" v-slot="{ id, invalid }"><input :id="id" v-model="form.email" type="email" class="field-input" :aria-invalid="invalid" /></FormField>
     </div>
-    <FormField label="Catatan" optional v-slot="{ id }"><textarea :id="id" v-model="form.notes" rows="3" class="field-input" /></FormField>
+    <FormField :label="copy.customers.formNotes" optional v-slot="{ id }"><textarea :id="id" v-model="form.notes" rows="3" class="field-input" /></FormField>
     <div class="flex justify-end gap-2 pt-1">
       <AppButton variant="secondary" @click="emit('cancel')">{{ copy.common.cancel }}</AppButton>
       <AppButton type="submit" :loading="saving">{{ copy.common.save }}</AppButton>

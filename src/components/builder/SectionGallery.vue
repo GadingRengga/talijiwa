@@ -8,7 +8,7 @@ const inv = defineModel<InvitationData>({ required: true })
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.gallery" description="Foto bintang menjadi cover undangan. Gambar dikompres otomatis sebelum disimpan.">
+  <BuilderSection :title="copy.builder.sections.gallery" :description="copy.builder.gallery.desc">
     <GalleryManager v-model="inv.gallery" :invitation-id="inv.id" />
   </BuilderSection>
 </template>

@@ -1,6 +1,6 @@
 # Database (Supabase / PostgreSQL)
 
-Migration: `supabase/migrations/001_schema.sql`, `002_rls.sql`, `003_storage.sql`. Jalankan berurutan. **Belum diuji di database sungguhan**; jalankan di project Supabase kosong dan lakukan uji RLS di bawah sebelum dipakai.
+Migration: `supabase/migrations/001_schema.sql` sampai `011_rebrand.sql`. Jalankan berurutan (`004_theme_text`, `005_style_order`, `006_share`, `007_orders_catalog`, `008_content`, `009_payments`, `010_couple`, `011_rebrand`). Uji RLS via API lolos 12/12 (2026-10-07); checklist manual di bawah tetap wajib sebelum produksi.
 
 ## Tabel
 
@@ -49,7 +49,7 @@ Tidak ada trigger yang otomatis menjadikan user baru sebagai admin (sengaja).
 
 ## Storage
 
-Bucket publik `invitation-images` (maks 5 MB, JPEG/PNG/WebP). Path: `invitations/{invitation_id}/{cover|couple|gallery}/<file>`. Baca publik; tulis/ubah/hapus hanya admin. Saat menghapus undangan atau foto, hapus juga objek storage-nya (Fase 2: lewat service, atau Edge Function pembersih).
+Bucket publik `invitation-images` (maks 5 MB, JPEG/PNG/WebP). Path: `invitations/{invitation_id}/{cover|couple|gallery}/<file>`. Baca publik; tulis/ubah/hapus hanya admin. Penghapusan file lama, foto yang diganti, dan folder undangan ditangani `services/storage` (`removeUrl`, `removeInvitationFolder`); Edge Function pembersih tidak jadi dibuat.
 
 ## Uji RLS (wajib sebelum produksi)
 
@@ -74,5 +74,5 @@ Dengan user terautentikasi non-admin (bukan di `profiles`): semua tabel bisnis h
 ## Hal yang sengaja belum ada
 
 - Rate limit sisi server untuk insert publik (disarankan Edge Function atau pg_net/cron + tabel counter).
-- RPC/view statistik dashboard dan grafik harian (Fase 4).
-- `seed.sql` demo (Fase 2; saat ini seed ada di `src/services/mock/seed.ts`).
+- RPC/view statistik dashboard (grafik dihitung di klien via `analytics.series()`).
+- Seed demo SQL ada di `supabase/seed_demo.sql` (opsional, UUID tetap).

@@ -125,18 +125,20 @@ defineExpose({ scrollToSection, replay: replayAll })
     :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`]"
     :style="cssVars"
   >
-    <InvitationCover
-      ref="coverRef"
-      eager
-      :couple="label"
-      :date="formatDate(dateValue)"
-      :guest="guestName"
-      :image="coverImage"
-      :decor="theme.decor"
-      :intro="introKind"
-      :mode="isPreview ? 'static' : 'overlay'"
-      @open="emit('open')"
-    />
+    <div data-sec="cover">
+      <InvitationCover
+        ref="coverRef"
+        eager
+        :couple="label"
+        :date="formatDate(dateValue)"
+        :guest="guestName"
+        :image="coverImage"
+        :decor="theme.decor"
+        :intro="introKind"
+        :mode="isPreview ? 'static' : 'overlay'"
+        @open="emit('open')"
+      />
+    </div>
 
     <div class="relative flex flex-col">
       <OrnamentLayer v-if="theme.ornament && level === 'full'" :kind="theme.ornament" :class="isPreview ? '' : '!fixed'" />

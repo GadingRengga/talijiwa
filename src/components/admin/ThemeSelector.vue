@@ -2,6 +2,7 @@
 import { Check } from 'lucide-vue-next'
 import { ref } from 'vue'
 import ThemeBanner from '@/components/invitation/ThemeBanner.vue'
+import { copy } from '@/config/copy'
 import { themeList } from '@/themes'
 import type { ThemeId } from '@/types'
 
@@ -11,7 +12,7 @@ const hot = ref<string | null>(null)
 </script>
 
 <template>
-  <div role="radiogroup" aria-label="Pilih tema" class="grid gap-3 sm:grid-cols-2">
+  <div role="radiogroup" :aria-label="copy.builder.theme.themeSelector" class="grid gap-3 sm:grid-cols-2">
     <button
       v-for="t in themeList"
       :key="t.id"

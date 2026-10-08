@@ -57,7 +57,6 @@ export const routes = [
         { path: 'orders/:id', name: 'admin-order', component: () => import('@/pages/admin/OrderDetail.vue'), meta: { title: 'Detail pesanan' } },
         { path: 'themes', name: 'admin-themes', component: () => import('@/pages/admin/Themes.vue'), meta: { title: 'Tema' } },
         { path: 'invitations', name: 'admin-invitations', component: () => import('@/pages/admin/Invitations.vue'), meta: { title: 'Undangan' } },
-        { path: 'invitations/create', name: 'admin-invitation-create', component: () => import('@/pages/admin/CreateInvitation.vue'), meta: { title: 'Buat undangan' } },
         { path: 'invitations/:id', redirect: (to: RouteLocationGeneric) => `/admin/invitations/${to.params.id}/edit` },
         { path: 'invitations/:id/edit', name: 'admin-invitation-edit', component: () => import('@/pages/admin/InvitationEdit.vue'), meta: { title: 'Builder undangan' } },
         { path: 'invitations/:id/preview', name: 'admin-invitation-preview', component: () => import('@/pages/admin/InvitationPreview.vue'), meta: { title: 'Pratinjau' } },

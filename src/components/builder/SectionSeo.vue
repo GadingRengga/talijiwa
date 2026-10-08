@@ -7,26 +7,26 @@ import { copy } from '@/config/copy'
 import type { InvitationData } from '@/types'
 
 const inv = defineModel<InvitationData>({ required: true })
-const titleDefault = computed(() => `${inv.value.title || 'Nama Pasangan'} — Wedding Invitation`)
-const descDefault = computed(() => `Undangan pernikahan ${inv.value.title || 'Nama Pasangan'}.`)
+const titleDefault = computed(() => `${inv.value.title || copy.builder.seo.coupleFallback} — Wedding Invitation`)
+const descDefault = computed(() => `Undangan pernikahan ${inv.value.title || copy.builder.seo.coupleFallback}.`)
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.seo" description="Judul dan deskripsi saat tautan dibagikan di WhatsApp atau mesin pencari.">
-    <FormField label="Judul halaman" optional :hint="`Kosongkan untuk memakai: ${titleDefault}`" v-slot="{ id }">
+  <BuilderSection :title="copy.builder.sections.seo" :description="copy.builder.seo.desc">
+    <FormField :label="copy.builder.seo.title" optional :hint="`${copy.builder.seo.titleHint}${titleDefault}`" v-slot="{ id }">
       <input :id="id" v-model="inv.settings.seo_title" class="field-input" maxlength="70" :placeholder="titleDefault" />
     </FormField>
-    <FormField label="Deskripsi" optional :hint="`Kosongkan untuk memakai: ${descDefault}`" v-slot="{ id }">
+    <FormField :label="copy.builder.seo.descLabel" optional :hint="`${copy.builder.seo.descHint}${descDefault}`" v-slot="{ id }">
       <textarea :id="id" v-model="inv.settings.seo_description" rows="2" class="field-input" maxlength="160" :placeholder="descDefault" />
     </FormField>
     <div class="card px-4">
-      <ToggleSwitch v-model="inv.settings.seo_noindex" label="Sembunyikan dari mesin pencari" description="Disarankan untuk undangan pribadi. Tautan tetap bisa dibuka siapa saja yang memilikinya." />
+      <ToggleSwitch v-model="inv.settings.seo_noindex" :label="copy.builder.seo.hideSeo" :description="copy.builder.seo.hideHint" />
     </div>
     <div class="card px-4">
-      <ToggleSwitch v-model="inv.settings.show_in_portfolio" label="Tampilkan di portofolio" description="Muncul di halaman Portofolio company profile setelah dipublikasikan. Pastikan pelanggan setuju." />
+      <ToggleSwitch v-model="inv.settings.show_in_portfolio" :label="copy.builder.seo.portfolio" :description="copy.builder.seo.portfolioHint" />
     </div>
     <div class="rounded-xl border border-line bg-panel p-4">
-      <p class="text-xs text-muted">Pratinjau hasil pencarian</p>
+      <p class="text-xs text-muted">{{ copy.builder.seo.previewTitle }}</p>
       <p class="mt-1 truncate text-base text-[#1a0dab]">{{ inv.settings.seo_title || titleDefault }}</p>
       <p class="line-clamp-2 text-sm text-muted">{{ inv.settings.seo_description || descDefault }}</p>
     </div>

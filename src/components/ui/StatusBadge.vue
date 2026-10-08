@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { copy } from '@/config/copy'
 import type { InvitationStatus } from '@/types'
 
 const props = defineProps<{ status: InvitationStatus }>()
 const map = {
-  draft: { label: 'Draf', cls: 'bg-warn-soft text-warn' },
-  published: { label: 'Terbit', cls: 'bg-sage-soft text-sage' },
-  archived: { label: 'Arsip', cls: 'bg-line text-muted' },
+  draft: { label: copy.invitations.statuses.draft, cls: 'bg-warn-soft text-warn' },
+  published: { label: copy.invitations.statuses.published, cls: 'bg-sage-soft text-sage' },
+  archived: { label: copy.invitations.statuses.archived, cls: 'bg-line text-muted' },
 } as const
 const info = computed(() => map[props.status])
 </script>

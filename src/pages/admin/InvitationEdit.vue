@@ -138,7 +138,7 @@ watch(active, (key) => {
 })
 
 const statusText = computed(
-  () => ({ saved: copy.common.saved, dirty: copy.common.unsaved, saving: copy.common.saving, error: lastError.value || 'Gagal menyimpan' })[saveState.value],
+  () => ({ saved: copy.common.saved, dirty: copy.common.unsaved, saving: copy.common.saving, error: lastError.value || copy.builder.saveFailed })[saveState.value],
 )
 </script>
 
@@ -147,14 +147,14 @@ const statusText = computed(
     <LoadingState v-if="loading" />
     <div v-else-if="loadError" class="m-6 space-y-3">
       <p class="text-sm text-danger" role="alert">{{ loadError }}</p>
-      <RouterLink to="/admin/invitations" class="text-sm font-medium text-brand hover:underline">Kembali ke daftar undangan</RouterLink>
+      <RouterLink to="/admin/invitations" class="text-sm font-medium text-brand hover:underline">{{ copy.builder.edit.backToList }}</RouterLink>
     </div>
 
     <template v-else-if="draft">
       <!-- Top bar -->
       <header class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line bg-panel px-4 py-2.5 sm:px-5">
         <div class="flex min-w-0 items-center gap-3">
-          <RouterLink to="/admin/invitations" class="rounded-lg p-1.5 text-muted hover:bg-black/5" aria-label="Kembali ke daftar undangan"><ArrowLeft class="size-4" /></RouterLink>
+          <RouterLink to="/admin/invitations" class="rounded-lg p-1.5 text-muted hover:bg-black/5" :aria-label="copy.builder.edit.backToList"><ArrowLeft class="size-4" /></RouterLink>
           <div class="min-w-0">
             <h1 class="truncate text-sm font-semibold leading-tight">{{ title }}</h1>
             <div class="mt-0.5 flex items-center gap-2">
@@ -169,30 +169,30 @@ const statusText = computed(
           </div>
         </div>
         <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
-          <div class="flex rounded-lg border border-line p-0.5 xl:hidden" role="tablist" aria-label="Tampilan">
+          <div class="flex rounded-lg border border-line p-0.5 xl:hidden" role="tablist" :aria-label="copy.builder.edit.viewTabs">
             <button v-for="t in (['edit', 'preview'] as const)" :key="t" type="button" role="tab" :aria-selected="tab === t" class="rounded-md px-3 py-1 text-[13px] font-medium" :class="tab === t ? 'bg-ink text-white' : 'text-muted'" @click="tab = t">
               {{ t === 'edit' ? copy.builder.tabEdit : copy.builder.tabPreview }}
             </button>
           </div>
           <div class="hidden sm:flex">
-            <AppButton variant="ghost" size="sm" title="Urungkan (Ctrl+Z)" aria-label="Urungkan" :disabled="!history.canUndo.value" @click="history.undo()"><Undo2 class="size-4" /></AppButton>
-            <AppButton variant="ghost" size="sm" title="Ulangi (Ctrl+Shift+Z)" aria-label="Ulangi" :disabled="!history.canRedo.value" @click="history.redo()"><Redo2 class="size-4" /></AppButton>
+            <AppButton variant="ghost" size="sm" :title="copy.builder.edit.undoTitle" :aria-label="copy.builder.edit.undo" :disabled="!history.canUndo.value" @click="history.undo()"><Undo2 class="size-4" /></AppButton>
+            <AppButton variant="ghost" size="sm" :title="copy.builder.edit.redoTitle" :aria-label="copy.builder.edit.redo" :disabled="!history.canRedo.value" @click="history.redo()"><Redo2 class="size-4" /></AppButton>
           </div>
-          <AppButton variant="ghost" size="sm" class="hidden sm:inline-flex" title="Putar ulang animasi pratinjau" @click="replay"><RotateCcw class="size-4" /><span class="hidden sm:inline"> Putar ulang</span></AppButton>
+          <AppButton variant="ghost" size="sm" class="hidden sm:inline-flex" :title="copy.builder.edit.replayTitle" @click="replay"><RotateCcw class="size-4" /><span class="hidden sm:inline"> {{ copy.builder.edit.replay }}</span></AppButton>
           <a :href="`/admin/invitations/${draft.id}/preview`" target="_blank" rel="noopener" class="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted hover:bg-black/5 sm:inline-flex"><ExternalLink class="size-4" /> {{ copy.common.preview }}</a>
           <AppButton variant="ghost" size="sm" class="hidden sm:inline-flex" @click="builder.copyPublicLink()"><Link2 class="size-4" /> {{ copy.common.copyLink }}</AppButton>
           <details class="relative sm:hidden" @click.capture="closeMenu">
-            <summary class="grid size-9 cursor-pointer list-none place-items-center rounded-lg text-muted hover:bg-black/5" aria-label="Aksi lainnya"><MoreHorizontal class="size-5" /></summary>
+            <summary class="grid size-9 cursor-pointer list-none place-items-center rounded-lg text-muted hover:bg-black/5" :aria-label="copy.builder.edit.moreActions"><MoreHorizontal class="size-5" /></summary>
             <div class="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-line bg-panel p-1 shadow-lg">
-              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper disabled:opacity-40" :disabled="!history.canUndo.value" @click="history.undo()"><Undo2 class="size-4" /> Urungkan</button>
-              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper disabled:opacity-40" :disabled="!history.canRedo.value" @click="history.redo()"><Redo2 class="size-4" /> Ulangi</button>
-              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper" @click="replay"><RotateCcw class="size-4" /> Putar ulang</button>
+              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper disabled:opacity-40" :disabled="!history.canUndo.value" @click="history.undo()"><Undo2 class="size-4" /> {{ copy.builder.edit.undo }}</button>
+              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper disabled:opacity-40" :disabled="!history.canRedo.value" @click="history.redo()"><Redo2 class="size-4" /> {{ copy.builder.edit.redo }}</button>
+              <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper" @click="replay"><RotateCcw class="size-4" /> {{ copy.builder.edit.replay }}</button>
               <a :href="`/admin/invitations/${draft.id}/preview`" target="_blank" rel="noopener" class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm hover:bg-paper"><ExternalLink class="size-4" /> {{ copy.common.preview }}</a>
               <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-paper" @click="builder.copyPublicLink()"><Link2 class="size-4" /> {{ copy.common.copyLink }}</button>
             </div>
           </details>
           <AppButton variant="secondary" size="sm" :loading="saveState === 'saving'" :disabled="saveState === 'saved'" @click="builder.save()">{{ copy.common.save }}</AppButton>
-          <AppButton v-if="!isPublished" size="sm" :loading="publishing" :disabled="!canPublish" :title="canPublish ? '' : 'Lengkapi data wajib terlebih dahulu'" @click="active === 'publish' ? builder.publish() : select('publish')">
+          <AppButton v-if="!isPublished" size="sm" :loading="publishing" :disabled="!canPublish" :title="canPublish ? '' : copy.builder.edit.completeFirst" @click="active === 'publish' ? builder.publish() : select('publish')">
             <Rocket class="size-4" /> {{ copy.common.publish }}
           </AppButton>
         </div>
@@ -204,11 +204,11 @@ const statusText = computed(
           <BuilderSidebar :active="active" :progress="progress" @select="select" />
         </div>
 
-        <div ref="formPane" tabindex="-1" role="region" aria-label="Formulir bagian aktif" class="min-h-0 overflow-y-auto outline-none" :class="tab === 'edit' ? 'block' : 'hidden xl:block'">
+        <div ref="formPane" tabindex="-1" role="region" :aria-label="copy.builder.edit.formRegion" class="min-h-0 overflow-y-auto outline-none" :class="tab === 'edit' ? 'block' : 'hidden xl:block'">
           <div class="mx-auto max-w-2xl px-4 py-6 sm:px-6">
             <button v-if="nextTodo && nextTodo !== active" type="button" class="mb-5 flex w-full items-center gap-3 rounded-xl border border-brand/30 bg-brand-soft/50 px-4 py-3 text-left text-sm hover:bg-brand-soft" @click="select(nextTodo)">
               <Lightbulb class="size-4 shrink-0 text-brand" aria-hidden="true" />
-              <span class="flex-1"><span class="font-semibold">Langkah berikutnya:</span> lengkapi {{ copy.builder.sections[nextTodo] }}</span>
+              <span class="flex-1"><span class="font-semibold">{{ copy.builder.edit.nextStep }}</span> {{ copy.builder.edit.completeAction }} {{ copy.builder.sections[nextTodo] }}</span>
               <ArrowRight class="size-4 text-brand" aria-hidden="true" />
             </button>
             <component :is="views[active]" v-model="draft" @jump="select($event as BuilderKey)" />
@@ -217,18 +217,18 @@ const statusText = computed(
               <span v-else />
               <AppButton v-if="next" size="sm" @click="select(next)">{{ copy.builder.sections[next] }} <ArrowRight class="size-4" /></AppButton>
             </div>
-            <p class="mt-6 text-center text-[11px] text-muted">Pintasan: Ctrl+S simpan · Ctrl+Z urungkan · Ctrl+Shift+Z ulangi · Alt+←/→ pindah bagian</p>
+            <p class="mt-6 text-center text-[11px] text-muted">{{ copy.builder.edit.shortcuts }}</p>
           </div>
         </div>
 
-        <aside class="min-h-0 overflow-hidden border-line bg-paper p-4 xl:border-l" :class="tab === 'preview' ? 'block' : 'hidden xl:block'" aria-label="Pratinjau langsung">
-          <div class="mx-auto mb-3 flex w-fit rounded-lg border border-line bg-panel p-0.5" role="radiogroup" aria-label="Ukuran pratinjau">
-            <button v-for="d in ([['phone', 'Ponsel', Smartphone], ['tablet', 'Tablet', Tablet]] as const)" :key="d[0]" type="button" role="radio" :aria-checked="device === d[0]" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[13px] font-medium" :class="device === d[0] ? 'bg-ink text-white' : 'text-muted'" @click="device = d[0]"><component :is="d[2]" class="size-4" /> {{ d[1] }}</button>
+        <aside class="min-h-0 overflow-hidden border-line bg-paper p-4 xl:border-l" :class="tab === 'preview' ? 'block' : 'hidden xl:block'" :aria-label="copy.builder.edit.previewRegion">
+          <div class="mx-auto mb-3 flex w-fit rounded-lg border border-line bg-panel p-0.5" role="radiogroup" :aria-label="copy.builder.edit.previewSize">
+            <button v-for="d in ([['phone', copy.builder.edit.phone, Smartphone], ['tablet', copy.builder.edit.tablet, Tablet]] as const)" :key="d[0]" type="button" role="radio" :aria-checked="device === d[0]" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[13px] font-medium" :class="device === d[0] ? 'bg-ink text-white' : 'text-muted'" @click="device = d[0]"><component :is="d[2]" class="size-4" /> {{ d[1] }}</button>
           </div>
           <div class="mx-auto h-[min(calc(100%-4.5rem),46rem)] min-h-96 max-w-full overflow-hidden border-ink bg-ink shadow-xl transition-[width,border-radius] duration-300" :class="device === 'phone' ? 'w-[min(22rem,100%)] rounded-[2rem] border-[6px]' : 'w-[min(32rem,100%)] rounded-[1.25rem] border-[8px]'">
-            <InvitationRenderer ref="previewRef" :invitation="draft" mode="preview" guest="Nama Tamu" @pick="onPick" />
+            <InvitationRenderer ref="previewRef" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" @pick="onPick" />
           </div>
-          <p class="mt-2 text-center text-xs text-muted">Klik bagian mana pun di pratinjau untuk langsung mengeditnya.</p>
+          <p class="mt-2 text-center text-xs text-muted">{{ copy.builder.edit.clickHint }}</p>
         </aside>
       </div>
     </template>

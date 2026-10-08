@@ -21,8 +21,3 @@ export function requireSupabase() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi. Isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY.')
   return supabase
 }
-
-/** Adapter not written yet (Phase 2). Mock mode is the only working backend for now. */
-export function notImplemented(name: string): never {
-  throw new Error(`Adapter Supabase untuk "${name}" belum diimplementasikan. Gunakan VITE_USE_MOCK=true.`)
-}

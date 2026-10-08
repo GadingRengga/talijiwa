@@ -33,7 +33,7 @@ async function run(fn: () => Promise<unknown>) {
     </div>
 
     <LoadingState v-if="store.loading && !store.loaded" />
-    <EmptyState v-else-if="!store.rows.length" message="Katalog tema belum tersedia." />
+    <EmptyState v-else-if="!store.rows.length" :message="copy.themes.empty" />
 
     <ul v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <li v-for="r in store.rows" :key="r.theme" class="card overflow-hidden" :class="r.is_active ? '' : 'opacity-70'">
@@ -44,8 +44,8 @@ async function run(fn: () => Promise<unknown>) {
             <p class="text-xs text-muted">{{ r.description }}</p>
           </div>
           <label class="block">
-            <span class="mb-1 block text-xs text-muted">Kategori</span>
-            <select :value="r.category" class="field-input" :aria-label="`Kategori ${r.name}`" @change="run(() => store.setCategory(r.theme, ($event.target as HTMLSelectElement).value as typeof r.category))">
+            <span class="mb-1 block text-xs text-muted">{{ copy.themes.category }}</span>
+            <select :value="r.category" class="field-input" :aria-label="`${copy.themes.category} ${r.name}`" @change="run(() => store.setCategory(r.theme, ($event.target as HTMLSelectElement).value as typeof r.category))">
               <option v-for="c in THEME_CATEGORIES" :key="c.id" :value="c.id">{{ c.label }}</option>
             </select>
           </label>
@@ -79,6 +79,6 @@ async function run(fn: () => Promise<unknown>) {
         </div>
       </li>
     </ul>
-    <p v-if="store.loading" class="flex items-center gap-2 text-xs text-muted"><Loader2 class="size-3 animate-spin" /> Menyimpan…</p>
+    <p v-if="store.loading" class="flex items-center gap-2 text-xs text-muted"><Loader2 class="size-3 animate-spin" /> {{ copy.themes.saving }}</p>
   </div>
 </template>

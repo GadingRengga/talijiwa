@@ -32,17 +32,17 @@ onMounted(async () => {
     <LoadingState v-if="loading" />
     <template v-else-if="stats">
       <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        <StatCard label="Pelanggan" :value="stats.customers" :icon="Users" />
-        <StatCard label="Undangan" :value="stats.invitations" :icon="FileHeart" />
-        <StatCard label="Undangan terbit" :value="stats.published" :icon="Globe" />
-        <StatCard label="Total RSVP" :value="stats.rsvps" :icon="Send" />
-        <StatCard label="Tamu hadir" :value="stats.guests" :icon="UsersRound" />
-        <StatCard label="Ucapan" :value="stats.messages" :icon="MessageSquareHeart" />
-        <StatCard label="Dilihat" :value="stats.views" :icon="Eye" />
+        <StatCard :label="copy.dashboard.stats.customers" :value="stats.customers" :icon="Users" />
+        <StatCard :label="copy.dashboard.stats.invitations" :value="stats.invitations" :icon="FileHeart" />
+        <StatCard :label="copy.dashboard.stats.published" :value="stats.published" :icon="Globe" />
+        <StatCard :label="copy.dashboard.stats.rsvps" :value="stats.rsvps" :icon="Send" />
+        <StatCard :label="copy.dashboard.stats.guests" :value="stats.guests" :icon="UsersRound" />
+        <StatCard :label="copy.dashboard.stats.messages" :value="stats.messages" :icon="MessageSquareHeart" />
+        <StatCard :label="copy.dashboard.stats.views" :value="stats.views" :icon="Eye" />
       </div>
       <section class="card p-4 sm:p-5">
-        <h2 class="mb-4 text-base font-semibold">14 hari terakhir</h2>
-        <BarChart :points="points" label="Grafik dilihat dan RSVP 14 hari terakhir" />
+        <h2 class="mb-4 text-base font-semibold">{{ copy.analytics.rangeTitle }}</h2>
+        <BarChart :points="points" :label="`${copy.analytics.chartLabel} ${copy.analytics.rangeTitle.toLowerCase()}`" />
       </section>
     </template>
   </div>

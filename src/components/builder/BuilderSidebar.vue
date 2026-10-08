@@ -41,11 +41,11 @@ const items: { key: BuilderKey; icon: Component }[] = [
   { key: 'publish', icon: Rocket },
   { key: 'share', icon: Share2 },
 ]
-const groupAt: Partial<Record<BuilderKey, string>> = { basic: 'Dasar', events: 'Acara & media', rsvp: 'Interaksi tamu', theme: 'Tampilan', seo: 'Rilis' }
+const groupAt: Partial<Record<BuilderKey, string>> = { basic: copy.builder.groups.dasar, events: copy.builder.groups.acara, rsvp: copy.builder.groups.tamu, theme: copy.builder.groups.tampil, seo: copy.builder.groups.rilis }
 </script>
 
 <template>
-  <nav aria-label="Bagian builder">
+  <nav :aria-label="copy.builder.sidebarNav">
     <!-- Desktop: vertical list -->
     <ul class="hidden space-y-0.5 lg:block">
       <li v-for="i in items" :key="i.key">
@@ -62,7 +62,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = { basic: 'Dasar', events: '
           <span
             class="size-1.5 shrink-0 rounded-full"
             :class="(progress[i.key] ?? 0) >= 100 ? 'bg-sage' : (progress[i.key] ?? 0) > 0 ? 'bg-warn' : 'bg-line'"
-            :title="`${progress[i.key] ?? 0}% lengkap`"
+            :title="`${progress[i.key] ?? 0}% ${copy.builder.progressDone}`"
           />
         </button>
       </li>
@@ -87,7 +87,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = { basic: 'Dasar', events: '
         </button>
       </li>
     </ul>
-    <div class="mt-2 lg:hidden" role="progressbar" :aria-valuenow="overall" aria-valuemin="0" aria-valuemax="100" aria-label="Kelengkapan undangan">
+    <div class="mt-2 lg:hidden" role="progressbar" :aria-valuenow="overall" aria-valuemin="0" aria-valuemax="100" :aria-label="copy.builder.completeness">
       <div class="h-1 overflow-hidden rounded-full bg-line">
         <div class="h-full rounded-full bg-sage transition-[width]" :style="{ width: `${overall}%` }" />
       </div>

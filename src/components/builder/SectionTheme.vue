@@ -41,18 +41,18 @@ const accentPresets = ['#b99a5b', '#c9747f', '#5f8564', '#4f86d9', '#9b7bea', '#
 const surfacePresets = computed(() => [theme.value.tokens.surface, '#ffffff', '#faf6ee', '#f4f6f3', '#242019'])
 
 const headingFonts: { v: FontChoice; label: string; family: string }[] = [
-  { v: 'theme', label: 'Ikuti tema', family: theme.value.tokens.fontHeading },
+  { v: 'theme', label: copy.builder.theme.fontTheme, family: theme.value.tokens.fontHeading },
   ...(Object.entries(FONT_FAMILY) as [Exclude<FontChoice, 'theme'>, string][]).map(([v, f]) => ({
     v,
-    label: { serif: 'Serif elegan', classic: 'Klasik', script: 'Tulisan tangan', modern: 'Modern' }[v],
+    label: copy.builder.theme.fonts[v],
     family: `'${f}', Georgia, serif`,
   })),
 ]
 const bodyFonts: { v: BodyFontChoice; label: string; family: string }[] = [
-  { v: 'theme', label: 'Ikuti tema', family: theme.value.tokens.fontBody },
+  { v: 'theme', label: copy.builder.theme.fontTheme, family: theme.value.tokens.fontBody },
   ...(['serif', 'classic', 'modern'] as const).map((v) => ({
     v,
-    label: { serif: 'Serif elegan', classic: 'Klasik', modern: 'Modern' }[v],
+    label: copy.builder.theme.fonts[v],
     family: `'${FONT_FAMILY[v]}', Georgia, serif`,
   })),
 ]
@@ -61,12 +61,12 @@ const scales: { v: HeadingScale; label: string }[] = [
   { v: 'm', label: copy.builder.styleSizeM },
   { v: 'l', label: copy.builder.styleSizeL },
 ]
-const intros = [['theme', 'Ikuti tema'], ['door', 'Pintu'], ['curtain', 'Tirai'], ['envelope', 'Amplop'], ['zoom', 'Zoom'], ['bloom', 'Bunga mekar'], ['blossom', 'Bunga berputar'], ['gunungan', 'Gunungan'], ['iris', 'Iris'], ['split', 'Belah layar'], ['slide', 'Geser']] as const
-const levels: { v: AnimationLevel; label: string; hint: string }[] = [
-  { v: 'full', label: 'Penuh', hint: 'Semua animasi' },
-  { v: 'light', label: 'Ringan', hint: 'Tanpa ornamen' },
-  { v: 'off', label: 'Mati', hint: 'Tanpa animasi' },
-]
+const intros = (Object.keys(copy.builder.theme.intros) as (keyof typeof copy.builder.theme.intros)[]).map((v) => [v, copy.builder.theme.intros[v]] as const)
+const levels: { v: AnimationLevel; label: string; hint: string }[] = (Object.keys(copy.builder.theme.levels) as AnimationLevel[]).map((v) => ({
+  v,
+  label: copy.builder.theme.levels[v].label,
+  hint: copy.builder.theme.levels[v].hint,
+}))
 
 // Section order: drag & drop (mouse/touch) plus up/down buttons (keyboard).
 const order = computed(() => resolveOrder(inv.value.settings))
@@ -79,7 +79,7 @@ function move(from: number, to: number) {
   const [k] = o.splice(from, 1)
   o.splice(to, 0, k as SectionKey)
   inv.value.settings.section_order = o
-  announce.value = `${sectionLabels[k as SectionKey].label} dipindah ke urutan ${to + 1} dari ${o.length}`
+  announce.value = `${sectionLabels[k as SectionKey].label} ${copy.builder.theme.movedTo} ${to + 1} ${copy.builder.theme.movedOf} ${o.length}`
 }
 // Pointer-based drag (works with mouse, touch and pen) from the grip handle.
 function gripDown(e: PointerEvent, i: number) {
@@ -103,20 +103,20 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
 </script>
 
 <template>
-  <BuilderSection :title="copy.builder.sections.theme" description="Pilih tema, atur teks dan warna, lalu atur urutan bagian undangan.">
+  <BuilderSection :title="copy.builder.sections.theme" :description="copy.builder.theme.desc">
     <ThemeSelector v-model="inv.theme" />
 
     <!-- Live style preview -->
     <section class="card overflow-hidden" :aria-label="copy.builder.stylePreview">
       <p class="px-4 pt-3 text-sm font-semibold">{{ copy.builder.stylePreview }}</p>
       <div class="mt-2 p-4" :style="{ background: bgVal, fontFamily: bodyFam }">
-        <p class="inv-heading break-words" :class="sampleSize" :style="{ fontFamily: headingFam, color: textVal }">Raka &amp; Sinta</p>
-        <p class="mt-1 text-sm" :style="{ color: mutedVal }">Dengan memohon rahmat dan ridho Allah SWT…</p>
+        <p class="inv-heading break-words" :class="sampleSize" :style="{ fontFamily: headingFam, color: textVal }">{{ copy.builder.theme.sampleCouple }}</p>
+        <p class="mt-1 text-sm" :style="{ color: mutedVal }">{{ copy.builder.theme.sampleMuted }}</p>
         <div class="mt-3 rounded-lg border p-3" :style="{ background: surfaceVal, borderColor: theme.tokens.border }">
-          <p class="text-sm font-semibold" :style="{ color: accentVal, fontFamily: headingFam }">Akad Nikah</p>
-          <p class="text-sm" :style="{ color: textVal }">Gedung Graha Bakti</p>
+          <p class="text-sm font-semibold" :style="{ color: accentVal, fontFamily: headingFam }">{{ copy.builder.theme.sampleEvent }}</p>
+          <p class="text-sm" :style="{ color: textVal }">{{ copy.builder.theme.sampleVenue }}</p>
         </div>
-        <span class="inv-btn mt-3 w-full" :style="{ background: accentVal, borderColor: accentVal, color: contrastOn(accentVal) }">Buka Undangan</span>
+        <span class="inv-btn mt-3 w-full" :style="{ background: accentVal, borderColor: accentVal, color: contrastOn(accentVal) }">{{ copy.builder.theme.sampleOpen }}</span>
       </div>
     </section>
 
@@ -131,25 +131,25 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
       </StyleColorInput>
       <div>
         <p class="mb-2 text-[13px] font-medium">{{ copy.builder.styleHeadingFont }}</p>
-        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Font judul">
+        <div class="grid grid-cols-2 gap-2" role="radiogroup" :aria-label="copy.builder.styleHeadingFont">
           <button v-for="f in headingFonts" :key="f.v" type="button" role="radio" :aria-checked="st.font === f.v" class="min-h-11 rounded-lg border px-3 py-2 text-left" :class="st.font === f.v ? 'border-brand bg-brand-soft/60 ring-2 ring-brand/25' : 'border-line bg-panel hover:border-[#c4ccc5]'" @click="patch({ font: f.v })">
-            <span class="block truncate text-xl leading-tight" :style="{ fontFamily: f.family }">Raka &amp; Sinta</span>
+            <span class="block truncate text-xl leading-tight" :style="{ fontFamily: f.family }">{{ copy.builder.theme.sampleCouple }}</span>
             <span class="text-xs text-muted">{{ f.label }}</span>
           </button>
         </div>
       </div>
       <div>
         <p class="mb-2 text-[13px] font-medium">{{ copy.builder.styleBodyFont }}</p>
-        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Font isi">
+        <div class="grid grid-cols-2 gap-2" role="radiogroup" :aria-label="copy.builder.styleBodyFont">
           <button v-for="f in bodyFonts" :key="f.v" type="button" role="radio" :aria-checked="st.fontBody === f.v" class="min-h-11 rounded-lg border px-3 py-2 text-left" :class="st.fontBody === f.v ? 'border-brand bg-brand-soft/60 ring-2 ring-brand/25' : 'border-line bg-panel hover:border-[#c4ccc5]'" @click="patch({ fontBody: f.v })">
-            <span class="block truncate text-sm" :style="{ fontFamily: f.family }">Dengan memohon rahmat…</span>
+            <span class="block truncate text-sm" :style="{ fontFamily: f.family }">{{ copy.builder.theme.sampleMuted }}</span>
             <span class="text-xs text-muted">{{ f.label }}</span>
           </button>
         </div>
       </div>
       <div>
         <p class="mb-2 text-[13px] font-medium">{{ copy.builder.styleHeadingSize }}</p>
-        <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Ukuran judul">
+        <div class="grid grid-cols-3 gap-2" role="radiogroup" :aria-label="copy.builder.styleHeadingSize">
           <button v-for="s in scales" :key="s.v" type="button" role="radio" :aria-checked="st.headingScale === s.v" class="min-h-11 rounded-lg border px-3 py-2" :class="st.headingScale === s.v ? 'border-brand bg-brand-soft/60 ring-2 ring-brand/25' : 'border-line bg-panel hover:border-[#c4ccc5]'" @click="patch({ headingScale: s.v })">
             <span class="block font-semibold" :class="s.v === 's' ? 'text-sm' : s.v === 'm' ? 'text-base' : 'text-lg'">Ag</span>
             <span class="text-xs text-muted">{{ s.label }}</span>
@@ -178,20 +178,20 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
     <section class="card space-y-5 p-4">
       <h3 class="text-sm font-semibold">{{ copy.builder.styleAnimation }}</h3>
       <div>
-        <p class="mb-2 text-[13px] font-medium">Animasi pembuka</p>
-        <div class="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Animasi pembuka">
+        <p class="mb-2 text-[13px] font-medium">{{ copy.builder.theme.introTitle }}</p>
+        <div class="flex flex-wrap gap-1.5" role="radiogroup" :aria-label="copy.builder.theme.introAria">
           <button v-for="[v, label] in intros" :key="v" type="button" role="radio" :aria-checked="st.intro === v" :class="[chip, st.intro === v ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-panel text-muted hover:text-ink']" @click="patch({ intro: v })">{{ label }}</button>
         </div>
-        <p v-if="st.animation !== 'full'" class="mt-1.5 text-xs text-muted">Pembuka khusus hanya aktif pada tingkat animasi “Penuh”.</p>
+        <p v-if="st.animation !== 'full'" class="mt-1.5 text-xs text-muted">{{ copy.builder.theme.introNote }}</p>
       </div>
       <div>
-        <p class="mb-2 text-[13px] font-medium">Tingkat animasi</p>
-        <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tingkat animasi">
+        <p class="mb-2 text-[13px] font-medium">{{ copy.builder.theme.levelTitle }}</p>
+        <div class="grid grid-cols-3 gap-2" role="radiogroup" :aria-label="copy.builder.theme.levelAria">
           <button v-for="l in levels" :key="l.v" type="button" role="radio" :aria-checked="st.animation === l.v" class="min-h-11 rounded-lg border px-3 py-2 text-left" :class="st.animation === l.v ? 'border-brand bg-brand-soft/60 ring-2 ring-brand/25' : 'border-line bg-panel hover:border-[#c4ccc5]'" @click="patch({ animation: l.v })">
             <span class="block text-sm font-semibold">{{ l.label }}</span><span class="text-xs text-muted">{{ l.hint }}</span>
           </button>
         </div>
-        <p class="mt-1.5 text-xs text-muted">“Ringan” cocok untuk HP dengan spesifikasi rendah. Pengunjung yang mematikan animasi di perangkatnya otomatis tidak melihat gerakan.</p>
+        <p class="mt-1.5 text-xs text-muted">{{ copy.builder.theme.levelNote }}</p>
       </div>
     </section>
 
@@ -199,9 +199,9 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
     <section>
       <div class="mb-1 flex items-center justify-between">
         <h3 class="text-sm font-semibold">{{ copy.builder.styleOrder }}</h3>
-        <button v-if="customOrder" type="button" class="inline-flex min-h-11 items-center gap-1 px-2 text-xs text-muted hover:text-ink" @click="resetOrder"><RotateCcw class="size-3" /> Urutan awal</button>
+        <button v-if="customOrder" type="button" class="inline-flex min-h-11 items-center gap-1 px-2 text-xs text-muted hover:text-ink" @click="resetOrder"><RotateCcw class="size-3" /> {{ copy.builder.theme.orderReset }}</button>
       </div>
-      <p class="mb-2 text-xs text-muted">Seret ikon pegangan (juga di layar sentuh), atau pakai tombol panah. Matikan saklar untuk menyembunyikan bagian.</p>
+      <p class="mb-2 text-xs text-muted">{{ copy.builder.theme.orderHint }}</p>
       <ul class="card divide-y divide-line">
         <li
           v-for="(k, i) in order"
@@ -216,11 +216,11 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
               <span class="block truncate text-sm font-medium" :class="inv.settings.sections[k] === false ? 'text-muted line-through' : ''">{{ sectionLabels[k].label }}</span>
               <span class="block truncate text-xs text-muted">{{ sectionLabels[k].hint }}</span>
             </span>
-            <input v-model="inv.settings.sections[k]" type="checkbox" class="size-5 shrink-0 accent-[var(--color-brand,#3b6b4f)]" :aria-label="`Tampilkan ${sectionLabels[k].label}`" />
+            <input v-model="inv.settings.sections[k]" type="checkbox" class="size-5 shrink-0 accent-[var(--color-brand,#3b6b4f)]" :aria-label="`${copy.builder.theme.showSection} ${sectionLabels[k].label}`" />
           </label>
           <span class="flex shrink-0">
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 hover:text-ink disabled:opacity-30" :disabled="i === 0" :aria-label="`Naikkan ${sectionLabels[k].label}`" @click="move(i, i - 1)"><ChevronUp class="size-4" /></button>
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 hover:text-ink disabled:opacity-30" :disabled="i === order.length - 1" :aria-label="`Turunkan ${sectionLabels[k].label}`" @click="move(i, i + 1)"><ChevronDown class="size-4" /></button>
+            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 hover:text-ink disabled:opacity-30" :disabled="i === 0" :aria-label="`${copy.builder.theme.moveUp} ${sectionLabels[k].label}`" @click="move(i, i - 1)"><ChevronUp class="size-4" /></button>
+            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 hover:text-ink disabled:opacity-30" :disabled="i === order.length - 1" :aria-label="`${copy.builder.theme.moveDown} ${sectionLabels[k].label}`" @click="move(i, i + 1)"><ChevronDown class="size-4" /></button>
           </span>
         </li>
       </ul>

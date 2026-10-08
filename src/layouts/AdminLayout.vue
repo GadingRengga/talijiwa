@@ -53,7 +53,7 @@ function logout() {
   <div class="min-h-dvh lg:grid" :class="collapsed ? 'lg:grid-cols-[4.25rem_1fr]' : 'lg:grid-cols-[15rem_1fr]'">
     <!-- Mobile top bar -->
     <header class="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
-      <button class="rounded-lg p-1.5 hover:bg-black/5" aria-label="Buka menu" @click="drawer = true">
+      <button class="rounded-lg p-1.5 hover:bg-black/5" :aria-label="copy.admin.openMenu" @click="drawer = true">
         <Menu class="size-5" />
       </button>
       <span class="font-display text-lg font-semibold">{{ company.company_name }}</span>
@@ -69,14 +69,14 @@ function logout() {
       <div class="flex items-center justify-between px-5 py-5" :class="collapsed ? 'lg:justify-center lg:px-0' : ''">
         <span class="font-display text-xl font-semibold tracking-tight" :class="collapsed ? 'lg:hidden' : ''">{{ company.company_name }}</span>
         <span v-if="collapsed" class="hidden font-display text-xl font-semibold lg:block" aria-hidden="true">{{ company.company_name.charAt(0) }}</span>
-        <button class="rounded-lg p-1 hover:bg-black/5 lg:hidden" aria-label="Tutup menu" @click="drawer = false">
+        <button class="rounded-lg p-1 hover:bg-black/5 lg:hidden" :aria-label="copy.admin.closeMenu" @click="drawer = false">
           <X class="size-5" />
         </button>
-        <button class="hidden rounded-lg p-1.5 text-muted hover:bg-black/5 lg:block" :aria-label="collapsed ? 'Bentangkan menu' : 'Ciutkan menu'" :title="collapsed ? 'Bentangkan menu' : 'Ciutkan menu'" @click="toggleCollapse">
+        <button class="hidden rounded-lg p-1.5 text-muted hover:bg-black/5 lg:block" :aria-label="collapsed ? copy.admin.expandMenu : copy.admin.collapseMenu" :title="collapsed ? copy.admin.expandMenu : copy.admin.collapseMenu" @click="toggleCollapse">
           <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" class="size-5" />
         </button>
       </div>
-      <nav class="flex-1 space-y-1 px-3" :class="collapsed ? 'lg:px-2' : ''" aria-label="Menu admin">
+      <nav class="flex-1 space-y-1 px-3" :class="collapsed ? 'lg:px-2' : ''" :aria-label="copy.nav.menuAdmin">
         <RouterLink
           v-for="i in items"
           :key="i.to"
