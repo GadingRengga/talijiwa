@@ -41,6 +41,9 @@ export function injectPrerenderMeta(route: string, html: string): string {
       `<meta property="og:title" content="${esc(meta.title)}">`,
       `<meta property="og:description" content="${esc(meta.description)}">`,
       `<meta property="og:url" content="${url}">`,
+      `<meta property="og:image" content="${SITE}/og-share.jpg">`,
+      `<meta name="twitter:card" content="summary_large_image">`,
+      `<meta name="twitter:image" content="${SITE}/og-share.jpg">`,
       `<script type="application/ld+json" data-jsonld="org">${JSON.stringify(ORG_JSONLD)}</script>`,
     ].join('\n') + '\n</head>')
 }
