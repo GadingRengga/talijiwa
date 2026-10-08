@@ -1,0 +1,6 @@
+# SPA fallback (hanya rute dinamis; file prerender *.html disajikan langsung).
+/invite/*  /index.html  200
+/admin/*  /index.html  200
+/pasangan/*  /index.html  200
+/embed/*  /index.html  200
+/login  /index.html  200

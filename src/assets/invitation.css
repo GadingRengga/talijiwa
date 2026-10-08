@@ -1,0 +1,174 @@
+/* Invitation theme primitives. All colors/fonts come from --inv-* variables set by themeStyle(). */
+.inv {
+  position: relative;
+  background: var(--inv-bg);
+  color: var(--inv-text);
+  font-family: var(--inv-font-body);
+  line-height: 1.7;
+}
+.inv-heading {
+  font-family: var(--inv-font-heading);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+}
+/* Builder heading-size override (m = theme default, no rules). Unlayered CSS beats Tailwind utilities. */
+.inv-h-s .inv-heading.text-2xl { font-size: 1.3rem; }
+.inv-h-s .inv-heading.text-3xl { font-size: 1.55rem; }
+.inv-h-s .inv-heading.text-4xl { font-size: 1.85rem; }
+.inv-h-l .inv-heading.text-2xl { font-size: 1.75rem; }
+.inv-h-l .inv-heading.text-3xl { font-size: 2.15rem; }
+.inv-h-l .inv-heading.text-4xl { font-size: 2.65rem; }
+.inv-section {
+  padding: 3rem 1rem;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+@media (min-width: 640px) {
+  .inv-section {
+    padding: 4.5rem 1.5rem;
+  }
+}
+.inv-section > * {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 34rem;
+}
+.inv-muted {
+  color: var(--inv-muted);
+}
+.inv-accent {
+  color: var(--inv-accent);
+}
+.inv-card {
+  background: var(--inv-surface);
+  border: 1px solid var(--inv-border);
+  border-radius: var(--inv-radius);
+}
+.inv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--inv-accent);
+  color: var(--inv-accent-contrast);
+  border: 1px solid var(--inv-accent);
+  border-radius: min(var(--inv-radius), 999px);
+  padding: 0.7rem 1.5rem;
+  min-height: 44px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.inv-btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.inv-btn:disabled {
+  opacity: 0.55;
+}
+.inv-btn-outline {
+  background: transparent;
+  color: var(--inv-accent);
+}
+.inv-input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--inv-text);
+  border: 1px solid var(--inv-border);
+  border-radius: min(var(--inv-radius), 12px);
+  padding: 0.65rem 0.85rem;
+  font-size: 16px;
+  font-family: inherit;
+}
+.inv-input:focus {
+  outline: none;
+  border-color: var(--inv-accent);
+}
+.inv-input::placeholder {
+  color: var(--inv-muted);
+  opacity: 0.7;
+}
+.inv-divider {
+  width: 4rem;
+  height: 1px;
+  margin: 1.25rem auto;
+  background: var(--inv-accent);
+  opacity: 0.7;
+}
+.inv-photo {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  width: 100%;
+  border-radius: var(--inv-radius);
+  border: 1px solid var(--inv-border);
+}
+.orn { pointer-events: none; position: absolute; inset: 0; overflow: hidden; z-index: 0; contain: strict; }
+.orn-vine { position: absolute; width: 8.5rem; opacity: 0.55; }
+.orn-vine-tl { top: 0; left: 0; }
+.orn-vine-br { bottom: 0; right: 0; transform: rotate(180deg); }
+.orn-draw { stroke-dasharray: 520; stroke-dashoffset: 520; animation: orn-draw 5s ease-out 0.4s forwards; }
+.orn-d2 { stroke-dasharray: 260; stroke-dashoffset: 260; animation-delay: 1.6s; animation-duration: 3s; }
+.orn-bud { transform-box: fill-box; transform-origin: center; animation: orn-bud 4s ease-in-out 3s infinite; }
+.orn-batik { position: absolute; inset: -48px; background: var(--inv-accent); opacity: 0.11; mask-size: 48px 48px; -webkit-mask-size: 48px 48px; animation: orn-slide 24s linear infinite; will-change: transform; }
+.orn-star { position: absolute; top: 0; left: 0; width: 1px; height: 1px; background: transparent; animation: inv-twinkle 4s ease-in-out infinite; }
+.orn-star-b { width: 2px; height: 2px; animation-duration: 6s; animation-delay: -2s; }
+.orn-wash { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; opacity: 0.5; will-change: transform; animation: orn-drift 26s ease-in-out infinite alternate; }
+.orn-wash-a { top: -25vmax; left: -20vmax; background: radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 30%, transparent), transparent 65%); }
+.orn-wash-b { bottom: -30vmax; right: -25vmax; background: radial-gradient(circle, color-mix(in srgb, var(--inv-border) 100%, transparent), transparent 65%); animation-delay: -9s; }
+.orn-wash-c { top: 30%; left: 30%; width: 45vmax; height: 45vmax; opacity: 0.3; background: radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 20%, transparent), transparent 65%); animation-delay: -15s; }
+@keyframes orn-draw { to { stroke-dashoffset: 0; } }
+@keyframes orn-bud { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.5); } }
+@keyframes orn-slide { to { transform: translate(48px, 48px); } }
+@keyframes orn-drift { to { transform: translate3d(8vmax, 6vmax, 0) scale(1.12); } }
+@media (prefers-reduced-motion: reduce) {
+  .orn *, .orn { animation: none !important; }
+  .orn-draw { stroke-dashoffset: 0; }
+}
+.orn-corner { position: absolute; width: 4.5rem; opacity: 0.7; }
+.orn-corner-tl { top: 10px; left: 10px; } .orn-corner-tr { top: 10px; right: 10px; transform: scaleX(-1); }
+.orn-corner-bl { bottom: 10px; left: 10px; transform: scaleY(-1); } .orn-corner-br { bottom: 10px; right: 10px; transform: scale(-1); }
+.orn-d { stroke-dasharray: 1; stroke-dashoffset: 1; animation: orn-draw1 3.2s ease-out 0.4s forwards; }
+.orn-vline { position: absolute; top: 12%; bottom: 12%; width: 1px; background: var(--inv-text); opacity: 0.16; transform-origin: top; animation: orn-grow 2.4s ease-out 0.3s both; }
+.orn-vline-l { left: 1.1rem; } .orn-vline-r { right: 1.1rem; }
+.orn-bouquet { position: absolute; width: 9rem; opacity: 0.7; transform-origin: 100% 0; animation: orn-sway 7s ease-in-out infinite alternate; }
+.orn-bouquet-tr { top: 0; right: 0; } .orn-bouquet-bl { bottom: 0; left: 0; transform: rotate(180deg); animation-name: orn-sway2; }
+.orn-flower { transform-box: fill-box; transform-origin: center; animation: orn-open 2.4s cubic-bezier(.2,.8,.2,1) 1s both; }
+.orn-flower-2 { animation-delay: 1.8s; }
+.orn-gline { position: absolute; left: 7%; right: 7%; height: 1px; background: linear-gradient(90deg, transparent, var(--inv-accent), transparent); opacity: 0.6; transform-origin: center; animation: orn-growx 2.4s ease-out 0.3s both; }
+.orn-gline-t { top: 14px; } .orn-gline-b { bottom: 14px; }
+.orn-sweep { position: absolute; top: -20%; bottom: -20%; left: -40%; width: 30%; background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--inv-accent) 22%, transparent), transparent); transform: skewX(-18deg) translateX(0); animation: orn-sweep 9s ease-in-out 2s infinite; will-change: transform; }
+.sheen { position: absolute; inset: 0 auto 0 -60%; width: 40%; background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--inv-accent) 40%, transparent), transparent); transform: skewX(-18deg); animation: orn-sheen 3.6s ease-in-out infinite; pointer-events: none; }
+@keyframes orn-draw1 { to { stroke-dashoffset: 0; } }
+@keyframes orn-grow { from { transform: scaleY(0); } }
+@keyframes orn-growx { from { transform: scaleX(0); } }
+@keyframes orn-sway { to { transform: rotate(3deg); } }
+@keyframes orn-sway2 { from { transform: rotate(180deg); } to { transform: rotate(183deg); } }
+@keyframes orn-open { from { transform: scale(0) rotate(-60deg); opacity: 0; } }
+@keyframes orn-sweep { 0%, 55% { transform: skewX(-18deg) translateX(0); } 100% { transform: skewX(-18deg) translateX(1600%); } }
+@keyframes orn-sheen { 0%, 40% { transform: skewX(-18deg) translateX(0); } 100% { transform: skewX(-18deg) translateX(900%); } }
+@media (prefers-reduced-motion: reduce) { .sheen { animation: none; opacity: 0; } .orn-d { stroke-dashoffset: 0; } }
+.inv-decor {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+.inv-decor > i {
+  position: absolute;
+  top: 0;
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* Builder preview: click a block to edit it */
+.inv-preview [data-sec] { cursor: pointer; }
+.inv-preview [data-sec]:hover { outline: 2px dashed var(--inv-accent); outline-offset: -6px; }
+.inv-preview [data-sec]:hover::after { content: 'Klik untuk edit'; position: absolute; top: 8px; left: 8px; z-index: 30; padding: 2px 8px; border-radius: 999px; font-size: 11px; line-height: 1.6; font-family: system-ui, sans-serif; background: var(--inv-accent); color: var(--inv-accent-contrast); }
+.inv-preview [data-sec]:not(.inv-cover) { position: relative; }
+@media (hover: none) {
+  .inv-preview [data-sec]:not(.inv-cover)::before, .inv-preview .inv-cover::before { content: 'Edit'; position: absolute; top: 6px; right: 6px; z-index: 30; padding: 1px 8px; border-radius: 999px; font-size: 10px; line-height: 1.6; font-family: system-ui, sans-serif; background: var(--inv-accent); color: var(--inv-accent-contrast); opacity: 0.85; pointer-events: none; }
+}

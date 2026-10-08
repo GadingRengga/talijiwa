@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /pasangan/
+Disallow: /embed/
+
+Sitemap: https://talijiwa.id/sitemap.xml

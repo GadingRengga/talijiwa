@@ -1,0 +1,14 @@
+# HTML: selalu revalidasi (konten CMS/SEO bisa berubah tanpa ganti nama file).
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+# Aset ber-hash: immutable setahun.
+# (Cloudflare Pages otomatis memberi cache panjang untuk file ber-hash di /assets/.)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+# robots/sitemap: cache pendek agar perubahan cepat tampil.
+/robots.txt
+  Cache-Control: public, max-age=3600
+/sitemap.xml
+  Cache-Control: public, max-age=3600
