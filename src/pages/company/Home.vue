@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Star } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onServerPrefetch, ref } from 'vue'
 import { useAnimation } from '@/composables/useAnimation'
 import { useSeo } from '@/composables/useSeo'
 import { whatsappLink } from '@/config/company'
@@ -15,9 +15,11 @@ const seo = useSeo()
 const catalog = useCatalogStore()
 const content = useContentStore()
 onMounted(() => hero.value && slideUp(Array.from(hero.value.children), { stagger: 0.12, y: 24 }))
-// Top-level await: content is rendered during SSR/prerender, not only on mount.
-await Promise.allSettled([catalog.load(), content.load(false)])
+// SSR waits via onServerPrefetch; the client loads in onMounted so hydration never suspends.
+const loadData = () => Promise.allSettled([catalog.load(), content.load(false)])
+onServerPrefetch(loadData)
 onMounted(async () => {
+  await loadData()
   seo.apply({
     title: content.text('seo_title', copy.site.homeTitle),
     description: content.text('seo_description', copy.site.homeDescription),

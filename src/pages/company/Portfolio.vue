@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onServerPrefetch, ref } from 'vue'
 import { useSeo } from '@/composables/useSeo'
 import { copy } from '@/config/copy'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -16,11 +16,17 @@ const loading = ref(true)
 const items = computed(() => all.value.filter((i) => i.status === 'published' && i.settings.show_in_portfolio))
 const thumb = (i: InvitationData) => i.gallery.find((g) => g.is_cover)?.url || placeholderImage(coupleLabel(i))
 
-try {
-  all.value = await invitationService.list()
-} finally {
-  loading.value = false
+const loadData = async () => {
+  try {
+    all.value = await invitationService.list()
+  } catch {
+    all.value = []
+  } finally {
+    loading.value = false
+  }
 }
+onServerPrefetch(loadData)
+onMounted(loadData)
 </script>
 
 <template>

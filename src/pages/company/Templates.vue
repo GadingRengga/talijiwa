@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onServerPrefetch, ref } from 'vue'
 import ThemeBanner from '@/components/invitation/ThemeBanner.vue'
 import { useSeo } from '@/composables/useSeo'
 import { copy } from '@/config/copy'
@@ -9,7 +9,9 @@ import { formatCurrency } from '@/utils/format'
 
 useSeo().apply({ title: copy.site.templatesTitle, description: copy.site.templatesDescription, path: '/templates' })
 const store = useCatalogStore()
-await store.load().catch(() => undefined)
+const loadData = () => store.load().catch(() => undefined)
+onServerPrefetch(loadData)
+onMounted(loadData)
 
 const category = ref('all')
 const cards = computed(() => {

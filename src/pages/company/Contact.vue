@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onServerPrefetch } from 'vue'
 import { useSeo } from '@/composables/useSeo'
 import { company, whatsappLink } from '@/config/company'
 import { copy } from '@/config/copy'
@@ -8,7 +8,9 @@ import { useContentStore } from '@/stores/content'
 useSeo().apply({ title: copy.site.contactTitle, description: copy.site.aboutDescription, path: '/contact' })
 
 const content = useContentStore()
-await content.load(false).catch(() => undefined)
+const loadData = () => content.load(false).catch(() => undefined)
+onServerPrefetch(loadData)
+onMounted(loadData)
 const contactText = computed(() => content.text('contact_text', 'Hubungi kami lewat WhatsApp untuk memesan undangan.'))
 </script>
 

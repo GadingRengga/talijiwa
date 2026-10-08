@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onServerPrefetch } from 'vue'
 import { useSeo } from '@/composables/useSeo'
 import { company, whatsappLink } from '@/config/company'
 import { useCatalogStore } from '@/stores/catalog'
@@ -10,7 +11,9 @@ import { copy } from '@/config/copy'
 useSeo().apply({ title: copy.site.servicesTitle, description: copy.site.servicesDescription, path: '/services' })
 const catalog = useCatalogStore()
 const content = useContentStore()
-await Promise.allSettled([catalog.load(), content.load(false)])
+const loadData = () => Promise.allSettled([catalog.load(), content.load(false)])
+onServerPrefetch(loadData)
+onMounted(loadData)
 </script>
 
 <template>

@@ -40,6 +40,7 @@ Vue 3 (`<script setup>`) · TypeScript strict · Vite · Vue Router · Pinia · 
 - Jangan pernah memakai Supabase service role key di frontend. Hanya `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`.
 - Hindari watcher yang tidak perlu. Builder memakai satu deep watcher (`useBuilder`) untuk dirty-tracking.
 - Gunakan `100dvh`, bukan `100vh`, untuk layar penuh di mobile.
+- Dilarang top-level `await` di `<script setup>` halaman: bikin hidrasi macet tanpa error (pernah blank total). Ambil data via `onServerPrefetch` (SSR) + `onMounted` (klien).
 - Aksesibilitas: label di setiap input (`FormField`), `aria-*` pada kontrol kustom, fokus terlihat, dialog memakai `<dialog>`.
 
 ## Peta kode
