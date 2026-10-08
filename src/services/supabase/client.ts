@@ -6,8 +6,16 @@ export const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+/** Abort hanging requests so pages fall back instead of loading forever. */
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  if (init?.signal || typeof AbortController === 'undefined') return fetch(input, init)
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 15000)
+  return fetch(input, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer))
+}
+
 /** Only the anon key is ever used in the frontend. Never add the service_role key. */
-export const supabase = !useMock && url && anonKey ? createClient(url, anonKey) : null
+export const supabase = !useMock && url && anonKey ? createClient(url, anonKey, { global: { fetch: fetchWithTimeout } }) : null
 
 export function requireSupabase() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi. Isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY.')

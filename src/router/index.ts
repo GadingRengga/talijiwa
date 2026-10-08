@@ -76,7 +76,11 @@ export const routes = [
 export function registerGuards(router: Router) {
   router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  await auth.init()
+  // Never hang navigation forever: a stuck session check must not blank the page.
+  await Promise.race([
+    auth.init(),
+    new Promise((r) => setTimeout(() => r(null), 8000)),
+  ])
   if (to.meta.requiresAuth) {
     if (!auth.isAuthenticated) return { name: 'login', query: { redirect: to.fullPath } }
     if (!auth.isAdmin) return auth.isCustomer ? { name: 'couple-dashboard' } : { name: 'login' }
