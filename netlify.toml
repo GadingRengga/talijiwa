@@ -1,0 +1,49 @@
+# Netlify config (version-controlled). Dashboard kosongkan/timpa dengan ini bila berbeda.
+# Secrets (VITE_* ) tetap diisi via dashboard: Site settings → Environment variables.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback — hanya rute dinamis (file prerender *.html disajikan langsung).
+[[redirects]]
+  from = "/invite/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/pasangan/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/embed/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+
+# HTML: selalu revalidasi (konten CMS/SEO bisa berubah tanpa ganti nama file).
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Aset ber-hash: immutable setahun.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
