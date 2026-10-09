@@ -4,6 +4,7 @@ import { accessCodeService, clearCodeSession, readCodeSession } from '@/services
 import { currentRole, getSessionEmail, isCurrentUserAdmin, myCustomerId, onAuthChange, requestMagicLink, signIn, signOut } from '@/services/auth'
 import type { UserRole } from '@/services/auth'
 import { useMock } from '@/services/supabase/client'
+import { useCoupleStore } from './couple'
 
 export const useAuthStore = defineStore('auth', () => {
   const email = ref<string | null>(null)
@@ -84,6 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
     // A couple login clears any admin session so /pasangan never lands on /admin.
     await signOut()
     clearCodeSession()
+    useCoupleStore().reset()
     const res = await accessCodeService.loginWithCode(code, inputEmail)
     email.value = inputEmail.trim().toLowerCase()
     role.value = 'customer'
@@ -93,6 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout(): Promise<void> {
     await signOut()
     clearCodeSession()
+    useCoupleStore().reset()
     email.value = null
     role.value = null
   }

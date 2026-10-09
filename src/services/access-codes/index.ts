@@ -1,4 +1,5 @@
 import type { AccessCode, CodeSession } from '@/types'
+import { copy } from '@/config/copy'
 import { makeAccessCode } from '@/utils/invitation'
 import { commit, clone, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
@@ -154,9 +155,34 @@ export const accessCodeService = {
       writeCodeSession({ code: row.code, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
       return delay({ customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
     }
-    // Prefer reusable validation; fall back to legacy redeem on old backends.
+    // Ensure a Supabase session exists so RLS owner policies apply.
+    // Code logins use an ANONYMOUS session (no verification); a real user
+    // session (admin/magic-link) is never reused for a code login.
+    const sb = requireSupabase()
+    const { data: sess } = await sb.auth.getSession()
+    const existing = sess.session?.user
+    if (existing && !existing.is_anonymous) {
+      await sb.auth.signOut().catch(() => undefined)
+    }
+    if (!sess.session || (existing && !existing.is_anonymous)) {
+      const { error: anonError } = await sb.auth.signInAnonymously()
+      if (anonError) {
+        // Provider disabled in the Supabase dashboard: the most common cause.
+        // Point at the fix and the magic-link fallback instead of raw internals.
+        // Match both the stable error_code (anonymous_provider_disabled) and the message.
+        const errCode = typeof (anonError as { code?: unknown }).code === 'string' ? (anonError as { code: string }).code : ''
+        if (/anonymous.*disabled|signup.*disabled/i.test(`${errCode} ${anonError.message}`)) throw new Error(copy.couple.anonDisabled)
+        throw new Error(anonError.message)
+      }
+      const { data: after } = await sb.auth.getSession()
+      if (!after.session) throw new Error(copy.couple.anonDisabled)
+    }
+
+    // Prefer link_couple_session (015: validates code AND binds auth.uid()).
+    // Fall back to validate/redeem RPCs when 015 is not deployed yet.
+    const missingRpc = (m: string) => /PGRST202|function .*does not exist/i.test(m)
     try {
-      const { data, error } = await requireSupabase().rpc('validate_access_code', { p_code: cleanCode, p_email: cleanEmail })
+      const { data, error } = await sb.rpc('link_couple_session', { p_code: cleanCode, p_email: cleanEmail })
       if (error) throw error
       const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
       if (!row) throw new Error('Kode tidak ditemukan.')
@@ -164,16 +190,25 @@ export const accessCodeService = {
       return row
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
-      // Legacy backend without validate_access_code: single-use redeem still works for first login.
-      if (/function .*validate_access_code.*does not exist|404|PGRST/.test(msg)) {
-        const { data, error } = await requireSupabase().rpc('redeem_access_code', { p_code: cleanCode, p_email: cleanEmail })
-        if (error) throw new Error(error.message)
-        const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
-        if (!row) throw new Error('Kode tidak ditemukan.')
-        writeCodeSession({ code: cleanCode, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
-        return row
-      }
-      throw e instanceof Error ? e : new Error(msg || 'Kode tidak valid.')
+      if (!missingRpc(msg)) throw e instanceof Error ? e : new Error(msg || 'Kode tidak valid.')
+    }
+    try {
+      const { data, error } = await sb.rpc('validate_access_code', { p_code: cleanCode, p_email: cleanEmail })
+      if (error) throw error
+      const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
+      if (!row) throw new Error('Kode tidak ditemukan.')
+      writeCodeSession({ code: cleanCode, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
+      return row
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      // Oldest backend: single-use redeem still works for the first login.
+      if (!missingRpc(msg)) throw e instanceof Error ? e : new Error(msg || 'Kode tidak valid.')
+      const { data, error } = await sb.rpc('redeem_access_code', { p_code: cleanCode, p_email: cleanEmail })
+      if (error) throw new Error(error.message)
+      const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
+      if (!row) throw new Error('Kode tidak ditemukan.')
+      writeCodeSession({ code: cleanCode, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
+      return row
     }
   },
 

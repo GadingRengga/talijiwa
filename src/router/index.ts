@@ -34,12 +34,13 @@ export const routes = [
     { path: '/login', name: 'login', component: () => import('@/pages/auth/Login.vue'), meta: { title: 'Masuk' } },
 
     // Couple portal (customers manage their own invitations; never admin pages)
+    // Login is standalone (full-screen, no sidebar shell).
+    { path: '/pasangan/masuk', name: 'couple-login', component: () => import('@/pages/couple/Login.vue'), meta: { title: 'Masuk Pasangan' } },
     {
       path: '/pasangan',
       component: () => import('@/layouts/CoupleLayout.vue'),
       children: [
         { path: '', name: 'couple-dashboard', component: () => import('@/pages/couple/Dashboard.vue'), meta: { title: 'Pantauan Undangan', requiresCouple: true } },
-        { path: 'masuk', name: 'couple-login', component: () => import('@/pages/couple/Login.vue'), meta: { title: 'Masuk Pasangan' } },
         { path: 'undangan/:id', name: 'couple-invitation', component: () => import('@/pages/couple/InvitationDetail.vue'), meta: { title: 'Detail Undangan', requiresCouple: true } },
         { path: 'undangan/:id/kelola', name: 'couple-manage', component: () => import('@/pages/couple/InvitationManage.vue'), meta: { title: 'Kelola Undangan', requiresCouple: true } },
       ],

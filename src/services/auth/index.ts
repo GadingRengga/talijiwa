@@ -1,3 +1,4 @@
+import { readCodeSession } from '@/services/access-codes'
 import { copy } from '@/config/copy'
 import { requireSupabase, useMock } from '@/services/supabase/client'
 
@@ -99,6 +100,10 @@ export async function signOut(): Promise<void> {
 /** Customer id linked to the current user (matched by email), or null. Never throws. */
 export async function myCustomerId(): Promise<string | null> {
   if (useMock) return readCouple()?.customer_id ?? null
+  // Code session: the anonymous session is linked to the customer (migration
+  // 015), so the stored id is authoritative and RLS-safe.
+  const code = readCodeSession()
+  if (code?.customer_id) return code.customer_id
   try {
     const sb = requireSupabase()
     const { data: user } = await sb.auth.getUser()

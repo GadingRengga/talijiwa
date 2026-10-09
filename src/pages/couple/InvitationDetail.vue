@@ -64,7 +64,7 @@ const revisionText = computed(() =>
 </script>
 
 <template>
-  <main class="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
+  <main class="space-y-6">
     <LoadingState v-if="loading" />
     <template v-else-if="inv">
       <div class="flex flex-wrap items-start justify-between gap-3">
