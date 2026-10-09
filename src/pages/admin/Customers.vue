@@ -2,6 +2,7 @@
 import { Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import CustomerForm from '@/components/admin/CustomerForm.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -72,17 +73,15 @@ async function confirmDelete() {
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 class="font-display text-3xl font-semibold">{{ copy.nav.customers }}</h1>
-        <p class="text-sm text-muted">{{ store.items.length }} {{ copy.nav.customers.toLowerCase() }}</p>
-      </div>
+    <PageHeader :title="copy.nav.customers" :subtitle="`${store.items.length} ${copy.nav.customers.toLowerCase()}`">
       <AppButton @click="openCreate"><Plus class="size-4" /> {{ copy.customers.add }}</AppButton>
-    </div>
+    </PageHeader>
 
-    <div class="relative max-w-sm">
-      <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-      <input v-model="query" class="field-input !pl-9" :placeholder="copy.customers.searchPh" :aria-label="copy.customers.searchAria" />
+    <div class="toolbar">
+      <div class="relative min-w-0 flex-1 sm:max-w-sm">
+        <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <input v-model="query" class="field-input !pl-9" :placeholder="copy.customers.searchPh" :aria-label="copy.customers.searchAria" />
+      </div>
     </div>
 
     <LoadingState v-if="store.loading && !store.loaded" />

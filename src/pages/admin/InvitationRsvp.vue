@@ -2,6 +2,7 @@
 import { ArrowDownWideNarrow, Download, Search } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -63,10 +64,10 @@ function downloadCsv() {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.rsvpAdmin.title }}</h1>
-      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }} · {{ attending.length }} {{ copy.rsvpAdmin.attending.toLowerCase() }} · {{ guests }} {{ copy.rsvpAdmin.guests }}</p>
-    </div>
+    <PageHeader
+      :title="copy.rsvpAdmin.title"
+      :subtitle="`${inv ? coupleLabel(inv) : '…'} · ${attending.length} ${copy.rsvpAdmin.attending.toLowerCase()} · ${guests} ${copy.rsvpAdmin.guests}`"
+    />
 
     <LoadingState v-if="loading" />
     <template v-else>
@@ -76,8 +77,8 @@ function downloadCsv() {
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ guests }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.guests }}</p></div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="relative w-full flex-1 sm:min-w-60 sm:max-w-sm">
+      <div class="toolbar">
+        <div class="relative w-full min-w-0 flex-1 sm:min-w-60 sm:max-w-sm">
           <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input v-model="query" class="field-input !pl-9" :placeholder="copy.rsvpAdmin.search" :aria-label="copy.rsvpAdmin.searchAria" />
         </div>

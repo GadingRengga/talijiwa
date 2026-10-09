@@ -2,6 +2,7 @@
 import { Pencil, Plus, Star, Trash2 } from 'lucide-vue-next'
 import { onMounted, reactive, ref } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -105,7 +106,7 @@ async function confirmDelete() {
 
 <template>
   <div class="space-y-6">
-    <h1 class="font-display text-3xl font-semibold">{{ copy.nav.settings }}</h1>
+    <PageHeader :title="copy.nav.settings" />
 
     <div class="flex gap-1 rounded-xl border border-line bg-panel p-1 sm:w-fit" role="tablist" :aria-label="copy.settings.tabAria">
       <button v-for="t in tabs" :key="t[0]" type="button" role="tab" :aria-selected="tab === t[0]" class="flex-1 rounded-lg px-4 py-1.5 text-[13px] font-medium sm:flex-none" :class="tab === t[0] ? 'bg-ink text-white' : 'text-muted hover:text-ink'" @click="tab = t[0]">{{ t[1] }}</button>

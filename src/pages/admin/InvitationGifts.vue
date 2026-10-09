@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -35,10 +36,10 @@ const giftTypeLabel = (t: GiftConfirmation['gift_type']) => copy.giftsAdmin.type
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.giftsAdmin.title }}</h1>
-      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }} · {{ items.length }} konfirmasi · {{ copy.giftsAdmin.total }} {{ formatCurrency(total) }}</p>
-    </div>
+    <PageHeader
+      :title="copy.giftsAdmin.title"
+      :subtitle="`${inv ? coupleLabel(inv) : '…'} · ${items.length} konfirmasi · ${copy.giftsAdmin.total} ${formatCurrency(total)}`"
+    />
 
     <LoadingState v-if="loading" />
     <template v-else>

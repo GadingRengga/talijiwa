@@ -2,6 +2,7 @@
 import { Eye, EyeOff, Search, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -68,15 +69,14 @@ async function confirmDelete() {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.messagesAdmin.title }}</h1>
-      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }} · {{ items.length }} ucapan</p>
-    </div>
+    <PageHeader :title="copy.messagesAdmin.title" :subtitle="`${inv ? coupleLabel(inv) : '…'} · ${items.length} ucapan`" />
 
     <LoadingState v-if="loading" />
-    <div v-else-if="items.length" class="relative max-w-sm">
-      <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-      <input v-model="query" class="field-input !pl-9" :placeholder="copy.messagesAdmin.searchPh" :aria-label="copy.messagesAdmin.searchAria" />
+    <div v-else-if="items.length" class="toolbar">
+      <div class="relative min-w-0 flex-1 sm:max-w-sm">
+        <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <input v-model="query" class="field-input !pl-9" :placeholder="copy.messagesAdmin.searchPh" :aria-label="copy.messagesAdmin.searchAria" />
+      </div>
     </div>
     <EmptyState v-if="!loading && !items.length" :message="copy.empty.messages" />
     <p v-else-if="!loading && !filtered.length" class="py-8 text-center text-sm text-muted">{{ copy.messagesAdmin.noMatch }}</p>

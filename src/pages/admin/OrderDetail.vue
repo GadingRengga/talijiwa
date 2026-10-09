@@ -3,6 +3,7 @@ import { Check, FileHeart, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import OrderForm from '@/components/admin/OrderForm.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -266,17 +267,16 @@ const statusClass = (s: string) =>
   <div class="space-y-6">
     <LoadingState v-if="loading" />
     <template v-else-if="order">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 class="font-display text-3xl font-semibold">{{ customerName }}</h1>
-          <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+      <PageHeader :title="customerName">
+        <template #subtitle>
+          <span class="flex flex-wrap items-center gap-2">
             <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="statusClass(order.status)">{{ copy.orders.statuses[order.status] }}</span>
             <span class="tabular-nums">{{ formatCurrency(order.paid) }} / {{ formatCurrency(order.amount) }}</span>
             <span v-if="order.due_date">· {{ copy.orders.dueDate }} {{ formatDate(order.due_date) }}</span>
-          </p>
-        </div>
+          </span>
+        </template>
         <AppButton variant="secondary" size="sm" @click="openEdit"><Pencil class="size-4" /> {{ copy.orders.editOrder }}</AppButton>
-      </div>
+      </PageHeader>
 
       <!-- Stepper -->
       <ol class="card grid gap-1 p-3 sm:grid-cols-4 sm:gap-3 sm:p-4">

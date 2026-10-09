@@ -2,6 +2,7 @@
 import { Copy, ExternalLink, FileHeart, Gift, Inbox, MessageCircle, MessageSquareHeart, Pencil, Send, UsersRound } from 'lucide-vue-next'
 import { nextTick, onMounted, ref } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatCard from '@/components/ui/StatCard.vue'
@@ -69,11 +70,8 @@ function revisionText(inv: InvitationData) {
 </script>
 
 <template>
-  <div class="space-y-8">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.couple.dashboardTitle }}</h1>
-      <p class="text-sm text-muted">{{ copy.couple.dashboardSubtitle }}</p>
-    </div>
+  <div class="space-y-6">
+    <PageHeader :title="copy.couple.dashboardTitle" :subtitle="copy.couple.dashboardSubtitle" />
 
     <LoadingState v-if="loading" />
     <template v-else-if="couple.primary">

@@ -2,6 +2,7 @@
 import { Check, Copy, MessageCircle } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import { useClipboard } from '@/composables/useClipboard'
@@ -67,13 +68,9 @@ const revisionText = computed(() =>
   <main class="space-y-6">
     <LoadingState v-if="loading" />
     <template v-else-if="inv">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 class="font-display text-3xl font-semibold">{{ coupleLabel(inv) }}</h1>
-          <p class="text-sm text-muted">{{ inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}</p>
-        </div>
-        <RouterLink :to="`/pasangan/undangan/${inv.id}/kelola`" class="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">{{ copy.couple.manageCta }}</RouterLink>
-      </div>
+      <PageHeader :title="coupleLabel(inv)" :subtitle="inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort">
+        <RouterLink :to="`/pasangan/undangan/${inv.id}/kelola`" class="inline-flex items-center gap-1.5 rounded-xl bg-ink px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:brightness-125">{{ copy.couple.manageCta }}</RouterLink>
+      </PageHeader>
 
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="card p-3 text-center"><p class="text-xl font-semibold tabular-nums">{{ attending.length }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.attending }}</p></div>

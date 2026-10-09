@@ -3,6 +3,7 @@ import { Archive, Copy, ExternalLink, MoreHorizontal, Pencil, Plus, Rocket, Sear
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -81,16 +82,12 @@ async function confirmDelete() {
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 class="font-display text-3xl font-semibold">{{ copy.nav.invitations }}</h1>
-        <p class="text-sm text-muted">{{ store.items.length }} {{ copy.invitations.unit }}</p>
-      </div>
+    <PageHeader :title="copy.nav.invitations" :subtitle="`${store.items.length} ${copy.invitations.unit}`">
       <RouterLink to="/admin/orders?new=1"><AppButton><Plus class="size-4" /> {{ copy.orders.create }}</AppButton></RouterLink>
-    </div>
+    </PageHeader>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="relative w-full flex-1 sm:min-w-60 sm:max-w-sm">
+    <div class="toolbar">
+      <div class="relative w-full min-w-0 flex-1 sm:min-w-60 sm:max-w-sm">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
         <input v-model="query" class="field-input !pl-9" :placeholder="copy.invitations.searchPh" :aria-label="copy.invitations.searchAria" />
       </div>

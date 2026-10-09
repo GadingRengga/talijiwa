@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BarChart from '@/components/admin/BarChart.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import { analyticsService } from '@/services/analytics'
 import type { DayPoint } from '@/services/analytics'
@@ -38,10 +39,7 @@ const totalViews = computed(() => points.value.reduce((n, p) => n + p.views, 0))
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.nav.analytics }}</h1>
-      <p class="text-sm text-muted">{{ inv ? coupleLabel(inv) : '…' }}</p>
-    </div>
+    <PageHeader :title="copy.nav.analytics" :subtitle="inv ? coupleLabel(inv) : '…'" />
     <LoadingState v-if="loading" />
     <p v-else-if="!inv" class="text-sm text-danger">{{ copy.invitation.notFound }}</p>
     <template v-else>

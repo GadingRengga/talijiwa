@@ -14,13 +14,13 @@ const props = withDefaults(
 
 const classes = computed(() => {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap'
-  const size = props.size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2 text-sm'
+    'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-150 disabled:opacity-50 whitespace-nowrap active:translate-y-px'
+  const size = props.size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2.5 text-sm'
   const variant = {
-    primary: 'bg-brand text-white hover:bg-brand-dark',
-    secondary: 'bg-panel text-ink border border-line hover:bg-paper',
+    primary: 'bg-gradient-to-b from-brand to-brand-dark text-white shadow-md shadow-brand/25 hover:shadow-lg hover:shadow-brand/30 hover:brightness-110',
+    secondary: 'bg-panel text-ink border border-line shadow-sm hover:bg-paper hover:border-brand/30',
     ghost: 'text-ink hover:bg-black/5',
-    danger: 'bg-danger text-white hover:opacity-90',
+    danger: 'bg-gradient-to-b from-danger to-[#8f2a24] text-white shadow-md shadow-danger/25 hover:brightness-110',
   }[props.variant]
   return `${base} ${size} ${variant}`
 })

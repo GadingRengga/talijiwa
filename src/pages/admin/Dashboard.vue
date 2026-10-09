@@ -3,6 +3,7 @@ import { Eye, FileHeart, MessageSquareHeart, Send, Users, UsersRound, Globe } fr
 import { nextTick, onMounted, ref } from 'vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useAnimation } from '@/composables/useAnimation'
@@ -25,11 +26,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-8">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.nav.dashboard }}</h1>
-      <p class="text-sm text-muted">{{ copy.dashboard.subtitle }}</p>
-    </div>
+  <div class="space-y-6">
+    <PageHeader :title="copy.nav.dashboard" :subtitle="copy.dashboard.subtitle" />
 
     <LoadingState v-if="analytics.loading && !analytics.stats" />
     <div v-else-if="analytics.stats" ref="grid" class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">

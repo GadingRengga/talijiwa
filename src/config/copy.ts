@@ -31,6 +31,7 @@ export const copy = {
     closeMenu: 'Tutup menu',
     expandMenu: 'Bentangkan menu',
     collapseMenu: 'Ciutkan menu',
+    panelSubtitle: 'Panel Admin',
   },
   dashboard: {
     subtitle: 'Ringkasan bisnis undangan digital Anda.',
@@ -170,6 +171,11 @@ export const copy = {
     unsavedWarning: 'Perubahan belum disimpan. Yakin ingin meninggalkan halaman ini?',
     tabEdit: 'Edit',
     tabPreview: 'Pratinjau',
+    quickOpenFull: 'Buka form lengkap',
+    quickEmpty: 'Bagian ini paling enak dilengkapi di form penuh.',
+    sectionsMenu: 'Pindah bagian',
+    tapHint: 'Ketuk bagian mana pun untuk mengedit.',
+    toolbar: 'Bilah alat',
     edit: {
       backToList: 'Kembali ke daftar undangan',
       viewTabs: 'Tampilan',

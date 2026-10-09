@@ -3,6 +3,7 @@ import { FileHeart, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import OrderForm from '@/components/admin/OrderForm.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -127,13 +128,9 @@ const statusClass = (s: PaymentStatus) =>
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 class="font-display text-3xl font-semibold">{{ copy.orders.title }}</h1>
-        <p class="text-sm text-muted">{{ store.items.length }} {{ copy.orders.countUnit }} · {{ copy.orders.subtitle }}</p>
-      </div>
+    <PageHeader :title="copy.orders.title" :subtitle="`${store.items.length} ${copy.orders.countUnit} · ${copy.orders.subtitle}`">
       <AppButton @click="openCreate()"><Plus class="size-4" /> {{ copy.orders.add }}</AppButton>
-    </div>
+    </PageHeader>
 
     <div class="grid grid-cols-3 gap-3">
       <div class="card p-3 text-center sm:p-4"><p class="text-lg font-semibold tabular-nums sm:text-2xl">{{ formatCurrency(receivable) }}</p><p class="text-xs text-muted">{{ copy.orders.receivable }}</p></div>
@@ -141,8 +138,8 @@ const statusClass = (s: PaymentStatus) =>
       <div class="card p-3 text-center sm:p-4" :class="overdueCount ? 'border-danger/50' : ''"><p class="text-xl font-semibold tabular-nums sm:text-2xl" :class="overdueCount ? 'text-danger' : ''">{{ overdueCount }}</p><p class="text-xs text-muted">{{ copy.orders.overdue }}</p></div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="relative w-full flex-1 sm:min-w-60 sm:max-w-sm">
+    <div class="toolbar">
+      <div class="relative w-full min-w-0 flex-1 sm:min-w-60 sm:max-w-sm">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
         <input v-model="query" class="field-input !pl-9" :placeholder="copy.orders.searchPh" :aria-label="copy.orders.searchAria" />
       </div>

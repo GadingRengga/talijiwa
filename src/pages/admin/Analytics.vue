@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import BarChart from '@/components/admin/BarChart.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import { Eye, FileHeart, MessageSquareHeart, Send, Users, UsersRound, Globe } from 'lucide-vue-next'
@@ -27,8 +28,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-8">
-    <h1 class="font-display text-3xl font-semibold">{{ copy.nav.analytics }}</h1>
+  <div class="space-y-6">
+    <PageHeader :title="copy.nav.analytics" />
     <LoadingState v-if="loading" />
     <template v-else-if="stats">
       <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">

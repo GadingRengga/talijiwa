@@ -56,8 +56,19 @@ function replayAll() {
 }
 const orderIdx = computed(() => Object.fromEntries(resolveOrder(props.invitation.settings).map((k, i) => [k, i + 1])))
 const ord = (k: SectionKey) => orderIdx.value[k] ?? 0
+// Tap-vs-scroll guard: a swipe that scrolls the canvas must not open the editor.
+let touchAt: { x: number; y: number } | null = null
+function onTouchStart(e: TouchEvent) {
+  const t = e.touches[0]
+  touchAt = t ? { x: t.clientX, y: t.clientY } : null
+}
 function onPreviewClick(e: MouseEvent) {
   if (!isPreview.value) return
+  if (touchAt) {
+    const moved = Math.hypot(e.clientX - touchAt.x, e.clientY - touchAt.y)
+    touchAt = null
+    if (moved > 12) return
+  }
   e.preventDefault()
   e.stopPropagation()
   const sec = (e.target as HTMLElement).closest<HTMLElement>('[data-sec]')
@@ -122,6 +133,7 @@ defineExpose({ scrollToSection, replay: replayAll })
     ref="root"
     class="inv"
     @click.capture="onPreviewClick"
+    @touchstart.capture="onTouchStart"
     :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`]"
     :style="cssVars"
   >

@@ -2,6 +2,7 @@
 import { Loader2 } from 'lucide-vue-next'
 import { computed, onMounted } from 'vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import RupiahInput from '@/components/ui/RupiahInput.vue'
 import ThemeBanner from '@/components/invitation/ThemeBanner.vue'
@@ -34,10 +35,7 @@ async function run(fn: () => Promise<unknown>) {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="font-display text-3xl font-semibold">{{ copy.themes.title }}</h1>
-      <p class="text-sm text-muted">{{ copy.themes.subtitle }}</p>
-    </div>
+    <PageHeader :title="copy.themes.title" :subtitle="copy.themes.subtitle" />
 
     <LoadingState v-if="store.loading && !store.loaded" />
     <EmptyState v-else-if="!store.rows.length" :message="copy.themes.empty" />

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { BarChart3, FileHeart, LayoutDashboard, LogOut, Menu, Palette, PanelLeftClose, PanelLeftOpen, Settings, ShoppingBag, Users, X } from 'lucide-vue-next'
+import { BarChart3, FileHeart, LayoutDashboard, Palette, Settings, ShoppingBag, Users } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppTopbar from '@/components/layout/AppTopbar.vue'
 import { company } from '@/config/company'
 import { copy } from '@/config/copy'
 import { useAuthStore } from '@/stores/auth'
@@ -18,14 +20,13 @@ try {
 } catch {
   /* ignore */
 }
-function toggleCollapse() {
-  collapsed.value = !collapsed.value
+watch(collapsed, (v) => {
   try {
-    localStorage.setItem(COLLAPSE_KEY, collapsed.value ? '1' : '0')
+    localStorage.setItem(COLLAPSE_KEY, v ? '1' : '0')
   } catch {
     /* ignore */
   }
-}
+})
 
 const items = [
   { to: '/admin', label: copy.nav.dashboard, icon: LayoutDashboard, exact: true },
@@ -37,7 +38,6 @@ const items = [
   { to: '/admin/settings', label: copy.nav.settings, icon: Settings },
 ]
 
-const isActive = (to: string, exact?: boolean) => (exact ? route.path === to : route.path.startsWith(to))
 // The builder needs the full viewport, so it renders without the page padding wrapper.
 const fullBleed = () => route.name === 'admin-invitation-edit'
 
@@ -50,63 +50,41 @@ function logout() {
 </script>
 
 <template>
-  <div class="min-h-dvh lg:grid" :class="collapsed ? 'lg:grid-cols-[4.25rem_1fr]' : 'lg:grid-cols-[15rem_1fr]'">
-    <!-- Mobile top bar -->
-    <header class="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
-      <button class="rounded-lg p-1.5 hover:bg-black/5" :aria-label="copy.admin.openMenu" @click="drawer = true">
-        <Menu class="size-5" />
-      </button>
-      <span class="font-display text-lg font-semibold">{{ company.company_name }}</span>
-      <span class="size-8" />
-    </header>
+  <div
+    class="min-h-dvh bg-paper transition-[grid-template-columns] duration-200 lg:grid"
+    :class="collapsed ? 'lg:grid-cols-[5rem_1fr]' : 'lg:grid-cols-[17.5rem_1fr]'"
+  >
+    <AppSidebar
+      v-model:drawer="drawer"
+      v-model:collapsed="collapsed"
+      :items="items"
+      :brand-title="company.company_name"
+      :subtitle="copy.admin.panelSubtitle"
+      :menu-label="copy.nav.menuAdmin"
+      :email="auth.email"
+      :role-label="copy.admin.panelSubtitle"
+      :close-label="copy.admin.closeMenu"
+      :expand-label="copy.admin.expandMenu"
+      :collapse-label="copy.admin.collapseMenu"
+    />
 
-    <div v-if="drawer" class="fixed inset-0 z-40 bg-black/40 lg:hidden" @click="drawer = false" />
-
-    <aside
-      class="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-line bg-panel transition-all lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0"
-      :class="[drawer ? 'translate-x-0' : '-translate-x-full', collapsed ? 'lg:w-[4.25rem]' : 'lg:w-60']"
-    >
-      <div class="flex items-center justify-between px-5 py-5" :class="collapsed ? 'lg:justify-center lg:px-0' : ''">
-        <span class="font-display text-xl font-semibold tracking-tight" :class="collapsed ? 'lg:hidden' : ''">{{ company.company_name }}</span>
-        <span v-if="collapsed" class="hidden font-display text-xl font-semibold lg:block" aria-hidden="true">{{ company.company_name.charAt(0) }}</span>
-        <button class="rounded-lg p-1 hover:bg-black/5 lg:hidden" :aria-label="copy.admin.closeMenu" @click="drawer = false">
-          <X class="size-5" />
-        </button>
-        <button class="hidden rounded-lg p-1.5 text-muted hover:bg-black/5 lg:block" :aria-label="collapsed ? copy.admin.expandMenu : copy.admin.collapseMenu" :title="collapsed ? copy.admin.expandMenu : copy.admin.collapseMenu" @click="toggleCollapse">
-          <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" class="size-5" />
-        </button>
-      </div>
-      <nav class="flex-1 space-y-1 px-3" :class="collapsed ? 'lg:px-2' : ''" :aria-label="copy.nav.menuAdmin">
-        <RouterLink
-          v-for="i in items"
-          :key="i.to"
-          :to="i.to"
-          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-          :class="[isActive(i.to, i.exact) ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-black/5 hover:text-ink', collapsed ? 'lg:justify-center lg:px-0' : '']"
-          :aria-current="isActive(i.to, i.exact) ? 'page' : undefined"
-          :title="collapsed ? i.label : undefined"
-        >
-          <component :is="i.icon" class="size-4 shrink-0" aria-hidden="true" />
-          <span :class="collapsed ? 'lg:hidden' : ''">{{ i.label }}</span>
-        </RouterLink>
-      </nav>
-      <div class="border-t border-line p-3" :class="collapsed ? 'lg:px-2' : ''">
-        <p class="truncate px-3 pb-2 text-xs text-muted" :class="collapsed ? 'lg:hidden' : ''">{{ auth.email }}</p>
-        <button
-          class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted hover:bg-black/5 hover:text-ink"
-          :class="collapsed ? 'lg:justify-center lg:px-0' : ''"
-          :title="collapsed ? copy.auth.logout : undefined"
-          @click="logout"
-        >
-          <LogOut class="size-4 shrink-0" aria-hidden="true" />
-          <span :class="collapsed ? 'lg:hidden' : ''">{{ copy.auth.logout }}</span>
-        </button>
-      </div>
-    </aside>
-
-    <main class="min-w-0">
-      <div v-if="fullBleed()"><RouterView /></div>
-      <div v-else class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><RouterView /></div>
-    </main>
+    <div class="flex min-w-0 flex-col bg-[radial-gradient(60rem_18rem_at_50%_-6rem,rgba(123,50,80,0.07),transparent)]">
+      <AppTopbar
+        :parent-label="copy.nav.dashboard"
+        parent-to="/admin"
+        :email="auth.email"
+        :role-label="copy.admin.panelSubtitle"
+        :menu-label="copy.admin.openMenu"
+        :logout-label="copy.auth.logout"
+        @menu="drawer = true"
+        @logout="logout"
+      />
+      <main class="min-w-0 flex-1">
+        <div v-if="fullBleed()"><RouterView /></div>
+        <div v-else class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
+          <div class="card p-4 sm:p-5 lg:p-6"><RouterView /></div>
+        </div>
+      </main>
+    </div>
   </div>
 </template>

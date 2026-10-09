@@ -2,6 +2,7 @@
 import { ArrowLeft, Plus } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -36,10 +37,7 @@ onMounted(async () => {
     <LoadingState v-if="loading" />
     <p v-else-if="!customer" class="text-sm text-danger">{{ copy.customers.detailMissing }}</p>
     <template v-else>
-      <div>
-        <h1 class="font-display text-3xl font-semibold">{{ customer.name }}</h1>
-        <p class="text-sm text-muted">{{ copy.customers.detailSince }} {{ formatDateTime(customer.created_at) }}</p>
-      </div>
+      <PageHeader :title="customer.name" :subtitle="`${copy.customers.detailSince} ${formatDateTime(customer.created_at)}`" />
       <dl class="card grid gap-4 p-4 text-sm sm:grid-cols-3">
         <div><dt class="text-xs text-muted">{{ copy.customers.detailPhone }}</dt><dd>{{ customer.phone || copy.customers.detailEmpty }}</dd></div>
         <div><dt class="text-xs text-muted">{{ copy.customers.detailEmail }}</dt><dd class="break-all">{{ customer.email || copy.customers.detailEmpty }}</dd></div>
