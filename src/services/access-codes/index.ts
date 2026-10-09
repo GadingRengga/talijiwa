@@ -1,7 +1,39 @@
-import type { AccessCode } from '@/types'
+import type { AccessCode, CodeSession } from '@/types'
 import { makeAccessCode } from '@/utils/invitation'
 import { commit, clone, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
+
+const CODE_SESSION_KEY = 'talijiwa:code-session'
+
+export function readCodeSession(): CodeSession | null {
+  try {
+    const raw = localStorage.getItem(CODE_SESSION_KEY)
+    if (!raw) return null
+    const s = JSON.parse(raw) as CodeSession
+    return s?.code && s?.email && s?.customer_id ? s : null
+  } catch {
+    return null
+  }
+}
+
+function writeCodeSession(s: CodeSession): void {
+  try {
+    localStorage.setItem(CODE_SESSION_KEY, JSON.stringify(s))
+    // Legacy key kept for myCustomerId()/currentRole() fallback readers.
+    localStorage.setItem('talijiwa:couple', JSON.stringify({ email: s.email, customer_id: s.customer_id }))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearCodeSession(): void {
+  try {
+    localStorage.removeItem(CODE_SESSION_KEY)
+    localStorage.removeItem('talijiwa:couple')
+  } catch {
+    /* ignore */
+  }
+}
 
 function toApp(r: Record<string, unknown>): AccessCode {
   return {
@@ -13,6 +45,7 @@ function toApp(r: Record<string, unknown>): AccessCode {
     expires_at: (r.expires_at as string | null) ?? null,
     redeemed_email: (r.redeemed_email as string) ?? '',
     redeemed_at: (r.redeemed_at as string | null) ?? null,
+    last_used_at: (r.last_used_at as string | null) ?? null,
     created_at: r.created_at as string,
   }
 }
@@ -53,6 +86,7 @@ export const accessCodeService = {
         expires_at: null,
         redeemed_email: '',
         redeemed_at: null,
+        last_used_at: null,
         created_at: new Date().toISOString(),
       }
       data.accessCodes.push(row)
@@ -87,10 +121,12 @@ export const accessCodeService = {
   },
 
   /**
-   * Validate a code and link it to an email. Works for anonymous callers
-   * (Supabase path delegates to the SECURITY DEFINER RPC).
+   * Credential-style login: code + email, reusable, no per-login verification.
+   * Mock: matched locally. Supabase: validated via `validate_access_code` RPC
+   * (falls back to legacy single-use `redeem_access_code` when 014 not deployed).
+   * On success a local code session is stored for the auth store.
    */
-  async redeem(code: string, email: string): Promise<RedeemResult> {
+  async loginWithCode(code: string, email: string): Promise<RedeemResult> {
     const cleanCode = code.trim().toUpperCase()
     const cleanEmail = email.trim().toLowerCase()
     if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Masukkan alamat email yang valid.')
@@ -98,31 +134,55 @@ export const accessCodeService = {
       const data = db()
       const row = data.accessCodes.find((c) => c.code === cleanCode)
       if (!row) throw new Error('Kode tidak ditemukan. Periksa kembali kode dari admin.')
-      if (!row.is_active) throw new Error('Kode sudah dipakai atau dinonaktifkan.')
+      if (!row.is_active) throw new Error('Kode dinonaktifkan. Hubungi admin.')
+      if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) throw new Error('Kode sudah kedaluwarsa. Hubungi admin.')
       const order = data.orders.find((o) => o.id === row.order_id)
       if (!order || order.status === 'cancelled') throw new Error('Pesanan terkait kode ini dibatalkan. Hubungi admin.')
       const customer = data.customers.find((c) => c.id === row.customer_id)
       if (!customer) throw new Error('Pelanggan tidak ditemukan.')
-      if (customer.email && customer.email.toLowerCase() !== cleanEmail) {
-        throw new Error('Kode ini terdaftar untuk pelanggan lain.')
+      if (row.redeemed_email) {
+        if (row.redeemed_email.toLowerCase() !== cleanEmail) throw new Error('Kode ini terdaftar untuk email lain.')
+      } else {
+        if (customer.email && customer.email.toLowerCase() !== cleanEmail) throw new Error('Kode ini terdaftar untuk pelanggan lain.')
+        customer.email = cleanEmail
+        customer.updated_at = new Date().toISOString()
+        row.redeemed_email = cleanEmail
+        row.redeemed_at = new Date().toISOString()
       }
-      customer.email = cleanEmail
-      customer.updated_at = new Date().toISOString()
-      row.redeemed_email = cleanEmail
-      row.redeemed_at = new Date().toISOString()
-      row.is_active = false
+      row.last_used_at = new Date().toISOString()
       commit()
-      try {
-        localStorage.setItem('talijiwa:couple', JSON.stringify({ email: customer.email, customer_id: customer.id }))
-      } catch {
-        /* ignore */
-      }
+      writeCodeSession({ code: row.code, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
       return delay({ customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
     }
-    const { data, error } = await requireSupabase().rpc('redeem_access_code', { p_code: cleanCode, p_email: cleanEmail })
-    if (error) throw new Error(error.message)
-    const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
-    if (!row) throw new Error('Kode tidak ditemukan.')
-    return row
+    // Prefer reusable validation; fall back to legacy redeem on old backends.
+    try {
+      const { data, error } = await requireSupabase().rpc('validate_access_code', { p_code: cleanCode, p_email: cleanEmail })
+      if (error) throw error
+      const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
+      if (!row) throw new Error('Kode tidak ditemukan.')
+      writeCodeSession({ code: cleanCode, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
+      return row
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      // Legacy backend without validate_access_code: single-use redeem still works for first login.
+      if (/function .*validate_access_code.*does not exist|404|PGRST/.test(msg)) {
+        const { data, error } = await requireSupabase().rpc('redeem_access_code', { p_code: cleanCode, p_email: cleanEmail })
+        if (error) throw new Error(error.message)
+        const row = (Array.isArray(data) ? data[0] : data) as RedeemResult | undefined
+        if (!row) throw new Error('Kode tidak ditemukan.')
+        writeCodeSession({ code: cleanCode, email: cleanEmail, customer_id: row.customer_id, order_id: row.order_id, tier: row.tier })
+        return row
+      }
+      throw e instanceof Error ? e : new Error(msg || 'Kode tidak valid.')
+    }
+  },
+
+  /**
+   * Validate a code and link it to an email. Works for anonymous callers
+   * (Supabase path delegates to the SECURITY DEFINER RPC).
+   * Legacy single-use entry point; prefer loginWithCode for credential logins.
+   */
+  async redeem(code: string, email: string): Promise<RedeemResult> {
+    return this.loginWithCode(code, email)
   },
 }

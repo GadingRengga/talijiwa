@@ -141,9 +141,15 @@ export function createSeed(): MockDb {
     gerbang: 'premium', amplop: 'premium', sinematik: 'premium', jawa: 'premium', celestial: 'premium',
     luxury: 'luxury',
   }
+  const codes: Record<string, string> = {
+    classic: 'CLS', minimal: 'MNM', floral: 'FLR', garden: 'GRD', watercolor: 'WTR',
+    gerbang: 'GRB', amplop: 'AMP', sinematik: 'SNM', jawa: 'JWA', celestial: 'CLT',
+    luxury: 'LUX',
+  }
   const themeCatalog: ThemeCatalogEntry[] = (Object.keys(Object.fromEntries(demos.map((d) => [d.theme, true]))) as ThemeId[]).map(
     (theme, i) => ({
       theme,
+      code: codes[theme] ?? theme.toUpperCase().slice(0, 3),
       is_active: true,
       price: theme === 'luxury' ? 249000 : ['gerbang', 'amplop', 'sinematik', 'jawa', 'celestial'].includes(theme) ? 199000 : 149000,
       position: i + 1,
@@ -172,6 +178,9 @@ const siteSettings: Record<string, string> = {
   seo_title: 'Undangan Pernikahan Digital Elegan — Talijiwa',
   seo_description: 'Buat undangan pernikahan digital yang indah, interaktif, dan mudah dibagikan lewat WhatsApp.',
   contact_text: 'Ceritakan tanggal dan impian pernikahan Anda, kami bantu wujudkan undangannya.',
+  tier_price_basic: '149000',
+  tier_price_premium: '199000',
+  tier_price_luxury: '249000',
 }
 
 const testimonials: Testimonial[] = [

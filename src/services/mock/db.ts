@@ -25,8 +25,12 @@ function load(): MockDb {
       }
       for (const t of cache.themeCatalog) {
         ;(t as { tier?: string }).tier ??= 'basic'
+        ;(t as { code?: string }).code ??= (t.theme as string).toUpperCase().slice(0, 3)
       }
       cache.siteSettings ??= fresh.siteSettings
+      cache.siteSettings.tier_price_basic ??= '149000'
+      cache.siteSettings.tier_price_premium ??= '199000'
+      cache.siteSettings.tier_price_luxury ??= '249000'
       cache.testimonials ??= fresh.testimonials
       cache.faqs ??= fresh.faqs
       return cache

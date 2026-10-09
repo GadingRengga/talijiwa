@@ -198,12 +198,20 @@ export interface Payment {
 
 export interface ThemeCatalogEntry {
   theme: ThemeId
+  /** Fixed short code for admin/WA reference (e.g. CLS, GRB, LUX). */
+  code: string
   is_active: boolean
   price: number
   position: number
   category: ThemeCategory
   /** Which tier this theme belongs to (basic < premium < luxury). */
   tier: InvitationTier
+}
+
+/** Master price per tier (for NEW orders; existing orders keep their snapshot). */
+export interface TierPrice {
+  tier: InvitationTier
+  price: number
 }
 
 /** One-time code issued after payment so a customer can manage their own invitation. */
@@ -216,7 +224,18 @@ export interface AccessCode {
   expires_at: string | null
   redeemed_email: string
   redeemed_at: string | null
+  /** Last successful code login (codes are reusable credentials). */
+  last_used_at: string | null
   created_at: string
+}
+
+/** Local session for code-based couple logins (code + email, no Supabase Auth). */
+export interface CodeSession {
+  code: string
+  email: string
+  customer_id: string
+  order_id: string
+  tier: InvitationTier
 }
 
 export type ThemeCategory = 'klasik' | 'modern' | 'floral' | 'adat' | 'mewah'

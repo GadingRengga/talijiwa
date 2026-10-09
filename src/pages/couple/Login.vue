@@ -5,8 +5,6 @@ import AppButton from '@/components/ui/AppButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { company } from '@/config/company'
 import { copy } from '@/config/copy'
-import { accessCodeService } from '@/services/access-codes'
-import { useMock } from '@/services/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -29,11 +27,7 @@ async function submit() {
   busy.value = true
   try {
     await auth.requestLink(form.email)
-    if (useMock) {
-      await router.replace(redirectTarget())
-    } else {
-      sent.value = true
-    }
+    sent.value = true
   } catch (e) {
     error.value = e instanceof Error ? e.message : copy.common.genericError
   } finally {
@@ -43,21 +37,15 @@ async function submit() {
 
 /**
  * One-time access code issued by the admin after payment.
- * In mock mode the redeem step signs the customer in directly;
- * with Supabase it claims the code, then a magic link email completes the session.
+ * Credential-style: code + email, reusable; the code stays attached to the
+ * order so a forgotten code is recovered from OrderDetail.
  */
 async function submitRedeem() {
   redeemError.value = ''
   redeemBusy.value = true
   try {
-    await accessCodeService.redeem(redeem.code, redeem.email)
-    if (useMock) {
-      await router.replace(redirectTarget())
-      return
-    }
-    form.email = redeem.email.trim()
-    await auth.requestLink(form.email)
-    sent.value = true
+    await auth.loginWithCode(redeem.code, redeem.email)
+    await router.replace(redirectTarget())
   } catch (e) {
     redeemError.value = e instanceof Error ? e.message : copy.common.genericError
   } finally {

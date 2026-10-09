@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import Modal from '@/components/ui/Modal.vue'
+import RupiahInput from '@/components/ui/RupiahInput.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useToast } from '@/composables/useToast'
 import { copy } from '@/config/copy'
@@ -15,14 +16,16 @@ import { accessCodeService } from '@/services/access-codes'
 import { orderService } from '@/services/orders'
 import type { OrderInput } from '@/services/orders'
 import { invitationService } from '@/services/invitations'
+import { rsvpService } from '@/services/rsvp'
+import { useCatalogStore } from '@/stores/catalog'
 import { useCustomerStore } from '@/stores/customer'
 import { useInvitationStore } from '@/stores/invitation'
 import { useOrderStore } from '@/stores/order'
 import { usePaymentStore } from '@/stores/payment'
 import { themeList } from '@/themes'
-import type { AccessCode, InvitationData, Order, PaymentMethod } from '@/types'
-import { formatCurrency, formatDate, formatDateTime } from '@/utils/format'
-import { coupleLabel } from '@/utils/invitation'
+import type { AccessCode, GiftConfirmation, GuestMessage, InvitationData, Order, PaymentMethod, Rsvp } from '@/types'
+import { formatCurrency, formatDate, formatDateTime, formatLongDate } from '@/utils/format'
+import { coupleLabel, weddingDate } from '@/utils/invitation'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,9 +35,13 @@ const customers = useCustomerStore()
 const invitations = useInvitationStore()
 const orders = useOrderStore()
 const payments = usePaymentStore()
+const catalog = useCatalogStore()
 
 const order = ref<Order | null>(null)
 const inv = ref<InvitationData | null>(null)
+const rsvps = ref<Rsvp[]>([])
+const messages = ref<GuestMessage[]>([])
+const gifts = ref<GiftConfirmation[]>([])
 const loading = ref(true)
 const editOpen = ref(false)
 const saving = ref(false)
@@ -58,11 +65,25 @@ async function reload() {
     await payments.load(order.value.id)
     accessCode.value = await accessCodeService.getByOrder(order.value.id).catch(() => null)
   }
+  if (inv.value) {
+    const [r, m, g] = await Promise.all([
+      rsvpService.listRsvps(inv.value.id).catch(() => [] as Rsvp[]),
+      rsvpService.listMessages(inv.value.id, false).catch(() => [] as GuestMessage[]),
+      rsvpService.listGiftConfirmations(inv.value.id).catch(() => [] as GiftConfirmation[]),
+    ])
+    rsvps.value = r
+    messages.value = m
+    gifts.value = g
+  } else {
+    rsvps.value = []
+    messages.value = []
+    gifts.value = []
+  }
 }
 
 onMounted(async () => {
   try {
-    await Promise.all([customers.load(), invitations.load(), orders.load()])
+    await Promise.all([customers.load(), invitations.load(), orders.load(), catalog.load()])
     await reload()
     if (!order.value) router.replace('/admin/orders')
   } finally {
@@ -74,6 +95,21 @@ const customerName = computed(() => (order.value ? (customers.byId(order.value.c
 const remaining = computed(() => (order.value ? Math.max(0, order.value.amount - order.value.paid) : 0))
 const isPaidOff = computed(() => !!order.value && order.value.paid >= order.value.amount)
 const isPublished = computed(() => inv.value?.status === 'published')
+// Rich invitation facts derived from the linked draft (no new order columns).
+const weddingDay = computed(() => (inv.value ? weddingDate(inv.value) : ''))
+const daysToWedding = computed(() => {
+  if (!weddingDay.value) return null
+  const [y, m, d] = weddingDay.value.split('-').map(Number)
+  if (!y || !m || !d) return null
+  return Math.ceil((new Date(y, m - 1, d).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
+})
+const publicLink = computed(() => (inv.value?.slug ? `${window.location.origin}/invite/${inv.value.slug}` : ''))
+const attendingCount = computed(() => rsvps.value.filter((r) => r.attendance === 'attending').length)
+const guestTotal = computed(() => rsvps.value.filter((r) => r.attendance === 'attending').reduce((n, r) => n + r.guest_count, 0))
+const giftTotal = computed(() => gifts.value.reduce((n, g) => n + (g.amount ?? 0), 0))
+const themeCode = computed(() => catalog.rows.find((r) => r.theme === order.value?.theme)?.code ?? '')
+const themeName = computed(() => catalog.rows.find((r) => r.theme === order.value?.theme)?.name ?? order.value?.theme ?? '—')
+const tierPriceNow = computed(() => (order.value ? (catalog.tierPrices[order.value.tier] ?? 0) : 0))
 
 const steps = computed(() => [
   { label: copy.orders.steps[0], done: true, hint: `${customerName.value} · ${order.value ? formatCurrency(order.value.amount) : ''}` },
@@ -212,7 +248,8 @@ async function deactivateCode() {
   codeBusy.value = true
   try {
     await accessCodeService.deactivate(accessCode.value.code)
-    accessCode.value = null
+    // Keep the code visible on the order (admin may re-check it later).
+    accessCode.value = await accessCodeService.getByOrder(order.value?.id ?? '').catch(() => accessCode.value)
     toast.success(copy.orders.codeDeactivated)
   } catch (e) {
     toast.error(e instanceof Error ? e.message : copy.common.genericError)
@@ -257,9 +294,31 @@ const statusClass = (s: string) =>
           <p class="text-sm">{{ copy.orders.noInvitationYet }}</p>
           <AppButton size="sm" @click="openMake"><FileHeart class="size-4" /> {{ copy.orders.makeInvitation }}</AppButton>
         </div>
-        <div v-else class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm">{{ copy.orders.invitationIs }} <span class="font-semibold">{{ inv ? coupleLabel(inv) : '…' }}</span> · {{ inv?.status === 'published' ? copy.orders.publishedShort : copy.orders.draftShort }}</p>
-          <RouterLink :to="`/admin/invitations/${order.invitation_id}/edit`"><AppButton size="sm" variant="secondary"><FileHeart class="size-4" /> {{ copy.orders.openBuilder }}</AppButton></RouterLink>
+        <div v-else class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm">{{ copy.orders.invitationIs }} <span class="font-semibold">{{ inv ? coupleLabel(inv) : '…' }}</span> · {{ inv?.status === 'published' ? copy.orders.publishedShort : copy.orders.draftShort }}</p>
+            <div class="flex flex-wrap gap-2">
+              <RouterLink :to="`/admin/invitations/${order.invitation_id}/edit`"><AppButton size="sm" variant="secondary"><FileHeart class="size-4" /> {{ copy.orders.openBuilder }}</AppButton></RouterLink>
+              <RouterLink :to="`/admin/invitations/${order.invitation_id}/analytics`"><AppButton size="sm" variant="secondary">{{ copy.orders.viewAnalytics }}</AppButton></RouterLink>
+            </div>
+          </div>
+          <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoTheme }}</dt><dd class="font-medium">{{ themeName }} <span v-if="themeCode" class="font-mono text-xs text-muted">{{ themeCode }}</span> · {{ copy.orders.tiers[order.tier] }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoLink }}</dt><dd class="min-w-0 truncate font-mono text-xs"><a v-if="publicLink" :href="publicLink" target="_blank" rel="noopener" class="text-brand hover:underline">{{ publicLink }}</a><span v-else>—</span></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoPublished }}</dt><dd class="font-medium">{{ inv?.published_at ? formatDateTime(inv.published_at) : '—' }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoWeddingDay }}</dt><dd class="font-medium">{{ weddingDay ? `${formatLongDate(weddingDay)}${daysToWedding !== null ? ` (${daysToWedding >= 0 ? `H-${daysToWedding}` : `H+${-daysToWedding}`})` : ''}` : '—' }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoEvents }}</dt><dd class="font-medium">{{ inv ? inv.events.length : 0 }} {{ copy.orders.infoEventsUnit }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoGuests }}</dt><dd class="font-medium tabular-nums">{{ attendingCount }} {{ copy.orders.infoAttending }} · {{ guestTotal }} {{ copy.orders.infoGuestsUnit }} · {{ rsvps.length }} RSVP</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoMessages }}</dt><dd class="font-medium tabular-nums">{{ messages.length }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoGifts }}</dt><dd class="font-medium tabular-nums">{{ gifts.length }} · {{ formatCurrency(giftTotal) }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-muted">{{ copy.orders.infoAmount }}</dt><dd class="font-medium tabular-nums">{{ formatCurrency(order.amount) }}<span v-if="tierPriceNow > 0 && tierPriceNow !== order.amount" class="ml-1 text-xs font-normal text-muted">({{ copy.orders.infoTierNow }} {{ formatCurrency(tierPriceNow) }})</span></dd></div>
+          </dl>
+          <ul v-if="inv?.events.length" class="space-y-1 border-t border-line pt-3 text-sm">
+            <li v-for="e in inv.events" :key="e.id" class="flex flex-wrap justify-between gap-2">
+              <span class="font-medium">{{ e.name || copy.orders.infoUnnamedEvent }}</span>
+              <span class="text-muted">{{ e.date ? formatDate(e.date) : '—' }}{{ e.start_time ? ` · ${e.start_time}` : '' }} · {{ e.venue || '—' }}</span>
+            </li>
+          </ul>
         </div>
         <p v-if="order.invitation_id && !isPaidOff" class="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn" role="status">
           {{ copy.orders.unpaidWarning }} {{ formatCurrency(remaining) }}.
@@ -278,7 +337,10 @@ const statusClass = (s: string) =>
           <p class="text-xs text-muted">{{ copy.orders.accessCodeHint }}</p>
         </div>
         <div v-if="accessCode" class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper px-3 py-2.5">
-          <p class="font-mono text-lg font-semibold tracking-widest">{{ accessCode.code }}</p>
+          <div>
+            <p class="font-mono text-lg font-semibold tracking-widest">{{ accessCode.code }}</p>
+            <p class="text-xs text-muted">{{ copy.orders.codeReusable }}{{ accessCode.last_used_at ? ` · ${copy.orders.codeLastUsed} ${formatDateTime(accessCode.last_used_at)}` : '' }}</p>
+          </div>
           <div class="flex gap-2">
             <AppButton size="sm" variant="secondary" @click="copyCode">{{ copy.orders.copyCode }}</AppButton>
             <AppButton size="sm" variant="secondary" @click="deactivateCode" :loading="codeBusy">{{ copy.orders.deactivateCode }}</AppButton>
@@ -326,7 +388,10 @@ const statusClass = (s: string) =>
 
       <Modal :open="payOpen" :title="copy.orders.recordPayment" @close="payOpen = false">
         <form class="space-y-4" @submit.prevent="savePayment">
-          <FormField :label="copy.orders.paymentAmount" v-slot="{ id }"><input :id="id" v-model.number="payForm.amount" type="number" min="1" class="field-input" required /></FormField>
+          <FormField :label="copy.orders.paymentAmount" v-slot="{ id }">
+            <RupiahInput :id="id" v-model="payForm.amount" :aria-label="copy.orders.paymentAmount" />
+            <p class="mt-1 text-xs tabular-nums text-muted">{{ formatCurrency(payForm.amount) }}</p>
+          </FormField>
           <div class="grid gap-4 sm:grid-cols-2">
             <FormField :label="copy.orders.paymentMethod" v-slot="{ id }">
               <select :id="id" v-model="payForm.method" class="field-input">

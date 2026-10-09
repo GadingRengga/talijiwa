@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { accessCodeService, clearCodeSession, readCodeSession } from '@/services/access-codes'
 import { currentRole, getSessionEmail, isCurrentUserAdmin, myCustomerId, onAuthChange, requestMagicLink, signIn, signOut } from '@/services/auth'
 import type { UserRole } from '@/services/auth'
 import { useMock } from '@/services/supabase/client'
@@ -17,8 +18,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function resolve(mail: string | null) {
     if (!mail) {
+      // A code session still counts as a customer session (code-first logins).
+      const code = readCodeSession()
+      if (code) {
+        email.value = code.email
+        role.value = 'customer'
+        return
+      }
       email.value = null
       role.value = null
+      return
+    }
+    const code = readCodeSession()
+    if (code && code.email.toLowerCase() === mail.toLowerCase()) {
+      email.value = code.email
+      role.value = 'customer'
       return
     }
     if (useMock) {
@@ -66,11 +80,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithCode(code: string, inputEmail: string): Promise<void> {
+    // A couple login clears any admin session so /pasangan never lands on /admin.
+    await signOut()
+    clearCodeSession()
+    const res = await accessCodeService.loginWithCode(code, inputEmail)
+    email.value = inputEmail.trim().toLowerCase()
+    role.value = 'customer'
+    void res
+  }
+
   async function logout(): Promise<void> {
     await signOut()
+    clearCodeSession()
     email.value = null
     role.value = null
   }
 
-  return { email, role, ready, isAuthenticated, isAdmin, isCustomer, init, login, requestLink, logout }
+  return { email, role, ready, isAuthenticated, isAdmin, isCustomer, init, login, loginWithCode, requestLink, logout }
 })

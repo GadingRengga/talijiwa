@@ -14,6 +14,7 @@ export const THEME_CATEGORIES: { id: ThemeCategory; label: string }[] = [
 
 export interface CatalogRow {
   theme: ThemeId
+  code: string
   name: string
   description: string
   is_active: boolean
@@ -25,6 +26,7 @@ export interface CatalogRow {
 
 export const useCatalogStore = defineStore('catalog', () => {
   const rows = ref<CatalogRow[]>([])
+  const tierPrices = ref<Record<InvitationTier, number>>({ basic: 0, premium: 0, luxury: 0 })
   const loading = ref(false)
   const loaded = ref(false)
 
@@ -32,11 +34,12 @@ export const useCatalogStore = defineStore('catalog', () => {
     if (loaded.value && !force) return
     loading.value = true
     try {
-      const entries = await themeCatalogService.list()
+      const [entries, prices] = await Promise.all([themeCatalogService.list(), themeCatalogService.tierPrices()])
       rows.value = entries.map((e) => {
         const t = getTheme(e.theme)
-        return { theme: e.theme, name: t.name, description: t.description, is_active: e.is_active, price: e.price, position: e.position, category: e.category, tier: e.tier }
+        return { theme: e.theme, code: e.code || e.theme.toUpperCase().slice(0, 3), name: t.name, description: t.description, is_active: e.is_active, price: e.price, position: e.position, category: e.category, tier: e.tier }
       })
+      tierPrices.value = prices
       loaded.value = true
     } finally {
       loading.value = false
@@ -59,8 +62,15 @@ export const useCatalogStore = defineStore('catalog', () => {
     rows.value = rows.value.map((r) => (r.theme === theme ? { ...r, tier: updated.tier } : r))
   }
 
+  async function setTierPrice(tier: InvitationTier, price: number) {
+    tierPrices.value = await themeCatalogService.setTierPrice(tier, price)
+    // Master price applies to every theme of the tier (same price per tier).
+    rows.value = rows.value.map((r) => (r.tier === tier ? { ...r, price: tierPrices.value[tier] ?? r.price } : r))
+  }
+
+  const byTier = (tier: InvitationTier) => rows.value.filter((r) => r.tier === tier)
 
   const active = computed(() => rows.value.filter((r) => r.is_active))
 
-  return { rows, active, loading, loaded, load, setActive, setPrice, setCategory, setTier }
+  return { rows, active, tierPrices, byTier, loading, loaded, load, setActive, setPrice, setCategory, setTier, setTierPrice }
 })

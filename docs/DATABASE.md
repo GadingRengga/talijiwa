@@ -1,6 +1,6 @@
 # Database (Supabase / PostgreSQL)
 
-Migration: `supabase/migrations/001_schema.sql` sampai `013_rate_limits.sql`. Jalankan berurutan (`004_theme_text`, `005_style_order`, `006_share`, `007_orders_catalog`, `008_content`, `009_payments`, `010_couple`, `011_rebrand`, `012_tier_codes`, `013_rate_limits`). Uji RLS via API lolos 12/12 (2026-10-07); checklist manual di bawah tetap wajib sebelum produksi.
+Migration: `supabase/migrations/001_schema.sql` sampai `014_code_tier.sql`. Jalankan berurutan (`004_theme_text`, `005_style_order`, `006_share`, `007_orders_catalog`, `008_content`, `009_payments`, `010_couple`, `011_rebrand`, `012_tier_codes`, `013_rate_limits`, `014_code_tier`). Uji RLS via API lolos 12/12 (2026-10-07); checklist manual di bawah tetap wajib sebelum produksi.
 
 ## Tabel
 
@@ -15,6 +15,8 @@ Migration: `supabase/migrations/001_schema.sql` sampai `013_rate_limits.sql`. Ja
 `012_tier_codes.sql`: tier `basic|premium|luxury` + `access_codes` + RLS owner + RPC `redeem_access_code`.
 
 `013_rate_limits.sql`: `public_rate_limits` + RPC `check_public_rate_limit` (sliding window, dipanggil service RSVP/pesan/hadiah; tanpa akses tabel langsung untuk anon) + RPC `invitation_daily_series` (agregasi grafik harian, 1 round-trip, hormati admin vs owner).
+
+`014_code_tier.sql`: kode akses reusable (`validate_access_code` RPC, `last_used_at`; `redeem_access_code` lama dipertahankan) + `tier_prices` master per tier (order baru saja; tidak retroaktif) + kolom `theme_catalog.code` (kode fixed per tema).
 
 - Semua PK UUID. Hapus undangan → child ikut terhapus (`cascade`). Hapus pelanggan yang masih punya undangan → ditolak (`restrict`).
 - `invitations.slug` unik, format `^[a-z0-9]+(-[a-z0-9]+)*$`, 3–60 karakter.

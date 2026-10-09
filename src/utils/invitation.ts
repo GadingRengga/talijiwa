@@ -45,6 +45,31 @@ export function allowedThemes(
     .map((c) => c.theme)
 }
 
+/**
+ * Effective selling price of a catalog entry: the tier master price when set
+ * (> 0), otherwise the per-theme fallback.
+ */
+export function resolveThemePrice(
+  entry: Pick<ThemeCatalogEntry, 'price'>,
+  tierPrices: Partial<Record<InvitationTier, number>>,
+  tier: InvitationTier,
+): number {
+  const master = tierPrices[tier] ?? 0
+  return master > 0 ? master : entry.price
+}
+
+/** Parse a formatted rupiah string ("Rp150.000", "150000") to a number. */
+export function parseRupiah(input: string): number {
+  const digits = input.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '')
+  const n = Number(digits || 0)
+  return Number.isFinite(n) ? Math.min(n, 999_999_999_999) : 0
+}
+
+/** True when an order amount differs from every current tier price (custom deal). */
+export function isCustomAmount(amount: number, tierPrices: Partial<Record<InvitationTier, number>>): boolean {
+  return !Object.values(tierPrices).some((p) => p === amount)
+}
+
 export function isThemeAllowed(
   theme: ThemeId,
   tier: InvitationTier,
