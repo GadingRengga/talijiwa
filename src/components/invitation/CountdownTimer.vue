@@ -1,18 +1,41 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { copy } from '@/config/copy'
 
 const props = defineProps<{ target: Date }>()
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | undefined
 
-onMounted(() => {
-  timer = setInterval(() => (now.value = Date.now()), 1000)
-})
-onBeforeUnmount(() => clearInterval(timer))
+function stop() {
+  if (timer) {
+    clearInterval(timer)
+    timer = undefined
+  }
+}
 
+function start() {
+  stop()
+  // Pause while the tab is hidden: saves battery and avoids timer drift.
+  if (document.visibilityState === 'hidden') return
+  timer = setInterval(() => (now.value = Date.now()), 1000)
+}
+
+onMounted(() => {
+  start()
+  document.addEventListener('visibilitychange', start)
+})
+onBeforeUnmount(() => {
+  stop()
+  document.removeEventListener('visibilitychange', start)
+})
+
+// Stop ticking once the date has passed.
 const diff = computed(() => Math.max(0, props.target.getTime() - now.value))
 const done = computed(() => diff.value <= 0)
+watch(done, (isDone) => {
+  if (isDone) stop()
+})
+
 const units = computed(() => {
   const s = Math.floor(diff.value / 1000)
   return [

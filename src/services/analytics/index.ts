@@ -1,8 +1,10 @@
 import { commit, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
 import { uid } from '@/utils/format'
+import { checkClientRateLimit } from '@/utils/rateLimit'
 
 const VISITOR_KEY = 'talijiwa:visitor'
+const VIEW_THROTTLE_MS = 30_000
 
 /** Random per-browser id. No IP address is ever collected or stored. */
 function visitorHash(): string {
@@ -67,6 +69,8 @@ function buildSeries(days: string[], views: { created_at: string; invitation_id:
 
 export const analyticsService = {
   async trackView(invitationId: string): Promise<void> {
+    // One counted view per invitation per 30s per browser (reload-safe).
+    if (!checkClientRateLimit(`view:${invitationId}`, 1, VIEW_THROTTLE_MS)) return
     if (useMock) {
       db().views.push({
         id: uid('view'),
@@ -126,6 +130,25 @@ export const analyticsService = {
     if (useMock) {
       const d = db()
       return delay(buildSeries(keys, d.views, d.rsvps, invitationId))
+    }
+    // Prefer the server-side aggregation RPC (single round-trip, cheap).
+    // Falls back to the legacy two-query path when the migration is not deployed yet.
+    try {
+      const since = dayKey(new Date(Date.now() - days * 86400000))
+      const { data, error } = await requireSupabase().rpc('invitation_daily_series', {
+        p_days: days,
+        p_since: since,
+        p_invitation_id: invitationId ?? null,
+      })
+      if (!error && Array.isArray(data)) {
+        const byDate = new Map((data as { day: string; views: number; rsvps: number; guests: number }[]).map((r) => [r.day, r]))
+        return keys.map((date) => {
+          const r = byDate.get(date)
+          return { date, label: dayLabel(date), views: Number(r?.views ?? 0), rsvps: Number(r?.rsvps ?? 0), guests: Number(r?.guests ?? 0) }
+        })
+      }
+    } catch {
+      /* fall through to legacy path */
     }
     const sb = requireSupabase()
     const since = new Date()

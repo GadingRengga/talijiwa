@@ -15,7 +15,17 @@ function load(): MockDb {
       cache.orders ??= fresh.orders
       cache.payments ??= fresh.payments
       cache.themeCatalog ??= fresh.themeCatalog
+      cache.accessCodes ??= fresh.accessCodes
       for (const o of cache.orders) o.delivered_at ??= null
+      for (const i of cache.invitations) {
+        ;(i as { tier?: string }).tier ??= 'basic'
+      }
+      for (const o of cache.orders) {
+        ;(o as { tier?: string }).tier ??= 'basic'
+      }
+      for (const t of cache.themeCatalog) {
+        ;(t as { tier?: string }).tier ??= 'basic'
+      }
       cache.siteSettings ??= fresh.siteSettings
       cache.testimonials ??= fresh.testimonials
       cache.faqs ??= fresh.faqs

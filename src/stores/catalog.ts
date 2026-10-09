@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { ThemeCategory, ThemeId } from '@/types'
+import type { InvitationTier, ThemeCategory, ThemeId } from '@/types'
 import { themeCatalogService } from '@/services/catalog'
 import { getTheme } from '@/themes'
 
@@ -20,6 +20,7 @@ export interface CatalogRow {
   price: number
   position: number
   category: ThemeCategory
+  tier: InvitationTier
 }
 
 export const useCatalogStore = defineStore('catalog', () => {
@@ -34,7 +35,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       const entries = await themeCatalogService.list()
       rows.value = entries.map((e) => {
         const t = getTheme(e.theme)
-        return { theme: e.theme, name: t.name, description: t.description, is_active: e.is_active, price: e.price, position: e.position, category: e.category }
+        return { theme: e.theme, name: t.name, description: t.description, is_active: e.is_active, price: e.price, position: e.position, category: e.category, tier: e.tier }
       })
       loaded.value = true
     } finally {
@@ -53,8 +54,13 @@ export const useCatalogStore = defineStore('catalog', () => {
     const updated = await themeCatalogService.update(theme, { category })
     rows.value = rows.value.map((r) => (r.theme === theme ? { ...r, category: updated.category } : r))
   }
+  async function setTier(theme: ThemeId, tier: InvitationTier) {
+    const updated = await themeCatalogService.update(theme, { tier })
+    rows.value = rows.value.map((r) => (r.theme === theme ? { ...r, tier: updated.tier } : r))
+  }
+
 
   const active = computed(() => rows.value.filter((r) => r.is_active))
 
-  return { rows, active, loading, loaded, load, setActive, setPrice, setCategory }
+  return { rows, active, loading, loaded, load, setActive, setPrice, setCategory, setTier }
 })

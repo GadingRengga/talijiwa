@@ -8,8 +8,10 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import FormField from '@/components/ui/FormField.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import Modal from '@/components/ui/Modal.vue'
+import { useClipboard } from '@/composables/useClipboard'
 import { useToast } from '@/composables/useToast'
 import { copy } from '@/config/copy'
+import { accessCodeService } from '@/services/access-codes'
 import { orderService } from '@/services/orders'
 import type { OrderInput } from '@/services/orders'
 import { invitationService } from '@/services/invitations'
@@ -18,7 +20,7 @@ import { useInvitationStore } from '@/stores/invitation'
 import { useOrderStore } from '@/stores/order'
 import { usePaymentStore } from '@/stores/payment'
 import { themeList } from '@/themes'
-import type { InvitationData, Order, PaymentMethod } from '@/types'
+import type { AccessCode, InvitationData, Order, PaymentMethod } from '@/types'
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/format'
 import { coupleLabel } from '@/utils/invitation'
 
@@ -42,15 +44,20 @@ const toDeletePay = ref<string | null>(null)
 const making = ref(false)
 const makeOpen = ref(false)
 const makeTitle = ref('')
+const accessCode = ref<AccessCode | null>(null)
+const codeBusy = ref(false)
 
-const formInitial = ref<OrderInput>({ customer_id: '', invitation_id: null, theme: themeList[0]!.id, amount: 0, paid: 0, status: 'pending', due_date: '', notes: '' })
+const formInitial = ref<OrderInput>({ customer_id: '', invitation_id: null, tier: 'basic', theme: themeList[0]!.id, amount: 0, paid: 0, status: 'pending', due_date: '', notes: '' })
 const payForm = ref({ amount: 0, method: 'transfer' as PaymentMethod, paid_at: new Date().toISOString().slice(0, 10), note: '' })
 const methods: PaymentMethod[] = ['transfer', 'ewallet', 'cash', 'other']
 
 async function reload() {
   order.value = await orderService.get(id)
   inv.value = order.value?.invitation_id ? await invitationService.get(order.value.invitation_id) : null
-  if (order.value) await payments.load(order.value.id)
+  if (order.value) {
+    await payments.load(order.value.id)
+    accessCode.value = await accessCodeService.getByOrder(order.value.id).catch(() => null)
+  }
 }
 
 onMounted(async () => {
@@ -85,9 +92,12 @@ async function makeInvitation() {
   if (!order.value || !makeTitle.value.trim()) return
   making.value = true
   try {
-    const created = await invitations.create(order.value.customer_id, makeTitle.value.trim(), order.value.theme)
+    const created = await invitations.create(order.value.customer_id, makeTitle.value.trim(), order.value.theme, {
+      tier: order.value.tier,
+    })
     const updated = await orderService.update(order.value.id, {
-      customer_id: order.value.customer_id, invitation_id: created.id, theme: order.value.theme,
+      customer_id: order.value.customer_id, invitation_id: created.id,
+      tier: order.value.tier, theme: order.value.theme,
       amount: order.value.amount, paid: order.value.paid, status: order.value.status,
       due_date: order.value.due_date, notes: order.value.notes,
     })
@@ -106,7 +116,8 @@ async function makeInvitation() {
 function openEdit() {
   if (!order.value) return
   formInitial.value = {
-    customer_id: order.value.customer_id, invitation_id: order.value.invitation_id, theme: order.value.theme,
+    customer_id: order.value.customer_id, invitation_id: order.value.invitation_id,
+    tier: order.value.tier, theme: order.value.theme,
     amount: order.value.amount, paid: order.value.paid, status: order.value.status,
     due_date: order.value.due_date, notes: order.value.notes,
   }
@@ -167,6 +178,49 @@ async function markDelivered() {
   }
 }
 
+const { copy: copyText } = useClipboard()
+
+/** Issue (or reuse) the customer access code. Requires paid off + one admin-made invitation. */
+async function issueCode() {
+  if (!order.value || codeBusy.value) return
+  if (order.value.paid < order.value.amount) {
+    toast.error(copy.orders.needPaidFirst ?? copy.common.genericError)
+    return
+  }
+  if (!order.value.invitation_id) {
+    toast.error(copy.orders.needInvitationFirst ?? copy.common.genericError)
+    return
+  }
+  codeBusy.value = true
+  try {
+    accessCode.value = await accessCodeService.issue(order.value.id)
+    toast.success(copy.orders.codeCopied)
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : copy.common.genericError)
+  } finally {
+    codeBusy.value = false
+  }
+}
+
+async function copyCode() {
+  if (!accessCode.value) return
+  if (await copyText(accessCode.value.code)) toast.success(copy.orders.codeCopied)
+}
+
+async function deactivateCode() {
+  if (!accessCode.value || codeBusy.value) return
+  codeBusy.value = true
+  try {
+    await accessCodeService.deactivate(accessCode.value.code)
+    accessCode.value = null
+    toast.success(copy.orders.codeDeactivated)
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : copy.common.genericError)
+  } finally {
+    codeBusy.value = false
+  }
+}
+
 const statusClass = (s: string) =>
   s === 'paid' ? 'bg-sage-soft text-sage' : s === 'dp' ? 'bg-brand-soft text-brand' : s === 'cancelled' ? 'bg-danger-soft text-danger' : 'bg-warn-soft text-warn'
 </script>
@@ -216,6 +270,25 @@ const statusClass = (s: string) =>
         </div>
         <p v-else-if="order.delivered_at" class="border-t border-line pt-3 text-sm text-sage">✓ {{ copy.orders.delivered }} · {{ formatDateTime(order.delivered_at) }}</p>
       </div>
+
+      <!-- Access code: only after paid off + one admin-made invitation -->
+      <section class="card space-y-3 p-4">
+        <div>
+          <h2 class="text-base font-semibold">{{ copy.orders.accessCode }}</h2>
+          <p class="text-xs text-muted">{{ copy.orders.accessCodeHint }}</p>
+        </div>
+        <div v-if="accessCode" class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper px-3 py-2.5">
+          <p class="font-mono text-lg font-semibold tracking-widest">{{ accessCode.code }}</p>
+          <div class="flex gap-2">
+            <AppButton size="sm" variant="secondary" @click="copyCode">{{ copy.orders.copyCode }}</AppButton>
+            <AppButton size="sm" variant="secondary" @click="deactivateCode" :loading="codeBusy">{{ copy.orders.deactivateCode }}</AppButton>
+          </div>
+        </div>
+        <div v-else class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-muted">{{ !isPaidOff ? copy.orders.needPaidFirst : !order.invitation_id ? copy.orders.needInvitationFirst : copy.orders.accessCodeHint }}</p>
+          <AppButton size="sm" :disabled="!isPaidOff || !order.invitation_id" :loading="codeBusy" @click="issueCode">{{ copy.orders.makeAccessCode }}</AppButton>
+        </div>
+      </section>
 
       <!-- Payments -->
       <section>

@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { company, whatsappLink } from '@/config/company'
+import { copy } from '@/config/copy'
 
 const route = useRoute()
 const open = ref(false)
@@ -27,6 +28,9 @@ const links = [
           <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="text-sm text-muted hover:text-ink" active-class="!text-ink">
             {{ l.label }}
           </RouterLink>
+          <RouterLink to="/pasangan/masuk" class="text-sm text-muted hover:text-ink" active-class="!text-ink">
+            {{ copy.company.coupleLogin }}
+          </RouterLink>
           <a :href="whatsappLink()" target="_blank" rel="noopener" class="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark">
             Pesan Sekarang
           </a>
@@ -37,6 +41,7 @@ const links = [
       </div>
       <nav v-if="open" class="space-y-1 border-t border-line px-4 py-3 md:hidden" aria-label="Menu utama">
         <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="block rounded-lg px-3 py-2 text-sm hover:bg-black/5">{{ l.label }}</RouterLink>
+        <RouterLink to="/pasangan/masuk" class="block rounded-lg px-3 py-2 text-sm hover:bg-black/5">{{ copy.company.coupleLogin }}</RouterLink>
       </nav>
     </header>
     <RouterView />

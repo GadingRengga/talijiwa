@@ -7,10 +7,12 @@ import ThemeBanner from '@/components/invitation/ThemeBanner.vue'
 import { useToast } from '@/composables/useToast'
 import { copy } from '@/config/copy'
 import { THEME_CATEGORIES, useCatalogStore } from '@/stores/catalog'
+import type { InvitationTier } from '@/types'
 import { formatCurrency } from '@/utils/format'
 
 const store = useCatalogStore()
 const toast = useToast()
+const tiers: InvitationTier[] = ['basic', 'premium', 'luxury']
 
 onMounted(() => store.load())
 
@@ -43,12 +45,20 @@ async function run(fn: () => Promise<unknown>) {
             <p class="font-semibold">{{ r.name }}</p>
             <p class="text-xs text-muted">{{ r.description }}</p>
           </div>
-          <label class="block">
-            <span class="mb-1 block text-xs text-muted">{{ copy.themes.category }}</span>
-            <select :value="r.category" class="field-input" :aria-label="`${copy.themes.category} ${r.name}`" @change="run(() => store.setCategory(r.theme, ($event.target as HTMLSelectElement).value as typeof r.category))">
-              <option v-for="c in THEME_CATEGORIES" :key="c.id" :value="c.id">{{ c.label }}</option>
-            </select>
-          </label>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-xs text-muted">{{ copy.themes.category }}</span>
+              <select :value="r.category" class="field-input" :aria-label="`${copy.themes.category} ${r.name}`" @change="run(() => store.setCategory(r.theme, ($event.target as HTMLSelectElement).value as typeof r.category))">
+                <option v-for="c in THEME_CATEGORIES" :key="c.id" :value="c.id">{{ c.label }}</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs text-muted">{{ copy.themes.tier }}</span>
+              <select :value="r.tier" class="field-input" :aria-label="`${copy.themes.tier} ${r.name}`" @change="run(() => store.setTier(r.theme, ($event.target as HTMLSelectElement).value as InvitationTier))">
+                <option v-for="t in tiers" :key="t" :value="t">{{ copy.orders.tiers[t] }}</option>
+              </select>
+            </label>
+          </div>
           <div class="flex flex-wrap items-center gap-3">
             <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
               <input

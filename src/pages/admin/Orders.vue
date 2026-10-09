@@ -35,7 +35,7 @@ const formOpen = ref(false)
 const saving = ref(false)
 const toDelete = ref<Order | null>(null)
 const formInitial = ref<OrderInput>({
-  customer_id: '', invitation_id: null, theme: themeList[0]!.id,
+  customer_id: '', invitation_id: null, tier: 'basic', theme: themeList[0]!.id,
   amount: 0, paid: 0, status: 'pending', due_date: '', notes: '',
 })
 
@@ -79,7 +79,7 @@ const paged = computed(() => pager.paginate(filtered.value))
 function openCreate(customerId = '') {
   editing.value = null
   formInitial.value = {
-    customer_id: customerId, invitation_id: null, theme: themeList[0]!.id,
+    customer_id: customerId, invitation_id: null, tier: 'basic', theme: themeList[0]!.id,
     amount: 0, paid: 0, status: 'pending', due_date: '', notes: '',
   }
   formOpen.value = true
@@ -88,7 +88,7 @@ function openCreate(customerId = '') {
 function openEdit(o: Order) {
   editing.value = o
   formInitial.value = {
-    customer_id: o.customer_id, invitation_id: o.invitation_id, theme: o.theme,
+    customer_id: o.customer_id, invitation_id: o.invitation_id, tier: o.tier, theme: o.theme,
     amount: o.amount, paid: o.paid, status: o.status, due_date: o.due_date, notes: o.notes,
   }
   formOpen.value = true

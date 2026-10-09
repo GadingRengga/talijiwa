@@ -67,9 +67,12 @@ const revisionText = computed(() =>
   <main class="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
     <LoadingState v-if="loading" />
     <template v-else-if="inv">
-      <div>
-        <h1 class="font-display text-3xl font-semibold">{{ coupleLabel(inv) }}</h1>
-        <p class="text-sm text-muted">{{ inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}</p>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="font-display text-3xl font-semibold">{{ coupleLabel(inv) }}</h1>
+          <p class="text-sm text-muted">{{ inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}</p>
+        </div>
+        <RouterLink :to="`/pasangan/undangan/${inv.id}/kelola`" class="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">{{ copy.couple.manageCta }}</RouterLink>
       </div>
 
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">

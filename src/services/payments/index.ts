@@ -31,7 +31,7 @@ export const paymentService = {
     if (error) throw new Error(error.message)
     return (data ?? []).map((r) => toApp(r as Record<string, unknown>))
   },
-  /** Record a payment and add it to the order's paid total. */
+  /** Record a payment and add it to the order's paid total (atomic via RPC in Supabase mode). */
   async record(orderId: string, input: PaymentInput): Promise<Payment> {
     const amount = Math.round(input.amount) || 0
     if (amount <= 0) throw new Error('Nominal pembayaran harus lebih dari 0.')
@@ -47,23 +47,19 @@ export const paymentService = {
       commit()
       return delay(clone(row))
     }
-    const sb = requireSupabase()
-    const order = await sb.from('orders').select('paid, amount, status').eq('id', orderId).maybeSingle()
-    if (order.error) throw new Error(order.error.message)
-    if (!order.data) throw new Error('Pesanan tidak ditemukan.')
-    const current = order.data as { paid: number; amount: number; status: string }
-    const { data, error } = await sb.from('payments').insert({
-      order_id: orderId, amount, method: input.method,
-      paid_at: input.paid_at || new Date().toISOString().slice(0, 10), note: input.note,
-    }).select('*').single()
+    const { data, error } = await requireSupabase().rpc('record_payment', {
+      p_order_id: orderId,
+      p_amount: amount,
+      p_method: input.method,
+      p_paid_at: input.paid_at || null,
+      p_note: input.note ?? '',
+    })
     if (error) throw new Error(error.message)
-    const paid = Number(current.paid ?? 0) + amount
-    const status = current.status === 'cancelled' ? 'cancelled' : paid >= Number(current.amount ?? 0) ? 'paid' : 'dp'
-    const { error: upErr } = await sb.from('orders').update({ paid, status }).eq('id', orderId)
-    if (upErr) throw new Error(upErr.message)
-    return toApp(data as Record<string, unknown>)
+    const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined
+    if (!row) throw new Error('Pembayaran tidak tersimpan.')
+    return toApp({ ...row, created_at: new Date().toISOString() })
   },
-  /** Delete a payment and subtract it from the order's paid total. */
+  /** Delete a payment and subtract it from the order's paid total (atomic via RPC in Supabase mode). */
   async remove(id: string): Promise<void> {
     if (useMock) {
       const data = db()
@@ -80,17 +76,7 @@ export const paymentService = {
       await delay(null)
       return
     }
-    const sb = requireSupabase()
-    const row = await sb.from('payments').select('order_id, amount').eq('id', id).maybeSingle()
-    if (row.error) throw new Error(row.error.message)
-    if (!row.data) return
-    const { error } = await sb.from('payments').delete().eq('id', id)
+    const { error } = await requireSupabase().rpc('remove_payment', { p_payment_id: id })
     if (error) throw new Error(error.message)
-    const order = await sb.from('orders').select('paid, amount, status').eq('id', (row.data as { order_id: string }).order_id).maybeSingle()
-    if (order.error || !order.data) return
-    const cur = order.data as { paid: number; amount: number; status: string }
-    const paid = Math.max(0, Number(cur.paid ?? 0) - Number((row.data as { amount: number }).amount ?? 0))
-    const status = cur.status === 'cancelled' ? 'cancelled' : paid >= Number(cur.amount ?? 0) ? 'paid' : paid > 0 ? 'dp' : 'pending'
-    await sb.from('orders').update({ paid, status }).eq('id', (row.data as { order_id: string }).order_id)
   },
 }

@@ -1,6 +1,6 @@
 # Database (Supabase / PostgreSQL)
 
-Migration: `supabase/migrations/001_schema.sql` sampai `011_rebrand.sql`. Jalankan berurutan (`004_theme_text`, `005_style_order`, `006_share`, `007_orders_catalog`, `008_content`, `009_payments`, `010_couple`, `011_rebrand`). Uji RLS via API lolos 12/12 (2026-10-07); checklist manual di bawah tetap wajib sebelum produksi.
+Migration: `supabase/migrations/001_schema.sql` sampai `013_rate_limits.sql`. Jalankan berurutan (`004_theme_text`, `005_style_order`, `006_share`, `007_orders_catalog`, `008_content`, `009_payments`, `010_couple`, `011_rebrand`, `012_tier_codes`, `013_rate_limits`). Uji RLS via API lolos 12/12 (2026-10-07); checklist manual di bawah tetap wajib sebelum produksi.
 
 ## Tabel
 
@@ -10,7 +10,11 @@ Migration: `supabase/migrations/001_schema.sql` sampai `011_rebrand.sql`. Jalank
 
 `008_content.sql`: `theme_catalog.category` (`klasik|modern|floral|adat|mewah`), `site_settings` (konten + SEO beranda), `testimonials`, `faqs`.
 
-`009_payments.sql`: `payments` (jejak bayar per order, admin-only) + `orders.delivered_at` (tanda link terkirim).
+`009_payments.sql`: `payments` (jejak bayar per order, admin-only) + `orders.delivered_at` (tanda link terkirim) + RPC transaksional `record_payment` / `remove_payment` (insert/hapus payment + update total order atomik, anti race-condition; service frontend memanggil RPC ini di mode Supabase).
+
+`012_tier_codes.sql`: tier `basic|premium|luxury` + `access_codes` + RLS owner + RPC `redeem_access_code`.
+
+`013_rate_limits.sql`: `public_rate_limits` + RPC `check_public_rate_limit` (sliding window, dipanggil service RSVP/pesan/hadiah; tanpa akses tabel langsung untuk anon) + RPC `invitation_daily_series` (agregasi grafik harian, 1 round-trip, hormati admin vs owner).
 
 - Semua PK UUID. Hapus undangan → child ikut terhapus (`cascade`). Hapus pelanggan yang masih punya undangan → ditolak (`restrict`).
 - `invitations.slug` unik, format `^[a-z0-9]+(-[a-z0-9]+)*$`, 3–60 karakter.
@@ -73,6 +77,4 @@ Dengan user terautentikasi non-admin (bukan di `profiles`): semua tabel bisnis h
 
 ## Hal yang sengaja belum ada
 
-- Rate limit sisi server untuk insert publik (disarankan Edge Function atau pg_net/cron + tabel counter).
-- RPC/view statistik dashboard (grafik dihitung di klien via `analytics.series()`).
 - Seed demo SQL ada di `supabase/seed_demo.sql` (opsional, UUID tetap).

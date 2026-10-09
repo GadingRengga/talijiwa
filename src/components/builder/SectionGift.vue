@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import BuilderSection from './BuilderSection.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -6,10 +7,13 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import FormField from '@/components/ui/FormField.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { copy } from '@/config/copy'
+import { useAuthStore } from '@/stores/auth'
 import type { GiftAccount, InvitationData } from '@/types'
 import { uid } from '@/utils/format'
 
 const inv = defineModel<InvitationData>({ required: true })
+// Admin shortcuts stay admin-only; couples monitor via /pasangan dashboard.
+const isAdmin = computed(() => useAuthStore().isAdmin)
 
 function add(kind: GiftAccount['kind']) {
   inv.value.gifts.push({ id: uid('gf'), kind, provider: '', number: '', holder: '' })
@@ -46,6 +50,6 @@ function remove(id: string) {
       <AppButton variant="secondary" size="sm" @click="add('bank')"><Plus class="size-4" /> {{ copy.builder.gift.addBank }}</AppButton>
       <AppButton variant="secondary" size="sm" @click="add('e_wallet')"><Plus class="size-4" /> {{ copy.builder.gift.addWallet }}</AppButton>
     </div>
-    <RouterLink :to="`/admin/invitations/${inv.id}/gifts`" class="inline-block text-sm font-medium text-brand hover:underline">{{ copy.builder.gift.viewConfirmations }}</RouterLink>
+    <RouterLink v-if="isAdmin" :to="`/admin/invitations/${inv.id}/gifts`" class="inline-block text-sm font-medium text-brand hover:underline">{{ copy.builder.gift.viewConfirmations }}</RouterLink>
   </BuilderSection>
 </template>

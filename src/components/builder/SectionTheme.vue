@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { AlertTriangle, ChevronDown, ChevronUp, GripVertical, RotateCcw } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import BuilderSection from './BuilderSection.vue'
+import { ALLOWED_THEMES_KEY } from './allowedThemes'
 import StyleColorInput from './StyleColorInput.vue'
 import ThemeSelector from '@/components/admin/ThemeSelector.vue'
 import { copy, sectionLabels } from '@/config/copy'
@@ -10,6 +11,7 @@ import { FONT_FAMILY, contrastOn, contrastRatio, resolveOrder, resolveStyle } fr
 import type { AnimationLevel, BodyFontChoice, FontChoice, HeadingScale, InvitationData, InvitationStyle, SectionKey } from '@/types'
 
 const inv = defineModel<InvitationData>({ required: true })
+const allowed = inject(ALLOWED_THEMES_KEY, ref(null))
 const st = computed(() => resolveStyle(inv.value.settings))
 const theme = computed(() => getTheme(inv.value.theme))
 function patch(p: Partial<InvitationStyle>) {
@@ -104,7 +106,7 @@ const chip = 'rounded-full border px-3 py-2 text-[13px] font-medium transition-c
 
 <template>
   <BuilderSection :title="copy.builder.sections.theme" :description="copy.builder.theme.desc">
-    <ThemeSelector v-model="inv.theme" />
+    <ThemeSelector v-model="inv.theme" :allowed="allowed" />
 
     <!-- Live style preview -->
     <section class="card overflow-hidden" :aria-label="copy.builder.stylePreview">

@@ -23,8 +23,13 @@ export const useInvitationStore = defineStore('invitation', () => {
     if (i >= 0) items.value[i] = inv
     else items.value.unshift(inv)
   }
-  async function create(customerId: string, title: string, theme: ThemeId) {
-    const inv = await invitationService.create(customerId, title, theme)
+  async function create(
+    customerId: string,
+    title: string,
+    theme: ThemeId,
+    opts: { tier?: InvitationData['tier']; allowedThemes?: ThemeId[] } = {},
+  ) {
+    const inv = await invitationService.create(customerId, title, theme, opts)
     replace(inv)
     return inv
   }

@@ -11,7 +11,7 @@ Tiga area dalam satu aplikasi Vue 3:
 | Undangan publik | `/invite/:slug` | Berfungsi: cover GSAP, 11 bagian, 11 tema, RSVP, ucapan, amplop digital |
 | Portal pasangan | `/pasangan/*` | Read-only: pantauan hadir, ucapan, hadiah (magic link) |
 
-> Data memakai **mock lokal** (`localStorage`) bila `VITE_USE_MOCK=true`. Adapter Supabase di `src/services/*` sudah lengkap (auth, customers, invitations, rsvp, analytics, orders, katalog, konten, storage); isi `.env` dan jalankan migrasi `001…011` untuk mode produksi.
+> Data memakai **mock lokal** (`localStorage`) bila `VITE_USE_MOCK=true`. Adapter Supabase di `src/services/*` sudah lengkap (auth, customers, invitations, rsvp, analytics, orders, katalog, konten, storage); isi `.env` dan jalankan migrasi `001…013` untuk mode produksi.
 
 ## Menjalankan
 
@@ -67,7 +67,7 @@ project.md            konteks untuk AI coding assistant
 ## Beralih ke Supabase (produksi)
 
 1. Buat project Supabase, **matikan sign-up publik** (Authentication → Providers → Email → *Allow new users to sign up* off).
-2. Jalankan `supabase/migrations/001…011` berurutan (opsional: `seed_demo.sql`).
+2. Jalankan `supabase/migrations/001…013` berurutan (opsional: `seed_demo.sql`).
 3. Buat user admin di Authentication, lalu daftarkan sebagai admin (`supabase/bootstrap_admin.sql`, lihat `docs/DATABASE.md`).
 4. Isi `.env`: `VITE_USE_MOCK=false`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. **Jangan pernah** memakai service role key di frontend.
 

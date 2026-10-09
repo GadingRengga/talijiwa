@@ -1,5 +1,7 @@
 export type InvitationStatus = 'draft' | 'published' | 'archived'
 export type ThemeId = 'classic' | 'minimal' | 'floral' | 'luxury' | 'gerbang' | 'amplop' | 'sinematik' | 'garden' | 'jawa' | 'celestial' | 'watercolor'
+/** Price tier: higher tiers unlock all themes of lower tiers. */
+export type InvitationTier = 'basic' | 'premium' | 'luxury'
 export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
 export type OrnamentKind = 'garden' | 'batik' | 'stars' | 'wash' | 'frame' | 'lines' | 'bouquet' | 'shine'
@@ -117,6 +119,7 @@ export interface InvitationData {
   title: string
   slug: string
   status: InvitationStatus
+  tier: InvitationTier
   theme: ThemeId
   published_at: string | null
   created_at: string
@@ -169,6 +172,7 @@ export interface Order {
   id: string
   customer_id: string
   invitation_id: string | null
+  tier: InvitationTier
   theme: ThemeId
   amount: number
   paid: number
@@ -198,6 +202,21 @@ export interface ThemeCatalogEntry {
   price: number
   position: number
   category: ThemeCategory
+  /** Which tier this theme belongs to (basic < premium < luxury). */
+  tier: InvitationTier
+}
+
+/** One-time code issued after payment so a customer can manage their own invitation. */
+export interface AccessCode {
+  code: string
+  customer_id: string
+  order_id: string
+  tier: InvitationTier
+  is_active: boolean
+  expires_at: string | null
+  redeemed_email: string
+  redeemed_at: string | null
+  created_at: string
 }
 
 export type ThemeCategory = 'klasik' | 'modern' | 'floral' | 'adat' | 'mewah'

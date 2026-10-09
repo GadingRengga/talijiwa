@@ -8,6 +8,7 @@ import './style.css'
 /** Show runtime errors on screen (for devices where devtools can't be opened). No-op on server. */
 function installErrorPanel() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (import.meta.env.PROD) return // production guests must never see raw internals
   if (document.querySelector('[data-error-panel]')) return
   const show = (message: string) => {
     let el = document.querySelector<HTMLElement>('[data-error-panel]')

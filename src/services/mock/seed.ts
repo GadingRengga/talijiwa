@@ -1,4 +1,4 @@
-import type { Customer, Faq, GiftConfirmation, GuestMessage, InvitationData, Order, Payment, Rsvp, Testimonial, ThemeCatalogEntry, ThemeCategory, ThemeId } from '@/types'
+import type { AccessCode, Customer, Faq, GiftConfirmation, GuestMessage, InvitationData, InvitationTier, Order, Payment, Rsvp, Testimonial, ThemeCatalogEntry, ThemeCategory, ThemeId } from '@/types'
 import { createEmptyInvitation, placeholderImage } from '@/utils/invitation'
 
 export interface MockDb {
@@ -12,6 +12,7 @@ export interface MockDb {
   orders: Order[]
   payments: Payment[]
   themeCatalog: ThemeCatalogEntry[]
+  accessCodes: AccessCode[]
   siteSettings: Record<string, string>
   testimonials: Testimonial[]
   faqs: Faq[]
@@ -135,6 +136,11 @@ export function createSeed(): MockDb {
     classic: 'klasik', minimal: 'modern', floral: 'floral', luxury: 'mewah', gerbang: 'adat',
     amplop: 'modern', sinematik: 'modern', garden: 'floral', jawa: 'adat', celestial: 'modern', watercolor: 'floral',
   }
+  const tiers: Record<string, InvitationTier> = {
+    classic: 'basic', minimal: 'basic', floral: 'basic', garden: 'basic', watercolor: 'basic',
+    gerbang: 'premium', amplop: 'premium', sinematik: 'premium', jawa: 'premium', celestial: 'premium',
+    luxury: 'luxury',
+  }
   const themeCatalog: ThemeCatalogEntry[] = (Object.keys(Object.fromEntries(demos.map((d) => [d.theme, true]))) as ThemeId[]).map(
     (theme, i) => ({
       theme,
@@ -142,19 +148,22 @@ export function createSeed(): MockDb {
       price: theme === 'luxury' ? 249000 : ['gerbang', 'amplop', 'sinematik', 'jawa', 'celestial'].includes(theme) ? 199000 : 149000,
       position: i + 1,
       category: categories[theme] ?? 'modern',
+      tier: tiers[theme] ?? 'basic',
     }),
   )
 
   const orders: Order[] = [
-    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', theme: 'classic', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
-    { id: 'ord_2', customer_id: 'cus_raka', invitation_id: 'inv_raka', theme: 'floral', amount: 149000, paid: 50000, status: 'dp', due_date: '2026-12-12', notes: 'Pelunasan maksimal H-7.', delivered_at: null, created_at: iso(4), updated_at: iso(4) },
+    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'classic', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
+    { id: 'ord_2', customer_id: 'cus_raka', invitation_id: 'inv_raka', tier: 'basic', theme: 'floral', amount: 149000, paid: 50000, status: 'dp', due_date: '2026-12-12', notes: 'Pelunasan maksimal H-7.', delivered_at: null, created_at: iso(4), updated_at: iso(4) },
   ]
   const payments: Payment[] = [
     { id: 'pay_1', order_id: 'ord_1', amount: 149000, method: 'transfer', paid_at: '2026-09-20', note: 'Pelunasan', created_at: iso(11) },
     { id: 'pay_2', order_id: 'ord_2', amount: 50000, method: 'ewallet', paid_at: '2026-10-03', note: 'DP', created_at: iso(4) },
   ]
 
-  return { version: 1, customers, invitations, rsvps, messages, giftConfirmations, views, orders, payments, themeCatalog, siteSettings, testimonials, faqs }
+  const accessCodes: AccessCode[] = []
+
+  return { version: 1, customers, invitations, rsvps, messages, giftConfirmations, views, orders, payments, themeCatalog, accessCodes, siteSettings, testimonials, faqs }
 }
 
 const siteSettings: Record<string, string> = {

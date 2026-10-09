@@ -1,4 +1,4 @@
-import type { ThemeCatalogEntry, ThemeCategory, ThemeId } from '@/types'
+import type { InvitationTier, ThemeCatalogEntry, ThemeCategory, ThemeId } from '@/types'
 import { commit, clone, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
 
@@ -13,6 +13,7 @@ function toApp(r: Record<string, unknown>): ThemeCatalogEntry {
     price: Number(r.price ?? 0),
     position: Number(r.position ?? 0),
     category: (r.category as ThemeCategory) ?? 'modern',
+    tier: (r.tier as InvitationTier) ?? 'basic',
   }
 }
 
@@ -31,7 +32,7 @@ export const themeCatalogService = {
     if (error) throw new Error(error.message)
     return ((data ?? []) as Record<string, unknown>[]).map(toApp)
   },
-  async update(theme: ThemeId, patch: Partial<Pick<ThemeCatalogEntry, 'is_active' | 'price' | 'position' | 'category'>>): Promise<ThemeCatalogEntry> {
+  async update(theme: ThemeId, patch: Partial<Pick<ThemeCatalogEntry, 'is_active' | 'price' | 'position' | 'category' | 'tier'>>): Promise<ThemeCatalogEntry> {
     if (useMock) {
       const row = db().themeCatalog.find((r) => r.theme === theme)
       if (!row) throw new Error('Tema tidak ditemukan.')

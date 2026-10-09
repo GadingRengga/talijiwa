@@ -4,7 +4,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { copy } from '@/config/copy'
 import { invitationService } from '@/services/invitations'
 import { useInvitationStore } from '@/stores/invitation'
-import type { InvitationData } from '@/types'
+import type { InvitationData, ThemeId } from '@/types'
 import { isValidSlug, slugify } from '@/utils/format'
 import { useClipboard } from './useClipboard'
 import { useToast } from './useToast'
@@ -37,6 +37,8 @@ export function useBuilder(idRef: Ref<string>) {
   const slugState = ref<SlugState>('idle')
   const slugTouched = ref(false)
   const publishing = ref(false)
+  /** Theme entitlement for this draft. Null = unrestricted (admin). Pages for customers set this. */
+  const allowedThemes = ref<ThemeId[] | null>(null)
 
   let ready = false // ignore watcher fires caused by loading/saving
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined
@@ -121,6 +123,12 @@ export function useBuilder(idRef: Ref<string>) {
     if (!inv || saveState.value === 'saving') return false
     clearTimeout(autosaveTimer)
 
+    if (allowedThemes.value && !allowedThemes.value.includes(inv.theme)) {
+      saveState.value = 'error'
+      lastError.value = copy.couple.themeOutside
+      if (!opts.silent) toast.error(lastError.value)
+      return false
+    }
     if (!isValidSlug(inv.slug) || slugState.value === 'taken') {
       saveState.value = 'error'
       lastError.value = slugState.value === 'taken' ? copy.builder.saveSlugTaken : copy.builder.saveSlugInvalid
@@ -129,7 +137,7 @@ export function useBuilder(idRef: Ref<string>) {
     }
     saveState.value = 'saving'
     try {
-      const saved = await invitationService.save(JSON.parse(JSON.stringify(inv)) as InvitationData)
+      const saved = await invitationService.save(JSON.parse(JSON.stringify(inv)) as InvitationData, { allowedThemes: allowedThemes.value ?? undefined })
       ready = false
       inv.updated_at = saved.updated_at
       store.replace(saved)
@@ -241,7 +249,7 @@ export function useBuilder(idRef: Ref<string>) {
   watch(idRef, () => void load())
 
   return {
-    draft, loading, loadError, saveState, lastError, slugState, slugTouched, publishing,
+    draft, loading, loadError, saveState, lastError, slugState, slugTouched, publishing, allowedThemes,
     issues, blockers, canPublish, isPublished,
     save, publish, unpublish, copyPublicLink, onSlugInput, resetSlugFromTitle, reload: load,
   }

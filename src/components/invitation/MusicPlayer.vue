@@ -32,9 +32,12 @@ defineExpose({ play })
     <button
       type="button"
       class="inv-btn fixed z-40 !size-11 !rounded-full !p-0 shadow-lg"
-      style="bottom: max(1.25rem, env(safe-area-inset-bottom)); right: max(1.25rem, env(safe-area-inset-right))"
+      :style="{
+        bottom: 'max(1.25rem, env(safe-area-inset-bottom))',
+        right: 'max(1.25rem, env(safe-area-inset-right))',
+        animation: playing ? 'inv-spin 4s linear infinite' : undefined,
+      }"
       :aria-label="playing ? 'Jeda musik' : 'Putar musik'"
-      :style="playing ? { animation: 'inv-spin 4s linear infinite' } : undefined"
       @click="toggle"
     >
       <Pause v-if="playing" class="size-5" />

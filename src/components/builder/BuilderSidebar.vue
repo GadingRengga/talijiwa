@@ -6,7 +6,10 @@ import { copy } from '@/config/copy'
 
 export type BuilderKey = 'basic' | 'couple' | 'story' | 'events' | 'gallery' | 'rsvp' | 'messages' | 'gift' | 'music' | 'theme' | 'seo' | 'publish' | 'share'
 
-const props = defineProps<{ active: BuilderKey; progress: Record<string, number> }>()
+const props = withDefaults(
+  defineProps<{ active: BuilderKey; progress: Record<string, number>; keys?: BuilderKey[] }>(),
+  { keys: undefined },
+)
 const emit = defineEmits<{ select: [key: BuilderKey] }>()
 
 const overall = computed(() => {
@@ -26,7 +29,7 @@ watch(
   { flush: 'post' },
 )
 
-const items: { key: BuilderKey; icon: Component }[] = [
+const allItems: { key: BuilderKey; icon: Component }[] = [
   { key: 'basic', icon: Info },
   { key: 'couple', icon: Users },
   { key: 'story', icon: Heart },
@@ -41,6 +44,7 @@ const items: { key: BuilderKey; icon: Component }[] = [
   { key: 'publish', icon: Rocket },
   { key: 'share', icon: Share2 },
 ]
+const items = computed(() => (props.keys ? allItems.filter((i) => (props.keys as BuilderKey[]).includes(i.key)) : allItems))
 const groupAt: Partial<Record<BuilderKey, string>> = { basic: copy.builder.groups.dasar, events: copy.builder.groups.acara, rsvp: copy.builder.groups.tamu, theme: copy.builder.groups.tampil, seo: copy.builder.groups.rilis }
 </script>
 

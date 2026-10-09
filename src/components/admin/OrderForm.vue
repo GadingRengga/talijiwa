@@ -4,7 +4,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { copy } from '@/config/copy'
 import { themeList } from '@/themes'
-import type { Customer, InvitationData, PaymentStatus } from '@/types'
+import type { Customer, InvitationData, InvitationTier, PaymentStatus } from '@/types'
 import type { OrderInput } from '@/services/orders'
 import { coupleLabel } from '@/utils/invitation'
 
@@ -17,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{ submit: [value: OrderInput] }>()
 
 const statuses: PaymentStatus[] = ['pending', 'dp', 'paid', 'cancelled']
+const tiers: InvitationTier[] = ['basic', 'premium', 'luxury']
 const form = reactive<OrderInput>({ ...props.initial })
 
 watch(
@@ -48,6 +49,11 @@ function submit() {
       </select>
     </FormField>
     <div class="grid gap-4 sm:grid-cols-2">
+      <FormField :label="copy.orders.tier" v-slot="{ id }">
+        <select :id="id" v-model="form.tier" class="field-input">
+          <option v-for="t in tiers" :key="t" :value="t">{{ copy.orders.tiers[t] }}</option>
+        </select>
+      </FormField>
       <FormField :label="copy.orders.invitation" optional v-slot="{ id }">
         <select :id="id" v-model="form.invitation_id" class="field-input">
           <option :value="null">{{ copy.orders.noInvitation }}</option>

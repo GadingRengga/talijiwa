@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
-import { PRERENDER_ROUTES, SITE, injectPrerenderMeta } from './src/config/seoPrerender'
+import { PRERENDER_ROUTES, SITE, injectPrerenderMeta } from './src/config/seoPrerender.ts'
 
 /** Regenerate dist/sitemap.xml from prerendered routes + build-time SITE_URL. */
 function sitemapPlugin(): Plugin {

@@ -7,6 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { BUILDER_KEY } from '@/composables/useBuilder'
 import { copy } from '@/config/copy'
 import { orderService } from '@/services/orders'
+import { useAuthStore } from '@/stores/auth'
 import type { InvitationData, Order } from '@/types'
 import { formatCurrency, formatDateTime } from '@/utils/format'
 
@@ -14,12 +15,20 @@ const inv = defineModel<InvitationData>({ required: true })
 const emit = defineEmits<{ jump: [section: string] }>()
 const b = inject(BUILDER_KEY)!
 const url = computed(() => `${window.location.origin}/invite/${inv.value.slug}`)
+// Order linkage is shown to admins only; customers see a generic checklist
+// (they must never see internal order totals or payment state).
+const auth = useAuthStore()
+const showOrderHint = computed(() => auth.isAdmin)
 
-// Linked order (if any): warn — don't block — when it isn't paid off.
+// Linked order (if any): warn — don't block — when it isn't paid off (admin view only).
 const linkedOrder = ref<Order | null>(null)
 watch(
   () => inv.value.id,
   async (id) => {
+    if (!showOrderHint.value) {
+      linkedOrder.value = null
+      return
+    }
     try {
       linkedOrder.value = await orderService.getByInvitation(id)
     } catch {
@@ -58,7 +67,7 @@ const unpaid = computed(() => {
         </li>
       </ul>
       <p v-else class="card flex items-center gap-2 p-3 text-sm"><CheckCircle2 class="size-4 text-sage" /> {{ copy.builder.publish.allGood }}</p>
-      <p v-if="unpaid" class="card flex items-start gap-2 border-warn/40 bg-warn-soft p-3 text-sm text-warn" role="status">
+      <p v-if="unpaid && showOrderHint" class="card flex items-start gap-2 border-warn/40 bg-warn-soft p-3 text-sm text-warn" role="status">
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />
         <span>{{ copy.orders.unpaidWarning }} {{ formatCurrency(unpaid) }}. {{ copy.builder.publish.stillCanPublish }}</span>
       </p>
@@ -69,7 +78,7 @@ const unpaid = computed(() => {
       <div class="flex gap-2">
         <input :value="url" readonly class="field-input" :aria-label="copy.builder.publish.linkTitle" @focus="($event.target as HTMLInputElement).select()" />
         <AppButton variant="secondary" :aria-label="copy.common.copyLink" @click="b.copyPublicLink()"><Copy class="size-4" /></AppButton>
-        <a :href="`/admin/invitations/${inv.id}/preview`" target="_blank" rel="noopener" class="inline-flex items-center rounded-lg border border-line bg-panel px-3 hover:bg-paper" :aria-label="copy.common.preview"><ExternalLink class="size-4" /></a>
+        <a :href="showOrderHint ? `/admin/invitations/${inv.id}/preview` : `/invite/${inv.slug}`" target="_blank" rel="noopener" class="inline-flex items-center rounded-lg border border-line bg-panel px-3 hover:bg-paper" :aria-label="copy.common.preview"><ExternalLink class="size-4" /></a>
       </div>
       <p v-if="!b.isPublished.value" class="text-xs text-muted">{{ copy.builder.publish.guestParamNote }} <code>?to=Nama%20Tamu</code> {{ copy.builder.publish.guestParamNote2 }}</p>
     </div>

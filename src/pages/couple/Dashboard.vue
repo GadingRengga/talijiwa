@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import { copy } from '@/config/copy'
@@ -63,18 +64,18 @@ const totals = computed(() => ({
         <div class="card p-3 text-center sm:p-4"><p class="text-xl font-semibold tabular-nums sm:text-2xl">{{ totals.guests }}</p><p class="text-xs text-muted">{{ copy.rsvpAdmin.guests }}</p></div>
       </div>
 
-      <EmptyState v-if="!rows.length" :message="copy.couple.noInvitations" />
-      <ul v-else class="card divide-y divide-line">
-        <li v-for="r in rows" :key="r.inv.id">
-          <RouterLink :to="`/pasangan/undangan/${r.inv.id}`" class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-paper">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium">{{ coupleLabel(r.inv) }}</p>
-              <p class="text-xs text-muted">{{ formatDate(weddingDate(r.inv)) }} · {{ r.attending }} {{ copy.rsvpAdmin.attending.toLowerCase() }} · {{ r.guests }} {{ copy.rsvpAdmin.guests }}</p>
-            </div>
-            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" :class="r.inv.status === 'published' ? 'bg-sage-soft text-sage' : 'bg-warn-soft text-warn'">
-              {{ r.inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}
-            </span>
+      <EmptyState v-if="!rows.length" :message="copy.couple.waitingAdmin" />
+      <p v-if="rows.length" class="text-sm text-muted">{{ copy.couple.singleReady }}</p>
+      <ul v-if="rows.length" class="card divide-y divide-line">
+        <li v-for="r in rows" :key="r.inv.id" class="flex items-center justify-between gap-3 px-4 py-3">
+          <RouterLink :to="`/pasangan/undangan/${r.inv.id}`" class="min-w-0 flex-1 hover:underline">
+            <p class="truncate text-sm font-medium">{{ coupleLabel(r.inv) }}</p>
+            <p class="text-xs text-muted">{{ formatDate(weddingDate(r.inv)) }} · {{ r.attending }} {{ copy.rsvpAdmin.attending.toLowerCase() }} · {{ r.guests }} {{ copy.rsvpAdmin.guests }}</p>
           </RouterLink>
+          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" :class="r.inv.status === 'published' ? 'bg-sage-soft text-sage' : 'bg-warn-soft text-warn'">
+            {{ r.inv.status === 'published' ? copy.couple.publishedShort : copy.couple.draftShort }}
+          </span>
+          <RouterLink :to="`/pasangan/undangan/${r.inv.id}/kelola`"><AppButton size="sm" variant="secondary">{{ copy.couple.manageCta }}</AppButton></RouterLink>
         </li>
       </ul>
     </template>

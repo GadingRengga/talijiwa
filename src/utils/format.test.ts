@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isValidSlug, normalizeWhatsapp, sanitizeGuestName, slugify } from '@/utils/format'
+import { checkClientRateLimit, retryAfterMs } from '@/utils/rateLimit'
 
 describe('slugify', () => {
   it('converts names to slugs', () => {
@@ -50,5 +51,20 @@ describe('sanitizeGuestName', () => {
     expect(sanitizeGuestName('x'.repeat(100)).length).toBeLessThanOrEqual(60)
     expect(sanitizeGuestName(undefined)).toBe('')
     expect(sanitizeGuestName(123)).toBe('')
+  })
+})
+
+describe('checkClientRateLimit', () => {
+  it('allows the first attempts then blocks', () => {
+    const key = `test:${Date.now()}:${Math.random()}`
+    expect(checkClientRateLimit(key, 2, 60_000)).toBe(true)
+    expect(checkClientRateLimit(key, 2, 60_000)).toBe(true)
+    expect(checkClientRateLimit(key, 2, 60_000)).toBe(false)
+  })
+  it('reports retry delay while limited', () => {
+    const key = `test:${Date.now()}:${Math.random()}`
+    expect(checkClientRateLimit(key, 1, 60_000)).toBe(true)
+    expect(checkClientRateLimit(key, 1, 60_000)).toBe(false)
+    expect(retryAfterMs(key, 1, 60_000)).toBeGreaterThan(0)
   })
 })

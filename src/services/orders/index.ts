@@ -3,13 +3,14 @@ import { uid } from '@/utils/format'
 import { commit, clone, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
 
-export type OrderInput = Pick<Order, 'customer_id' | 'invitation_id' | 'theme' | 'amount' | 'paid' | 'status' | 'due_date' | 'notes'>
+export type OrderInput = Pick<Order, 'customer_id' | 'invitation_id' | 'tier' | 'theme' | 'amount' | 'paid' | 'status' | 'due_date' | 'notes'>
 
 function toApp(row: Record<string, unknown>): Order {
   return {
     id: row.id as string,
     customer_id: row.customer_id as string,
     invitation_id: (row.invitation_id as string | null) ?? null,
+    tier: (row.tier as Order['tier']) ?? 'basic',
     theme: row.theme as Order['theme'],
     amount: Number(row.amount ?? 0),
     paid: Number(row.paid ?? 0),
@@ -38,6 +39,15 @@ export const orderService = {
     const { data, error } = await requireSupabase().from('orders').select('*').eq('invitation_id', invitationId).maybeSingle()
     if (error) throw new Error(error.message)
     return data ? toApp(data as Record<string, unknown>) : null
+  },
+  /** Orders of one customer (couple dashboard quota). RLS enforces ownership. */
+  async listByCustomer(customerId: string): Promise<Order[]> {
+    if (useMock) {
+      return delay(clone([...db().orders].filter((o) => o.customer_id === customerId).sort((a, b) => b.created_at.localeCompare(a.created_at))))
+    }
+    const { data, error } = await requireSupabase().from('orders').select('*').eq('customer_id', customerId).order('created_at', { ascending: false })
+    if (error) throw new Error(error.message)
+    return (data ?? []).map((r) => toApp(r as Record<string, unknown>))
   },
   async setDelivered(id: string, delivered: boolean): Promise<Order> {
     const delivered_at = delivered ? new Date().toISOString() : null
@@ -70,6 +80,7 @@ export const orderService = {
     const { data, error } = await requireSupabase().from('orders').insert({
       customer_id: input.customer_id,
       invitation_id: input.invitation_id,
+      tier: input.tier,
       theme: input.theme,
       amount: input.amount,
       paid: input.paid,
@@ -82,15 +93,25 @@ export const orderService = {
   },
   async update(id: string, input: OrderInput): Promise<Order> {
     if (useMock) {
-      const o = db().orders.find((x) => x.id === id)
+      const data = db()
+      const o = data.orders.find((x) => x.id === id)
       if (!o) throw new Error('Pesanan tidak ditemukan.')
       Object.assign(o, input, { updated_at: new Date().toISOString() })
+      // Tier follows the order: upgrading/downgrading an order re-entitles its invitation.
+      if (o.invitation_id) {
+        const inv = data.invitations.find((i) => i.id === o.invitation_id)
+        if (inv) {
+          inv.tier = o.tier
+          inv.updated_at = new Date().toISOString()
+        }
+      }
       commit()
       return delay(clone(o))
     }
     const { data, error } = await requireSupabase().from('orders').update({
       customer_id: input.customer_id,
       invitation_id: input.invitation_id,
+      tier: input.tier,
       theme: input.theme,
       amount: input.amount,
       paid: input.paid,
@@ -99,7 +120,13 @@ export const orderService = {
       notes: input.notes,
     }).eq('id', id).select('*').single()
     if (error) throw new Error(error.message)
-    return toApp(data as Record<string, unknown>)
+    const saved = toApp(data as Record<string, unknown>)
+    // Keep the linked invitation's entitlement in sync with the order tier.
+    if (saved.invitation_id) {
+      const { error: tierError } = await requireSupabase().from('invitations').update({ tier: saved.tier }).eq('id', saved.invitation_id)
+      if (tierError) throw new Error(tierError.message)
+    }
+    return saved
   },
   async remove(id: string): Promise<void> {
     if (useMock) {

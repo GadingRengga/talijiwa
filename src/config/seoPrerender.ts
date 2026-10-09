@@ -1,5 +1,5 @@
 /** Static SEO for prerendered routes (single source: copy.site; also applied at runtime via useSeo). */
-import { copy } from './copy'
+import { copy } from './copy.ts'
 
 // Node-only (imported by vite.config.ts): overridable via SITE_URL env at build time.
 const rawSite = typeof process !== 'undefined' ? (process.env.SITE_URL ?? process.env.VITE_SITE_URL) : undefined

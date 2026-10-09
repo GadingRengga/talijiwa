@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { contrastOn, contrastRatio, resolveOrder, resolveStyle } from '@/utils/invitation'
+import { allowedThemes, contrastOn, contrastRatio, isThemeAllowed, resolveOrder, resolveStyle } from '@/utils/invitation'
 import { DEFAULT_STYLE } from '@/utils/invitation'
-import type { InvitationSettings } from '@/types'
+import type { InvitationSettings, ThemeCatalogEntry } from '@/types'
 
 const baseSettings = (): InvitationSettings => ({
   sections: { couple: true, date: true, countdown: true, profile: true, story: true, events: true, maps: true, gallery: true, rsvp: true, messages: true, gift: true },
@@ -51,5 +51,27 @@ describe('resolveOrder', () => {
     expect(s).toContain('couple')
     expect(s).not.toContain('nope')
     expect(new Set(s).size).toBe(s.length)
+  })
+})
+
+describe('tier entitlement (Option B: higher tiers unlock lower ones)', () => {
+  const catalog: Pick<ThemeCatalogEntry, 'theme' | 'is_active' | 'tier'>[] = [
+    { theme: 'classic', is_active: true, tier: 'basic' },
+    { theme: 'gerbang', is_active: true, tier: 'premium' },
+    { theme: 'luxury', is_active: true, tier: 'luxury' },
+    { theme: 'minimal', is_active: false, tier: 'basic' },
+  ]
+  it('basic unlocks only active basic themes', () => {
+    expect(allowedThemes('basic', catalog)).toEqual(['classic'])
+  })
+  it('premium unlocks basic + premium', () => {
+    expect(allowedThemes('premium', catalog)).toEqual(['classic', 'gerbang'])
+  })
+  it('luxury unlocks everything active', () => {
+    expect(allowedThemes('luxury', catalog)).toEqual(['classic', 'gerbang', 'luxury'])
+  })
+  it('guards a single theme', () => {
+    expect(isThemeAllowed('luxury', 'premium', catalog)).toBe(false)
+    expect(isThemeAllowed('classic', 'premium', catalog)).toBe(true)
   })
 })

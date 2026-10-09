@@ -8,6 +8,16 @@ import { requireSupabase, useMock } from '../supabase/client'
 
 type Sb = SupabaseClient
 
+/** Admin gate for structural actions (add/remove/duplicate). Customers edit content only. */
+async function isCurrentUserAdminSafe(): Promise<boolean> {
+  try {
+    const { isCurrentUserAdmin } = await import('../auth')
+    return await isCurrentUserAdmin()
+  } catch {
+    return false
+  }
+}
+
 /** Storage paths become public URLs; absolute/data URLs pass through untouched. */
 function resolveFile(path: string): string {
   if (!path || path.startsWith('data:') || path.startsWith('http')) return path
@@ -50,6 +60,7 @@ async function assemble(sb: Sb, inv: Record<string, unknown>): Promise<Invitatio
     title: (inv.title as string) ?? '',
     slug: (inv.slug as string) ?? '',
     status: inv.status as InvitationStatus,
+    tier: (inv.tier as InvitationData['tier']) ?? 'basic',
     theme: inv.theme as InvitationData['theme'],
     published_at: (inv.published_at as string | null) ?? null,
     created_at: inv.created_at as string,
@@ -194,9 +205,22 @@ export const invitationService = {
     return !(await slugTakenSb(requireSupabase(), slug, exceptId))
   },
 
-  async create(customerId: string, title: string, theme: InvitationData['theme']): Promise<InvitationData> {
+  async create(
+    customerId: string,
+    title: string,
+    theme: InvitationData['theme'],
+    opts: { tier?: InvitationData['tier']; allowedThemes?: InvitationData['theme'][] } = {},
+  ): Promise<InvitationData> {
+    // Structural action: the single invitation is always created by the admin from the order page.
+    if (!(await isCurrentUserAdminSafe())) {
+      throw new Error('Menambah undangan hanya bisa dilakukan admin.')
+    }
+    const tier = opts.tier ?? 'basic'
+    if (opts.allowedThemes && !opts.allowedThemes.includes(theme)) {
+      throw new Error('Tema tidak termasuk dalam paket Anda. Hubungi admin untuk upgrade.')
+    }
     if (useMock) {
-      const inv = createEmptyInvitation(customerId, theme)
+      const inv = createEmptyInvitation(customerId, theme, tier)
       inv.title = title
       let slug = slugify(title) || 'undangan'
       let n = 2
@@ -211,13 +235,13 @@ export const invitationService = {
     let slug = base
     let n = 2
     while (!isValidSlug(slug) || (await slugTakenSb(sb, slug))) slug = `${base}-${n++}`
-    const inv = createEmptyInvitation(customerId, theme)
+    const inv = createEmptyInvitation(customerId, theme, tier)
     inv.id = crypto.randomUUID()
     inv.title = title
     inv.slug = slug
     const { couples, events, stories, gallery, gifts, settings } = childRows(inv)
     const { error } = await sb.from('invitations').insert({
-      id: inv.id, customer_id: customerId, title, slug, theme,
+      id: inv.id, customer_id: customerId, title, slug, tier, theme,
       greeting: inv.greeting, opening_text: inv.opening_text, closing_text: inv.closing_text,
     })
     if (error) throw new Error(error.message)
@@ -234,14 +258,19 @@ export const invitationService = {
     return saved
   },
 
-  async save(next: InvitationData): Promise<InvitationData> {
+  async save(next: InvitationData, opts: { allowedThemes?: InvitationData['theme'][] } = {}): Promise<InvitationData> {
+    if (opts.allowedThemes && !opts.allowedThemes.includes(next.theme)) {
+      throw new Error('Tema tidak termasuk dalam paket Anda. Hubungi admin untuk upgrade.')
+    }
     if (useMock) {
       const data = db()
       const idx = data.invitations.findIndex((i) => i.id === next.id)
       if (idx < 0) throw new Error('Undangan tidak ditemukan.')
       if (!isValidSlug(next.slug)) throw new Error('Slug tidak valid. Gunakan huruf kecil, angka, dan tanda hubung (minimal 3 karakter).')
       if (slugTakenMock(next.slug, next.id)) throw new Error('Slug sudah dipakai undangan lain.')
-      const saved: InvitationData = { ...clone(next), updated_at: new Date().toISOString() }
+      const prev = data.invitations[idx]!
+      // Tier is set by the order and never changed from the builder.
+      const saved: InvitationData = { ...clone(next), tier: prev.tier, updated_at: new Date().toISOString() }
       data.invitations[idx] = saved
       commit()
       return delay(clone(saved))
@@ -294,7 +323,10 @@ export const invitationService = {
     return saved
   },
 
-  async duplicate(id: string): Promise<InvitationData> {
+  async duplicate(id: string, opts: { allowCustomer?: boolean } = {}): Promise<InvitationData> {
+    if (!opts.allowCustomer && !(await isCurrentUserAdminSafe())) {
+      throw new Error('Duplikat undangan hanya bisa dilakukan admin.')
+    }
     if (useMock) {
       const src = db().invitations.find((i) => i.id === id)
       if (!src) throw new Error('Undangan tidak ditemukan.')
@@ -326,7 +358,7 @@ export const invitationService = {
     const { couples, events, stories, gallery, gifts, settings } = childRows(copy)
     const { error } = await sb.from('invitations').insert({
       id: copy.id, customer_id: copy.customer_id, title: copy.title, slug: copy.slug,
-      status: 'draft', theme: copy.theme, greeting: copy.greeting,
+      status: 'draft', tier: copy.tier, theme: copy.theme, greeting: copy.greeting,
       opening_text: copy.opening_text, closing_text: copy.closing_text,
     })
     if (error) throw new Error(error.message)
@@ -343,7 +375,10 @@ export const invitationService = {
     return saved
   },
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, opts: { allowCustomer?: boolean } = {}): Promise<void> {
+    if (!opts.allowCustomer && !(await isCurrentUserAdminSafe())) {
+      throw new Error('Hapus undangan hanya bisa dilakukan admin.')
+    }
     if (useMock) {
       const data = db()
       data.invitations = data.invitations.filter((i) => i.id !== id)

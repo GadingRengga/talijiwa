@@ -1,5 +1,5 @@
 import { SECTION_KEYS } from '@/types'
-import type { FontChoice, InvitationData, InvitationSettings, InvitationStyle, Person, SectionKey, ThemeId } from '@/types'
+import type { FontChoice, InvitationData, InvitationSettings, InvitationStyle, InvitationTier, Person, SectionKey, ThemeCatalogEntry, ThemeId } from '@/types'
 import { copy } from '@/config/copy'
 import { uid } from './format'
 
@@ -28,7 +28,43 @@ export function defaultSettings(): InvitationSettings {
   }
 }
 
-export function createEmptyInvitation(customerId: string, theme: ThemeId = 'classic'): InvitationData {
+/** Tier rank: a higher tier may use every theme of the tiers below it. */
+export const TIER_RANK: Record<InvitationTier, number> = { basic: 0, premium: 1, luxury: 2 }
+
+/**
+ * Themes a customer entitlement unlocks: active, matching category, and at or
+ * below the order tier. Single source of truth for client + server checks.
+ */
+export function allowedThemes(
+  tier: InvitationTier,
+  catalog: Pick<ThemeCatalogEntry, 'theme' | 'is_active' | 'tier'>[],
+): ThemeId[] {
+  const rank = TIER_RANK[tier]
+  return catalog
+    .filter((c) => c.is_active && TIER_RANK[c.tier] <= rank)
+    .map((c) => c.theme)
+}
+
+export function isThemeAllowed(
+  theme: ThemeId,
+  tier: InvitationTier,
+  catalog: Pick<ThemeCatalogEntry, 'theme' | 'is_active' | 'tier'>[],
+): boolean {
+  return allowedThemes(tier, catalog).includes(theme)
+}
+
+/** Random access code in the shape TJ-XXXX-XXXX ( unambiguous alphabet). */
+export function makeAccessCode(prefix = 'TJ'): string {
+  const alpha = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  const pick = (n: number) => Array.from({ length: n }, () => alpha[Math.floor(Math.random() * alpha.length)]).join('')
+  return `${prefix}-${pick(4)}-${pick(4)}`
+}
+
+export function createEmptyInvitation(
+  customerId: string,
+  theme: ThemeId = 'classic',
+  tier: InvitationTier = 'basic',
+): InvitationData {
   const now = new Date().toISOString()
   return {
     id: uid('inv'),
@@ -36,6 +72,7 @@ export function createEmptyInvitation(customerId: string, theme: ThemeId = 'clas
     title: '',
     slug: '',
     status: 'draft',
+    tier,
     theme,
     published_at: null,
     created_at: now,
@@ -62,6 +99,8 @@ export function coupleLabel(inv: Pick<InvitationData, 'title' | 'bride' | 'groom
   const b = inv.bride.nickname || inv.bride.name
   return [a, b].filter(Boolean).join(' & ') || 'Undangan baru'
 }
+
+
 
 /** First event date, used as the "wedding date" and countdown target. */
 export function weddingDate(inv: Pick<InvitationData, 'events'>): string {

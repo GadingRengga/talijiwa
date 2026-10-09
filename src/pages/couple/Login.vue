@@ -5,6 +5,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import { company } from '@/config/company'
 import { copy } from '@/config/copy'
+import { accessCodeService } from '@/services/access-codes'
 import { useMock } from '@/services/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 
@@ -12,9 +13,16 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const form = reactive({ email: '' })
+const redeem = reactive({ code: '', email: '' })
 const error = ref('')
+const redeemError = ref('')
 const sent = ref(false)
 const busy = ref(false)
+const redeemBusy = ref(false)
+
+function redirectTarget() {
+  return typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/pasangan') ? route.query.redirect : '/pasangan'
+}
 
 async function submit() {
   error.value = ''
@@ -22,8 +30,7 @@ async function submit() {
   try {
     await auth.requestLink(form.email)
     if (useMock) {
-      const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/pasangan') ? route.query.redirect : '/pasangan'
-      await router.replace(redirect)
+      await router.replace(redirectTarget())
     } else {
       sent.value = true
     }
@@ -31,6 +38,30 @@ async function submit() {
     error.value = e instanceof Error ? e.message : copy.common.genericError
   } finally {
     busy.value = false
+  }
+}
+
+/**
+ * One-time access code issued by the admin after payment.
+ * In mock mode the redeem step signs the customer in directly;
+ * with Supabase it claims the code, then a magic link email completes the session.
+ */
+async function submitRedeem() {
+  redeemError.value = ''
+  redeemBusy.value = true
+  try {
+    await accessCodeService.redeem(redeem.code, redeem.email)
+    if (useMock) {
+      await router.replace(redirectTarget())
+      return
+    }
+    form.email = redeem.email.trim()
+    await auth.requestLink(form.email)
+    sent.value = true
+  } catch (e) {
+    redeemError.value = e instanceof Error ? e.message : copy.common.genericError
+  } finally {
+    redeemBusy.value = false
   }
 }
 </script>
@@ -43,15 +74,29 @@ async function submit() {
         <h1 class="text-lg font-semibold">{{ copy.couple.linkSentTitle }}</h1>
         <p class="text-sm text-muted">{{ copy.couple.linkSentMessage }}</p>
       </div>
-      <form v-else class="card space-y-4 p-6" novalidate @submit.prevent="submit">
+      <!-- Primary: one-time access code issued by the admin after payment. -->
+      <form v-else class="card space-y-4 p-6" novalidate @submit.prevent="submitRedeem">
         <div>
           <h1 class="text-lg font-semibold">{{ copy.couple.loginTitle }}</h1>
-          <p class="text-sm text-muted">{{ copy.couple.loginSubtitle }}</p>
+          <p class="text-sm text-muted">{{ copy.couple.redeemSubtitle }}</p>
         </div>
-        <FormField :label="copy.auth.email" v-slot="{ id }"><input :id="id" v-model="form.email" type="email" class="field-input" autocomplete="email" required /></FormField>
-        <p v-if="error" class="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">{{ error }}</p>
-        <AppButton type="submit" class="w-full" :loading="busy">{{ copy.couple.sendLink }}</AppButton>
+        <FormField :label="copy.couple.codeLabel" v-slot="{ id }"><input :id="id" v-model="redeem.code" class="field-input font-mono uppercase" :placeholder="copy.couple.codePh" autocomplete="off" required /></FormField>
+        <FormField :label="copy.auth.email" v-slot="{ id }"><input :id="id" v-model="redeem.email" type="email" class="field-input" autocomplete="email" required /></FormField>
+        <p v-if="redeemError" class="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">{{ redeemError }}</p>
+        <AppButton type="submit" class="w-full" :loading="redeemBusy">{{ copy.couple.redeemCta }}</AppButton>
+        <p class="text-center text-xs text-muted">{{ copy.couple.noCodeHint }}</p>
       </form>
+
+      <!-- Fallback: magic link for customers who already redeemed once. -->
+      <details v-if="!sent" class="card mt-3 p-6">
+        <summary class="cursor-pointer text-sm font-semibold">{{ copy.couple.magicLinkTitle }}</summary>
+        <form class="mt-4 space-y-4" novalidate @submit.prevent="submit">
+          <p class="text-sm text-muted">{{ copy.couple.loginSubtitle }}</p>
+          <FormField :label="copy.auth.email" v-slot="{ id }"><input :id="id" v-model="form.email" type="email" class="field-input" autocomplete="email" required /></FormField>
+          <p v-if="error" class="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">{{ error }}</p>
+          <AppButton type="submit" class="w-full" :loading="busy">{{ copy.couple.sendLink }}</AppButton>
+        </form>
+      </details>
     </div>
   </main>
 </template>

@@ -1,7 +1,32 @@
 import type { Attendance, GiftConfirmation, GiftType, GuestMessage, Rsvp } from '@/types'
 import { normalizeWhatsapp, uid } from '@/utils/format'
+import { checkClientRateLimit } from '@/utils/rateLimit'
 import { commit, clone, db, delay } from '../mock/db'
 import { requireSupabase, useMock } from '../supabase/client'
+
+/** Client-side throttle for public inserts (server enforces via RPC too). */
+function throttle(kind: string, invitationId: string): void {
+  if (!checkClientRateLimit(`public:${kind}:${invitationId}`, 3, 60_000)) {
+    throw new Error('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.')
+  }
+}
+
+/** Server-side sliding-window check (anon-callable RPC). Never throws on infra errors (fail-open for UX, logged by RLS table). */
+async function checkServerRateLimit(kind: string, invitationId: string): Promise<void> {
+  try {
+    const { data, error } = await requireSupabase().rpc('check_public_rate_limit', {
+      p_key: `${kind}:${invitationId}`,
+      p_max: 5,
+      p_window_seconds: 60,
+    })
+    if (!error && data === false) {
+      throw new Error('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.')
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('Terlalu banyak')) throw e
+    /* RPC missing (migration not run yet) or network: allow, client throttle already applied */
+  }
+}
 
 export const rsvpService = {
   async listRsvps(invitationId: string): Promise<Rsvp[]> {
@@ -18,6 +43,7 @@ export const rsvpService = {
     attendance: Attendance
     message: string
   }): Promise<void> {
+    throttle('rsvp', input.invitation_id)
     if (useMock) {
       const row: Rsvp = {
         id: uid('rsvp'),
@@ -34,6 +60,7 @@ export const rsvpService = {
       return
     }
     // No .select(): anon has INSERT-only on this table (see docs/DATABASE.md).
+    await checkServerRateLimit('rsvp', input.invitation_id)
     const { error } = await requireSupabase().from('rsvps').insert({
       invitation_id: input.invitation_id,
       name: input.name.trim().slice(0, 80),
@@ -56,6 +83,7 @@ export const rsvpService = {
     return (data ?? []) as GuestMessage[]
   },
   async createMessage(input: { invitation_id: string; name: string; message: string }): Promise<void> {
+    throttle('message', input.invitation_id)
     if (useMock) {
       db().messages.push({
         id: uid('msg'),
@@ -69,6 +97,7 @@ export const rsvpService = {
       await delay(null)
       return
     }
+    await checkServerRateLimit('message', input.invitation_id)
     const { error } = await requireSupabase().from('guest_messages').insert({
       invitation_id: input.invitation_id,
       name: input.name.trim().slice(0, 80),
@@ -111,6 +140,7 @@ export const rsvpService = {
     amount: number | null
     message: string
   }): Promise<void> {
+    throttle('gift', input.invitation_id)
     if (useMock) {
       db().giftConfirmations.push({
         id: uid('gift'),
@@ -123,6 +153,7 @@ export const rsvpService = {
       await delay(null)
       return
     }
+    await checkServerRateLimit('gift', input.invitation_id)
     const { error } = await requireSupabase().from('gift_confirmations').insert({
       invitation_id: input.invitation_id,
       name: input.name.trim().slice(0, 80),
