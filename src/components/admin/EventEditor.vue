@@ -22,9 +22,9 @@ const open = ref(true)
         </span>
       </button>
       <div class="flex shrink-0">
-        <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="first" :aria-label="copy.builder.events.moveUp" @click="emit('up')"><ArrowUp class="size-4" /></button>
-        <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="last" :aria-label="copy.builder.events.moveDown" @click="emit('down')"><ArrowDown class="size-4" /></button>
-        <button type="button" class="rounded p-2 text-danger hover:bg-danger-soft" :aria-label="copy.builder.events.remove" @click="emit('remove')"><Trash2 class="size-4" /></button>
+        <button type="button" class="min-h-11 min-w-11 rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="first" :aria-label="copy.builder.events.moveUp" @click="emit('up')"><ArrowUp class="size-4" /></button>
+        <button type="button" class="min-h-11 min-w-11 rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="last" :aria-label="copy.builder.events.moveDown" @click="emit('down')"><ArrowDown class="size-4" /></button>
+        <button type="button" class="min-h-11 min-w-11 rounded p-2 text-danger hover:bg-danger-soft" :aria-label="copy.builder.events.remove" @click="emit('remove')"><Trash2 class="size-4" /></button>
       </div>
     </header>
     <template v-if="open">

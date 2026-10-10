@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertCircle, ArrowLeft, ArrowRight, Check, ExternalLink, LayoutGrid, Lightbulb, Link2, Loader2, MoreHorizontal, PanelTopClose, PanelTopOpen, Redo2, RotateCcw, Rocket, Smartphone, Tablet, Undo2 } from 'lucide-vue-next'
+import { AlertCircle, ArrowLeft, ArrowRight, Check, ExternalLink, LayoutGrid, Lightbulb, Link2, Loader2, MoreHorizontal, MousePointerClick, PanelTopClose, PanelTopOpen, Redo2, RotateCcw, Rocket, Smartphone, Tablet, Undo2 } from 'lucide-vue-next'
 import { useEventListener } from '@vueuse/core'
 import { computed, nextTick, provide, ref, watch } from 'vue'
 import type { Component } from 'vue'
@@ -24,11 +24,13 @@ import { ADMIN_SECTION_ORDER, PICK_MAP, PREVIEW_TARGET, SECTION_ICONS } from '@/
 import type { BuilderKey } from '@/components/builder/sections'
 import QuickEditSheet from '@/components/builder/QuickEditSheet.vue'
 import { QUICK_EDITS } from '@/components/builder/quickFields'
+import type { QuickEdit } from '@/components/builder/quickFields'
 import InvitationRenderer from '@/components/invitation/InvitationRenderer.vue'
 import { BUILDER_KEY } from '@/composables/useBuilder'
 import type { BuilderContext } from '@/composables/useBuilder'
 import { useHistory } from '@/composables/useHistory'
 import { useToast } from '@/composables/useToast'
+import { useRouter } from 'vue-router'
 import { copy } from '@/config/copy'
 import { coupleLabel, sectionProgress } from '@/utils/invitation'
 
@@ -59,10 +61,13 @@ const tab = ref<'edit' | 'preview'>(
   typeof window !== 'undefined' && window.matchMedia('(max-width: 1279.98px)').matches ? 'preview' : 'edit',
 )
 const quickSec = ref<string | null>(null)
+const quickIdx = ref<number | null>(null)
 const menuOpen = ref(false)
-// Collapsible toolbar: closed = single floating button; closes on X, Escape,
-// or focus leaving the bar (deterministic — no document-click timing involved).
-const barOpen = ref(false)
+/** PC: let users test real links/lightbox/music before going back to click-to-edit. */
+const previewInteractive = ref(false)
+// Toolbar collapses to a single button below xl; on xl+ it starts open so the
+// title, save status, history and publish controls stay visible.
+const barOpen = ref(typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches)
 function onBarFocusOut(e: FocusEvent) {
   const el = e.currentTarget as HTMLElement | null
   if (el && !el.contains(e.relatedTarget as Node | null)) barOpen.value = false
@@ -156,11 +161,19 @@ function closeMenu(e: Event) {
 }
 
 let fromPreview = false
-function onPick(sec: string) {
+/** Block-level index inside the preview (e.g. which event card was tapped). */
+interface PickInfo { sec: string; index: number | null }
+function entryFor(sec: string): QuickEdit | null {
+  return QUICK_EDITS[sec] ?? null
+}
+function onPick(pick: string | PickInfo) {
   // Blocks with scalar fields open the floating quick-edit sheet;
   // complex blocks fall through to the full section form.
-  if (QUICK_EDITS[sec]) {
+  const sec = typeof pick === 'string' ? pick : pick.sec
+  const index = typeof pick === 'string' ? null : pick.index
+  if (entryFor(sec)) {
     quickSec.value = sec
+    quickIdx.value = index
     return
   }
   const key = PICK_MAP[sec]
@@ -170,6 +183,7 @@ function onPick(sec: string) {
 }
 function openFull(section: BuilderKey) {
   quickSec.value = null
+  quickIdx.value = null
   menuOpen.value = false
   select(section)
 }
@@ -187,9 +201,31 @@ watch(active, (key) => {
   if (target) previewRef.value?.scrollToSection(target)
 })
 
-const statusText = computed(
-  () => ({ saved: copy.common.saved, dirty: copy.common.unsaved, saving: copy.common.saving, error: lastError.value || copy.builder.saveFailed })[saveState.value],
+const statusText = computed<string>(
+  () =>
+    ({
+      saved: copy.common.saved,
+      dirty: copy.common.unsaved,
+      saving: copy.common.saving,
+      error: lastError.value || copy.builder.saveFailed,
+    })[saveState.value] ?? '',
 )
+const dotClass = computed(() => {
+  if (saveState.value === 'saved') return 'bg-sage'
+  if (saveState.value === 'saving') return 'bg-brand'
+  if (saveState.value === 'error') return 'bg-danger'
+  return 'bg-warn'
+})
+const router = useRouter()
+const goBack = () => {
+  if (builder.hasUnsaved()) {
+    void builder.save({ silent: true }).then(() => {
+      if (!builder.hasUnsaved()) router.push(props.backTo)
+    })
+    return
+  }
+  router.push(props.backTo)
+}
 </script>
 
 <template>
@@ -203,18 +239,53 @@ const statusText = computed(
     </div>
 
     <template v-else-if="draft">
-      <!-- Collapsible floating top bar: closed = single floating button, top-left -->
+      <!-- Collapsible floating top bar: closed = compact status strip (title + save
+        state stay visible), full controls expand on xl by default. -->
       <div class="px-2 pt-1.5 sm:px-4 sm:pt-3">
-        <button
+        <div
           v-if="!barOpen"
-          type="button"
-          class="grid size-9 place-items-center rounded-2xl bg-ink text-white shadow-xl transition-transform active:scale-95"
-          :aria-label="copy.builder.toolbar"
-          :aria-expanded="false"
-          @click.stop="barOpen = true"
+          class="card flex items-center gap-2 px-2 py-1.5 sm:px-3"
         >
-          <PanelTopOpen class="size-4" aria-hidden="true" />
-        </button>
+          <button
+            type="button"
+            class="grid size-9 shrink-0 place-items-center rounded-2xl bg-ink text-white shadow-xl transition-transform active:scale-95 xl:hidden"
+            :aria-label="copy.builder.toolbar"
+            :aria-expanded="false"
+            @click.stop="barOpen = true"
+          >
+            <PanelTopOpen class="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="grid size-9 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-black/5 xl:hidden"
+            :aria-label="backLabel"
+            @click="goBack"
+          >
+            <ArrowLeft class="size-4" aria-hidden="true" />
+          </button>
+          <p class="min-w-0 flex-1 truncate text-sm font-bold tracking-tight">{{ title }}</p>
+          <span class="flex shrink-0 items-center gap-1.5 text-xs" :class="saveState === 'error' ? 'text-danger' : 'text-muted'" role="status" :aria-label="statusText">
+            <span class="relative flex size-2" aria-hidden="true">
+              <span v-if="saveState === 'saving'" class="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60" />
+              <span class="relative inline-flex size-2 rounded-full" :class="dotClass" />
+            </span>
+            <span class="max-w-24 truncate sm:max-w-none">{{ statusText }}</span>
+          </span>
+          <div class="flex shrink-0 rounded-xl border border-line bg-paper p-0.5 xl:hidden" role="tablist" :aria-label="copy.builder.edit.viewTabs">
+            <button
+              v-for="t in (['edit', 'preview'] as const)"
+              :key="t"
+              type="button"
+              role="tab"
+              :aria-selected="tab === t"
+              class="min-h-9 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all"
+              :class="tab === t ? 'bg-ink text-white shadow-sm' : 'text-muted'"
+              @click="tab = t"
+            >
+              {{ t === 'edit' ? copy.builder.tabEdit : copy.builder.tabPreview }}
+            </button>
+          </div>
+        </div>
         <header v-else class="card flex flex-wrap items-center gap-x-1.5 gap-y-1.5 px-2 py-1.5 sm:gap-x-3 sm:gap-y-2 sm:px-4 sm:py-2" @focusout="onBarFocusOut">
           <RouterLink :to="backTo" class="grid size-8 shrink-0 place-items-center rounded-xl text-muted transition-colors hover:bg-black/5 hover:text-ink sm:size-9" :aria-label="backLabel">
             <ArrowLeft class="size-4" aria-hidden="true" />
@@ -232,31 +303,30 @@ const statusText = computed(
                   <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-warn opacity-60" />
                   <span class="relative inline-flex size-2 rounded-full bg-warn" />
                 </span>
-                <span class="hidden min-[400px]:inline">{{ statusText }}</span>
+                <span>{{ statusText }}</span>
               </span>
             </div>
           </div>
 
           <div class="flex min-w-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1.5">
-            <div class="flex rounded-xl border border-line bg-paper p-0.5 xl:hidden" role="tablist" :aria-label="copy.builder.edit.viewTabs">
-              <button
-                v-for="t in (['edit', 'preview'] as const)"
-                :key="t"
-                type="button"
-                role="tab"
-                :aria-selected="tab === t"
-                class="rounded-lg px-2 py-1 text-xs font-semibold transition-all sm:px-3 sm:py-1.5 sm:text-[13px]"
-                :class="tab === t ? 'bg-ink text-white shadow-sm' : 'text-muted'"
-                @click="tab = t"
-              >
-                {{ t === 'edit' ? copy.builder.tabEdit : copy.builder.tabPreview }}
-              </button>
+            <div class="flex items-center gap-x-1.5 gap-y-1.5">
+              <AppButton v-if="prev" variant="ghost" size="sm" aria-label="Bagian sebelumnya" @click="select(prev)">
+                <ArrowLeft class="size-4" aria-hidden="true" />
+                <span class="hidden max-w-28 truncate sm:inline">{{ copy.builder.sections[prev] }}</span>
+              </AppButton>
+              <div class="px-2 text-center">
+                <p class="text-sm font-bold tabular-nums">{{ idx + 1 }}/{{ order.length }}</p>
+              </div>
+              <AppButton v-if="next" variant="ghost" size="sm" aria-label="Bagian berikutnya" @click="select(next)">
+                <span class="hidden max-w-28 truncate sm:inline">{{ copy.builder.sections[next] }}</span>
+                <ArrowRight class="size-4" aria-hidden="true" />
+              </AppButton>
             </div>
-            <div class="hidden sm:flex sm:items-center sm:gap-0.5">
-              <AppButton variant="ghost" size="sm" :title="copy.builder.edit.undoTitle" :aria-label="copy.builder.edit.undo" :disabled="!history.canUndo.value" @click="history.undo()">
+            <div class="flex items-center gap-0.5">
+              <AppButton variant="ghost" size="sm" class="!min-h-11 !min-w-11 !px-2 sm:!min-h-0 sm:!min-w-0 sm:!px-3" :title="copy.builder.edit.undoTitle" :aria-label="copy.builder.edit.undo" :disabled="!history.canUndo.value" @click="history.undo()">
                 <Undo2 class="size-4" aria-hidden="true" />
               </AppButton>
-              <AppButton variant="ghost" size="sm" :title="copy.builder.edit.redoTitle" :aria-label="copy.builder.edit.redo" :disabled="!history.canRedo.value" @click="history.redo()">
+              <AppButton variant="ghost" size="sm" class="!min-h-11 !min-w-11 !px-2 sm:!min-h-0 sm:!min-w-0 sm:!px-3" :title="copy.builder.edit.redoTitle" :aria-label="copy.builder.edit.redo" :disabled="!history.canRedo.value" @click="history.redo()">
                 <Redo2 class="size-4" aria-hidden="true" />
               </AppButton>
             </div>
@@ -270,12 +340,10 @@ const statusText = computed(
               <Link2 class="size-4" aria-hidden="true" />
             </AppButton>
             <details class="relative sm:hidden" @click.capture="closeMenu">
-              <summary class="grid size-8 cursor-pointer list-none place-items-center rounded-xl text-muted hover:bg-black/5 sm:size-9" :aria-label="copy.builder.edit.moreActions">
+              <summary class="grid min-h-11 min-w-11 size-8 cursor-pointer list-none place-items-center rounded-xl text-muted hover:bg-black/5 sm:size-9" :aria-label="copy.builder.edit.moreActions">
                 <MoreHorizontal class="size-5" aria-hidden="true" />
               </summary>
               <div class="absolute right-0 top-full z-30 mt-1 w-52 rounded-2xl border border-line bg-panel p-1.5 shadow-xl">
-                <button type="button" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-paper disabled:opacity-40" :disabled="!history.canUndo.value" @click="history.undo()"><Undo2 class="size-4" aria-hidden="true" /> {{ copy.builder.edit.undo }}</button>
-                <button type="button" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-paper disabled:opacity-40" :disabled="!history.canRedo.value" @click="history.redo()"><Redo2 class="size-4" aria-hidden="true" /> {{ copy.builder.edit.redo }}</button>
                 <button type="button" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-paper" @click="replay"><RotateCcw class="size-4" aria-hidden="true" /> {{ copy.builder.edit.replay }}</button>
                 <a :href="previewHref" target="_blank" rel="noopener" class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-paper"><ExternalLink class="size-4" aria-hidden="true" /> {{ copy.common.preview }}</a>
                 <button type="button" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-paper" @click="builder.copyPublicLink()"><Link2 class="size-4" aria-hidden="true" /> {{ copy.common.copyLink }}</button>
@@ -290,7 +358,7 @@ const statusText = computed(
               :title="canPublish ? '' : copy.builder.edit.completeFirst"
               @click="active === 'publish' ? builder.publish() : select('publish')"
             >
-              <Rocket class="size-4" aria-hidden="true" /> <span class="hidden min-[420px]:inline">{{ copy.common.publish }}</span>
+              <Rocket class="size-4" aria-hidden="true" /> <span>{{ copy.common.publish }}</span>
             </AppButton>
             <button
               type="button"
@@ -305,8 +373,9 @@ const statusText = computed(
         </header>
       </div>
 
-      <!-- Body -->
-      <div class="grid min-h-0 flex-1 grid-cols-1 px-2 pb-2 pt-1.5 sm:px-4 sm:pb-3 sm:pt-3 lg:grid-cols-[5.5rem_minmax(0,1fr)] lg:gap-3 lg:pl-0 xl:grid-cols-[5.5rem_minmax(0,1fr)_var(--pv)]" :style="{ '--pv': device === 'phone' ? '24rem' : '35rem' }">
+      <!-- Body: split form + live preview from lg up (tablets included);
+        single-tab layout below lg. -->
+      <div class="grid min-h-0 flex-1 grid-cols-1 px-2 pb-2 pt-1.5 sm:px-4 sm:pb-3 sm:pt-3 lg:grid-cols-[5.5rem_minmax(0,1fr)_minmax(0,22rem)] lg:gap-3 lg:pl-0 xl:grid-cols-[5.5rem_minmax(0,1fr)_var(--pv)]" :style="{ '--pv': device === 'phone' ? '24rem' : '35rem' }">
         <div class="min-h-0 lg:overflow-y-auto lg:pl-3" :class="tab === 'edit' ? 'block' : 'hidden lg:block'">
           <BuilderSidebar :active="active" :progress="progress" :keys="sectionKeys" @select="select" />
         </div>
@@ -317,7 +386,7 @@ const statusText = computed(
           role="region"
           :aria-label="copy.builder.edit.formRegion"
           class="min-h-0 overflow-y-auto rounded-2xl outline-none"
-          :class="tab === 'edit' ? 'block' : 'hidden xl:block'"
+          :class="tab === 'edit' ? 'block' : 'hidden lg:block'"
         >
           <div class="mx-auto max-w-2xl px-2 py-1 sm:px-3">
             <button
@@ -370,47 +439,59 @@ const statusText = computed(
 
         <aside
           class="flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-line bg-panel/60 p-3 sm:p-4"
-          :class="tab === 'preview' ? 'block' : 'hidden xl:block'"
+          :class="tab === 'preview' ? 'block' : 'hidden lg:block'"
           :aria-label="copy.builder.edit.previewRegion"
         >
-          <div class="mx-auto mb-3 hidden w-fit shrink-0 rounded-xl border border-line bg-panel p-1 shadow-sm xl:flex" role="radiogroup" :aria-label="copy.builder.edit.previewSize">
+          <div class="mx-auto mb-3 hidden w-fit shrink-0 items-center gap-1 rounded-xl border border-line bg-panel p-1 shadow-sm lg:flex" role="radiogroup" :aria-label="copy.builder.edit.previewSize">
             <button
               v-for="d in ([['phone', copy.builder.edit.phone, Smartphone], ['tablet', copy.builder.edit.tablet, Tablet]] as const)"
               :key="d[0]"
               type="button"
               role="radio"
               :aria-checked="device === d[0]"
-              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all"
+              class="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all"
               :class="device === d[0] ? 'bg-ink text-white shadow-sm' : 'text-muted hover:text-ink'"
               @click="device = d[0]"
             >
               <component :is="d[2]" class="size-4" aria-hidden="true" /> {{ d[1] }}
             </button>
+            <span class="mx-0.5 h-5 w-px bg-line" aria-hidden="true" />
+            <button
+              type="button"
+              :aria-pressed="previewInteractive"
+              :title="copy.builder.edit.tryHint"
+              class="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all"
+              :class="previewInteractive ? 'bg-brand text-white shadow-sm' : 'text-muted hover:text-ink'"
+              @click="previewInteractive = !previewInteractive"
+            >
+              <MousePointerClick class="size-4" aria-hidden="true" /> {{ copy.builder.edit.try }}
+            </button>
           </div>
           <div
-            class="relative mx-auto w-[min(22rem,100%)] overflow-hidden bg-ink shadow-2xl transition-[width,border-radius] duration-300 max-xl:min-h-0 max-xl:flex-1 max-xl:rounded-[2rem] max-xl:border-[8px] max-xl:border-ink xl:h-[min(calc(100%-4.5rem),46rem)] xl:min-h-96"
-            :class="device === 'phone' ? 'xl:rounded-[2.5rem] xl:border-[10px] xl:border-ink' : 'xl:w-[min(32rem,100%)] xl:rounded-[1.5rem] xl:border-[10px] xl:border-ink'"
+            class="relative mx-auto w-[min(26rem,100%)] overflow-hidden bg-ink shadow-2xl transition-[width,border-radius] duration-300 max-lg:min-h-0 max-lg:flex-1 max-lg:rounded-[2rem] max-lg:border-[8px] max-lg:border-ink lg:h-[min(calc(100%-4.5rem),46rem)] lg:min-h-96 lg:w-full lg:max-w-[26rem] lg:rounded-[2rem] lg:border-[8px] lg:border-ink xl:h-[min(calc(100%-4.5rem),46rem)]"
+            :class="device === 'phone' ? 'xl:max-w-none xl:rounded-[2.5rem] xl:border-[10px] xl:border-ink' : 'xl:w-[min(32rem,100%)] xl:max-w-none xl:rounded-[1.5rem] xl:border-[10px] xl:border-ink'"
           >
-            <div v-if="device === 'phone'" class="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden="true" />
-            <InvitationRenderer ref="previewRef" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" @pick="onPick" />
+            <div v-if="device === 'phone'" class="pointer-events-none absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden="true" />
+            <InvitationRenderer v-if="draft" ref="previewRef" :class="device === 'phone' ? 'pt-7' : ''" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" :interactive="previewInteractive" @pick="onPick" />
           </div>
-          <p class="mt-3 shrink-0 text-center text-xs text-muted xl:hidden">{{ copy.builder.tapHint }}</p>
-          <p class="mt-3 hidden shrink-0 text-center text-xs text-muted xl:block">{{ copy.builder.edit.clickHint }}</p>
+          <p class="mt-3 shrink-0 text-center text-xs text-muted lg:hidden">{{ copy.builder.tapHint }}</p>
+          <p class="mt-3 hidden shrink-0 text-center text-xs text-muted lg:block">{{ previewInteractive ? copy.builder.edit.tryActive : copy.builder.edit.clickHint }}</p>
         </aside>
       </div>
 
-      <!-- Floating section menu (mobile canvas only) -->
+      <!-- Floating section menu (mobile canvas only; bottom-left so it never
+        covers the invitation CTA on the right) -->
       <button
         v-if="tab === 'preview'"
         type="button"
-        class="fixed bottom-5 right-4 z-40 grid size-12 place-items-center rounded-2xl bg-ink text-white shadow-xl transition-transform active:scale-95 xl:hidden"
+        class="fixed bottom-5 left-4 z-40 grid size-12 min-h-11 min-w-11 place-items-center rounded-2xl bg-ink text-white shadow-xl transition-transform active:scale-95 lg:hidden"
         :style="{ marginBottom: 'env(safe-area-inset-bottom)' }"
         :aria-label="copy.builder.sectionsMenu"
         @click="menuOpen = true"
       >
         <LayoutGrid class="size-5" aria-hidden="true" />
       </button>
-      <div v-if="menuOpen" class="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" :aria-label="copy.builder.sectionsMenu">
+      <div v-if="menuOpen" class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" :aria-label="copy.builder.sectionsMenu">
         <button type="button" class="absolute inset-0 bg-ink/50 backdrop-blur-[1px]" :aria-label="copy.common.close" @click="menuOpen = false" />
         <div class="absolute inset-x-3 bottom-3 max-h-[70dvh] overflow-y-auto rounded-3xl border border-line bg-panel p-3" :style="{ marginBottom: 'env(safe-area-inset-bottom)' }">
           <span class="mx-auto mb-2 block h-1 w-10 rounded-full bg-line" aria-hidden="true" />
@@ -446,8 +527,9 @@ const statusText = computed(
         v-if="quickSec && draft"
         :draft="draft"
         :sec="quickSec"
+        :index="quickIdx"
         :save-text="statusText"
-        @close="quickSec = null"
+        @close="quickSec = null; quickIdx = null"
         @open-full="openFull"
       />
     </template>

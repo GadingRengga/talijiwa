@@ -26,13 +26,16 @@ const props = withDefaults(
     mode?: 'public' | 'preview'
     guest?: string
     messages?: GuestMessage[]
+    /** Builder-only: when true, preview keeps native clicks (links, lightbox)
+     * instead of hijacking them for click-to-edit. */
+    interactive?: boolean
   }>(),
-  { mode: 'public', guest: '', messages: () => [] },
+  { mode: 'public', guest: '', messages: () => [], interactive: false },
 )
 const emit = defineEmits<{
   open: []
   rsvp: [payload: { name: string; whatsapp: string; guest_count: number; attendance: Attendance; message: string }]
-  pick: [section: string]
+  pick: [pick: string | { sec: string; index: number | null }]
   message: [payload: { name: string; message: string }]
   gift: [payload: { name: string; gift_type: GiftType; amount: number | null; message: string }]
 }>()
@@ -63,7 +66,7 @@ function onTouchStart(e: TouchEvent) {
   touchAt = t ? { x: t.clientX, y: t.clientY } : null
 }
 function onPreviewClick(e: MouseEvent) {
-  if (!isPreview.value) return
+  if (!isPreview.value || props.interactive) return
   if (touchAt) {
     const moved = Math.hypot(e.clientX - touchAt.x, e.clientY - touchAt.y)
     touchAt = null
@@ -72,7 +75,14 @@ function onPreviewClick(e: MouseEvent) {
   e.preventDefault()
   e.stopPropagation()
   const sec = (e.target as HTMLElement).closest<HTMLElement>('[data-sec]')
-  if (sec?.dataset.sec) emit('pick', sec.dataset.sec)
+  if (sec?.dataset.sec) {
+    // Forward the tapped card index so quick-edit opens the right event
+    // (events/maps/date/countdown share one events array).
+    const card = (e.target as HTMLElement).closest<HTMLElement>('[data-idx]')
+    const raw = card?.dataset.idx
+    const index = raw == null || raw === '' ? null : Number(raw)
+    emit('pick', { sec: sec.dataset.sec, index: Number.isInteger(index) ? index : null })
+  }
 }
 const cssVars = computed(() => {
   const v = themeStyle(props.invitation.theme)
@@ -123,7 +133,12 @@ function timeRange(s: string, e: string) {
 
 function scrollToSection(key: string) {
   const el = root.value?.querySelector<HTMLElement>(`[data-sec="${key}"]`)
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  // Scroll the preview container itself — never the whole builder page.
+  const box = root.value
+  if (!el || !box) return
+  const top = el.offsetTop
+  if (typeof box.scrollTo === 'function') box.scrollTo({ top: Math.max(0, top - 12), behavior: 'smooth' })
+  else el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 defineExpose({ scrollToSection, replay: replayAll })
 </script>
@@ -220,7 +235,7 @@ defineExpose({ scrollToSection, replay: replayAll })
         <div class="inv-divider" />
         <p v-if="!invitation.events.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.events }}</p>
         <div v-else class="mt-8 space-y-4">
-          <article v-for="e in invitation.events" :key="e.id" :data-reveal="reveal" class="inv-card p-6">
+          <article v-for="(e, i) in invitation.events" :key="e.id" :data-idx="i" :data-reveal="reveal" class="inv-card p-6">
             <h3 class="inv-heading inv-accent text-2xl">{{ e.name }}</h3>
             <p class="mt-3 text-sm">{{ formatLongDate(e.date) }}</p>
             <p class="inv-muted text-sm">{{ timeRange(e.start_time, e.end_time) }}</p>
@@ -233,7 +248,7 @@ defineExpose({ scrollToSection, replay: replayAll })
       <!-- Maps -->
       <section v-if="on('maps') && invitation.events.some((e) => e.maps_url)" data-sec="maps" :style="{ order: ord('maps') }" class="inv-section !py-10">
         <div :data-reveal="reveal" class="space-y-3">
-          <a v-for="e in invitation.events.filter((x) => x.maps_url)" :key="e.id" :href="e.maps_url" target="_blank" rel="noopener noreferrer" class="inv-btn inv-btn-outline w-full">
+          <a v-for="e in invitation.events.filter((x) => x.maps_url)" :key="e.id" :data-idx="invitation.events.indexOf(e)" :href="e.maps_url" target="_blank" rel="noopener noreferrer" class="inv-btn inv-btn-outline w-full">
             <MapPin class="size-4" /> {{ copy.invitation.openMaps }} — {{ e.name }}
           </a>
         </div>
@@ -257,7 +272,7 @@ defineExpose({ scrollToSection, replay: replayAll })
           <h2 class="inv-heading text-3xl">Konfirmasi Kehadiran</h2>
           <div class="inv-divider" />
           <p v-if="invitation.settings.rsvp_deadline" class="inv-muted mb-5 text-sm">Mohon konfirmasi sebelum {{ formatDate(invitation.settings.rsvp_deadline) }}.</p>
-          <RsvpForm :disabled="isPreview" @submit="emit('rsvp', $event)" />
+          <RsvpForm :disabled="isPreview && !props.interactive" @submit="emit('rsvp', $event)" />
         </div>
       </section>
 
@@ -266,7 +281,7 @@ defineExpose({ scrollToSection, replay: replayAll })
         <div :data-reveal="reveal">
           <h2 class="inv-heading text-3xl">Ucapan &amp; Doa</h2>
           <div class="inv-divider" />
-          <GuestMessageForm :disabled="isPreview" @submit="emit('message', $event)" />
+          <GuestMessageForm :disabled="isPreview && !props.interactive" @submit="emit('message', $event)" />
           <ul v-if="messages.length" class="mt-8 max-h-96 space-y-3 overflow-y-auto text-left">
             <li v-for="m in messages" :key="m.id" class="inv-card p-4">
               <p class="text-sm font-medium">{{ m.name }}</p>
@@ -282,7 +297,7 @@ defineExpose({ scrollToSection, replay: replayAll })
           <h2 class="inv-heading text-3xl">Amplop Digital</h2>
           <div class="inv-divider" />
           <p v-if="!invitation.gifts.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.gifts }}</p>
-          <GiftSection v-else :accounts="invitation.gifts" :disabled="isPreview" @confirm="emit('gift', $event)" />
+          <GiftSection v-else :accounts="invitation.gifts" :disabled="isPreview && !props.interactive" @confirm="emit('gift', $event)" />
         </div>
       </section>
 
@@ -298,7 +313,7 @@ defineExpose({ scrollToSection, replay: replayAll })
     </div>
 
     <!-- Lightbox -->
-    <Teleport to="body" :disabled="isPreview">
+    <Teleport to="body" :disabled="isPreview && !props.interactive">
       <div v-if="lightbox" class="fixed inset-0 z-[60] grid place-items-center bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="Foto galeri" @click="lightbox = null">
         <button type="button" class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" aria-label="Tutup" @click="lightbox = null"><X class="size-5" /></button>
         <img :src="lightbox" alt="" class="max-h-full max-w-full rounded object-contain" />

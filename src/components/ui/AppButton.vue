@@ -7,9 +7,10 @@ const props = withDefaults(
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
     size?: 'sm' | 'md'
     loading?: boolean
+    disabled?: boolean
     type?: 'button' | 'submit'
   }>(),
-  { variant: 'primary', size: 'md', loading: false, type: 'button' },
+  { variant: 'primary', size: 'md', loading: false, disabled: false, type: 'button' },
 )
 
 const classes = computed(() => {
@@ -27,7 +28,7 @@ const classes = computed(() => {
 </script>
 
 <template>
-  <button :type="type" :class="classes" :disabled="loading">
+  <button :type="type" :class="classes" :disabled="loading || disabled">
     <Loader2 v-if="loading" class="size-4 animate-spin" aria-hidden="true" />
     <slot />
   </button>

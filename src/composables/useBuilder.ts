@@ -252,6 +252,7 @@ export function useBuilder(idRef: Ref<string>) {
     draft, loading, loadError, saveState, lastError, slugState, slugTouched, publishing, allowedThemes,
     issues, blockers, canPublish, isPublished,
     save, publish, unpublish, copyPublicLink, onSlugInput, resetSlugFromTitle, reload: load,
+    hasUnsaved,
   }
 }
 

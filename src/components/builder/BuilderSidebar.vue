@@ -51,7 +51,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = {
     <!-- Desktop: icon rail -->
     <ul class="nav-rail hidden flex-1 space-y-1 overflow-y-auto px-2.5 py-2 lg:block">
       <li v-for="i in items" :key="i.key">
-        <p v-if="groupAt[i.key]" class="px-1 pb-1 pt-3 text-center text-[9px] font-bold uppercase tracking-[0.14em] text-muted/70">
+        <p v-if="groupAt[i.key]" class="px-1 pb-1 pt-3 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-muted/70">
           {{ groupAt[i.key] }}
         </p>
         <button
@@ -63,7 +63,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = {
           @click="emit('select', i.key)"
         >
           <span
-            class="relative grid size-9 place-items-center rounded-2xl transition-all duration-150"
+            class="relative grid size-11 place-items-center rounded-2xl transition-all duration-150"
             :class="active === i.key ? 'bg-gradient-to-br from-brand to-brand-dark text-white shadow-md shadow-brand/30' : 'bg-black/[0.05] text-muted group-hover:text-ink'"
             aria-hidden="true"
           >
@@ -71,7 +71,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = {
             <span class="absolute -right-0.5 -top-0.5 size-2 rounded-full ring-2 ring-panel" :class="dotOf(i.key)" />
           </span>
           <span
-            class="w-full truncate px-0.5 text-[10px] font-semibold leading-tight"
+            class="w-full truncate px-0.5 text-[11px] font-semibold leading-tight"
             :class="active === i.key ? 'text-brand' : 'text-muted'"
             >{{ copy.builder.sections[i.key] }}</span
           >
@@ -92,7 +92,7 @@ const groupAt: Partial<Record<BuilderKey, string>> = {
       <li v-for="i in items" :key="i.key" class="shrink-0">
         <button
           type="button"
-          class="flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all"
+          class="flex min-h-11 items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold transition-all"
           :class="active === i.key ? 'border-ink bg-ink text-white shadow-md' : 'border-line bg-panel text-muted'"
           :aria-current="active === i.key ? 'step' : undefined"
           @click="emit('select', i.key)"

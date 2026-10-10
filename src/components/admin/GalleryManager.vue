@@ -111,13 +111,13 @@ function onDrop(to: number) {
         <span v-if="g.is_cover" class="absolute left-2 top-2 rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-white">{{ copy.builder.gallery.cover }}</span>
         <div class="flex items-center justify-between gap-1 p-1.5">
           <div class="flex">
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === 0" :aria-label="copy.builder.gallery.moveLeft" @click="move(i, i - 1)"><ArrowLeft class="size-3.5" /></button>
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === items.length - 1" :aria-label="copy.builder.gallery.moveRight" @click="move(i, i + 1)"><ArrowRight class="size-3.5" /></button>
+            <button type="button" class="min-h-11 min-w-11 rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === 0" :aria-label="copy.builder.gallery.moveLeft" @click="move(i, i - 1)"><ArrowLeft class="size-3.5" /></button>
+            <button type="button" class="min-h-11 min-w-11 rounded p-2 text-muted hover:bg-black/5 disabled:opacity-30" :disabled="i === items.length - 1" :aria-label="copy.builder.gallery.moveRight" @click="move(i, i + 1)"><ArrowRight class="size-3.5" /></button>
           </div>
           <div class="flex">
-            <button type="button" class="rounded p-2 text-muted hover:bg-black/5" :aria-label="copy.builder.gallery.crop" @click="cropId = g.id"><Crop class="size-3.5" /></button>
-            <button type="button" class="rounded p-2 hover:bg-black/5" :class="g.is_cover ? 'text-brand' : 'text-muted'" :aria-pressed="g.is_cover" :aria-label="copy.builder.gallery.setCover" @click="setCover(g.id)"><Star class="size-3.5" :fill="g.is_cover ? 'currentColor' : 'none'" /></button>
-            <button type="button" class="rounded p-2 text-danger hover:bg-danger-soft" :aria-label="copy.builder.gallery.removePhoto" @click="remove(g.id)"><Trash2 class="size-3.5" /></button>
+            <button type="button" class="min-h-11 min-w-11 rounded p-2 text-muted hover:bg-black/5" :aria-label="copy.builder.gallery.crop" @click="cropId = g.id"><Crop class="size-3.5" /></button>
+            <button type="button" class="min-h-11 min-w-11 rounded p-2 hover:bg-black/5" :class="g.is_cover ? 'text-brand' : 'text-muted'" :aria-pressed="g.is_cover" :aria-label="copy.builder.gallery.setCover" @click="setCover(g.id)"><Star class="size-3.5" :fill="g.is_cover ? 'currentColor' : 'none'" /></button>
+            <button type="button" class="min-h-11 min-w-11 rounded p-2 text-danger hover:bg-danger-soft" :aria-label="copy.builder.gallery.removePhoto" @click="remove(g.id)"><Trash2 class="size-3.5" /></button>
           </div>
         </div>
       </li>

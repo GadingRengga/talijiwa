@@ -8,30 +8,35 @@ const props = withDefaults(defineProps<{ src: string; aspect?: number; outWidth?
 const dialogTitle = computed(() => props.title || copy.builder.gallery.cropTitle)
 const emit = defineEmits<{ done: [dataUrl: string]; cancel: [] }>()
 
+/** Viewport fits small phones: 300px desktop, shrinks to screen padding on HP. */
 const VW = 300
-const VH = computed(() => Math.round(VW / props.aspect))
+const vw = computed(() => {
+  if (typeof window === 'undefined') return VW
+  return Math.max(240, Math.min(VW, window.innerWidth - 64))
+})
+const VH = computed(() => Math.round(vw.value / props.aspect))
 const img = ref<HTMLImageElement | null>(null)
 const nat = ref({ w: 0, h: 0 })
 const zoom = ref(1)
 const pos = ref({ x: 0, y: 0 })
-const base = computed(() => (nat.value.w ? Math.max(VW / nat.value.w, VH.value / nat.value.h) : 1))
+const base = computed(() => (nat.value.w ? Math.max(vw.value / nat.value.w, VH.value / nat.value.h) : 1))
 const scale = computed(() => base.value * zoom.value)
 const size = computed(() => ({ w: nat.value.w * scale.value, h: nat.value.h * scale.value }))
 const clamp = () => {
-  pos.value = { x: Math.min(0, Math.max(VW - size.value.w, pos.value.x)), y: Math.min(0, Math.max(VH.value - size.value.h, pos.value.y)) }
+  pos.value = { x: Math.min(0, Math.max(vw.value - size.value.w, pos.value.x)), y: Math.min(0, Math.max(VH.value - size.value.h, pos.value.y)) }
 }
 function onLoad() {
   const el = img.value!
   nat.value = { w: el.naturalWidth, h: el.naturalHeight }
-  pos.value = { x: (VW - size.value.w) / 2, y: (VH.value - size.value.h) / 2 }
+  pos.value = { x: (vw.value - size.value.w) / 2, y: (VH.value - size.value.h) / 2 }
 }
 function setZoom(z: number) {
   const next = Math.min(3, Math.max(1, z))
   // keep the viewport centre fixed while zooming
-  const cx = (VW / 2 - pos.value.x) / scale.value
+  const cx = (vw.value / 2 - pos.value.x) / scale.value
   const cy = (VH.value / 2 - pos.value.y) / scale.value
   zoom.value = next
-  pos.value = { x: VW / 2 - cx * scale.value, y: VH.value / 2 - cy * scale.value }
+  pos.value = { x: vw.value / 2 - cx * scale.value, y: VH.value / 2 - cy * scale.value }
   clamp()
 }
 let drag: { x: number; y: number; px: number; py: number } | null = null
@@ -54,7 +59,7 @@ function confirm() {
   const c = document.createElement('canvas')
   c.width = props.outWidth
   c.height = outH
-  c.getContext('2d')!.drawImage(img.value!, -pos.value.x / scale.value, -pos.value.y / scale.value, VW / scale.value, VH.value / scale.value, 0, 0, props.outWidth, outH)
+  c.getContext('2d')!.drawImage(img.value!, -pos.value.x / scale.value, -pos.value.y / scale.value, vw.value / scale.value, VH.value / scale.value, 0, 0, props.outWidth, outH)
   emit('done', c.toDataURL('image/jpeg', 0.84))
 }
 const onKey = (e: KeyboardEvent) => e.key === 'Escape' && emit('cancel')
@@ -69,7 +74,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <h2 class="font-display text-lg font-semibold">{{ dialogTitle }}</h2>
         <div
           class="relative mx-auto touch-none select-none overflow-hidden rounded-lg bg-black outline-none ring-brand focus-visible:ring-2"
-          :style="{ width: VW + 'px', height: VH + 'px', cursor: 'grab' }"
+          :style="{ width: vw + 'px', height: VH + 'px', cursor: 'grab' }"
           tabindex="0"
           role="img"
           :aria-label="copy.builder.gallery.cropArea"

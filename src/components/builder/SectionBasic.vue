@@ -26,8 +26,8 @@ const slugMessage = {
     </FormField>
 
     <FormField :label="copy.builder.basic.slugLabel" :error="b.slugState.value === 'taken' || b.slugState.value === 'invalid' ? slugMessage[b.slugState.value] : ''" v-slot="{ id, invalid }">
-      <div class="flex items-stretch gap-2">
-        <div class="flex min-w-0 flex-1 items-center rounded-lg border bg-panel focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/15" :class="invalid ? 'border-danger' : 'border-line'">
+      <div class="flex flex-wrap items-stretch gap-2">
+        <div class="flex min-w-0 flex-1 basis-48 items-center rounded-lg border bg-panel focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/15" :class="invalid ? 'border-danger' : 'border-line'">
           <span class="select-none pl-3 text-sm text-muted">/invite/</span>
           <input :id="id" v-model="inv.slug" class="min-w-0 flex-1 bg-transparent py-2 pr-3 text-sm outline-none" :aria-invalid="invalid" maxlength="60" @input="b.onSlugInput()" />
           <span class="pr-3" aria-hidden="true">
@@ -36,8 +36,8 @@ const slugMessage = {
             <X v-else-if="invalid" class="size-4 text-danger" />
           </span>
         </div>
-        <button v-if="b.slugTouched.value" type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel px-3 text-[13px] hover:bg-paper" @click="b.resetSlugFromTitle()">
-          <RotateCcw class="size-3.5" /> {{ copy.builder.basic.followTitle }}
+        <button v-if="b.slugTouched.value" type="button" class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-panel px-3 text-[13px] hover:bg-paper" :title="copy.builder.basic.followTitle" :aria-label="copy.builder.basic.followTitle" @click="b.resetSlugFromTitle()">
+          <RotateCcw class="size-3.5" /> <span class="hidden min-[420px]:inline">{{ copy.builder.basic.followTitle }}</span>
         </button>
       </div>
       <p v-if="b.slugState.value === 'ok' || b.slugState.value === 'checking'" class="mt-1.5 text-xs text-muted">{{ slugMessage[b.slugState.value] }}</p>
