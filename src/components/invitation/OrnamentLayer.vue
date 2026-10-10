@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { OrnamentKind } from '@/types'
+import { ORNAMENT_COMPONENTS } from './ornaments/types'
 
 const props = defineProps<{ kind: OrnamentKind }>()
+
+// Dedicated ornament component (e.g. jawa = detailed gunungan). Falls back to inline SVG below.
+const detailedComponent = computed(() => ORNAMENT_COMPONENTS[props.kind] ?? null)
 
 // Deterministic star field via box-shadow: 1 element, many stars, cheap to animate (opacity only).
 function field(n: number, seed: number) {
@@ -17,7 +21,8 @@ const batikMask = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 
 <template>
   <div class="orn" aria-hidden="true">
-    <template v-if="kind === 'garden'">
+    <component v-if="detailedComponent" :is="detailedComponent" />
+    <template v-else-if="kind === 'garden'">
       <svg v-for="c in ['tl', 'br']" :key="c" :class="['orn-vine', `orn-vine-${c}`]" viewBox="0 0 140 320" fill="none" stroke="var(--inv-accent)" stroke-width="1.6" stroke-linecap="round">
         <path class="orn-draw" d="M4 0 C 70 40, 10 120, 80 170 S 40 262, 118 316" />
         <path class="orn-draw orn-d2" d="M40 62 C 70 54, 92 70, 104 94 M26 128 C 54 128, 76 144, 82 168 M60 214 C 84 206, 104 214, 118 236" />

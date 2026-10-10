@@ -3,8 +3,8 @@ import type { ThemeDefinition } from '@/types'
 export const sinematik: ThemeDefinition = {
   id: 'sinematik',
   name: 'Cinematic Night',
-  description: 'Zoom sinematik ke foto utama, malam biru tua dengan kilau bintang.',
-  intro: 'zoom',
+  description: 'Panel 3D berputar ke samping mengungkap malam sinematik, biru tua dengan kilau bintang.',
+  intro: 'cube',
   reveal: 'stagger',
   decor: 'sparkle',
   swatches: ['#0c1424', '#e8edf7', '#7fa8ff', '#1d2b4a'],

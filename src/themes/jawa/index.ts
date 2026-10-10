@@ -3,10 +3,10 @@ import type { ThemeDefinition } from '@/types'
 export const jawa: ThemeDefinition = {
   id: 'jawa',
   name: 'Adat Jawa',
-  description: 'Gunungan membuka undangan, latar batik kawung bergerak halus, tulisan tersingkap seperti dilukis.',
+  description: 'Gunungan berputar 3D membuka undangan, latar batik kawung bergerak halus, tulisan tersingkap seperti dilukis.',
   intro: 'gunungan',
   reveal: 'mask',
-  ornament: 'batik',
+  ornament: 'jawa',
   decor: 'none',
   swatches: ['#f3e6cf','#fbf3e2','#9a5b24','#4a2c17'],
   tokens: {

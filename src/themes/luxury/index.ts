@@ -3,8 +3,8 @@ import type { ThemeDefinition } from '@/types'
 export const luxury: ThemeDefinition = {
   id: 'luxury',
   name: 'Luxury Gold',
-  description: 'Hitam pekat dan gading dengan kilau emas yang halus.',
-  intro: 'door',
+  description: 'Hitam pekat dan gading dengan kilau emas yang halus — kartu terbalik 3D mengungkap undangan.',
+  intro: 'flip',
   reveal: 'stagger',
   ornament: 'shine',
   decor: 'sparkle',

@@ -3,8 +3,8 @@ import type { ThemeDefinition } from '@/types'
 export const celestial: ThemeDefinition = {
   id: 'celestial',
   name: 'Celestial',
-  description: 'Langit malam berbintang yang berkelip dan terbuka seperti iris, nuansa ungu keperakan.',
-  intro: 'iris',
+  description: 'Kartu 3D terbalik mengungkap langit malam berbintang yang berkelip, nuansa ungu keperakan.',
+  intro: 'flip',
   reveal: 'stagger',
   ornament: 'stars',
   decor: 'none',

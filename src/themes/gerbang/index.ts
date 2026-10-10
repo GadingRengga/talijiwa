@@ -3,8 +3,8 @@ import type { ThemeDefinition } from '@/types'
 export const gerbang: ThemeDefinition = {
   id: 'gerbang',
   name: 'Gerbang Kayu',
-  description: 'Pintu kayu ganda yang terbuka perlahan, teks muncul bertahap saat digulir.',
-  intro: 'door',
+  description: 'Pintu kayu ganda berputar 3D membuka undangan, teks muncul bertahap saat digulir.',
+  intro: 'cube',
   reveal: 'stagger',
   decor: 'float',
   swatches: ['#2b1d14', '#f2e6d0', '#c9a15a', '#5a3b25'],

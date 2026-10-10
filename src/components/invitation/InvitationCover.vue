@@ -54,8 +54,8 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
     tl.to(q('.d-r'), { xPercent: 100, duration: 1.4, ease: 'power3.inOut' }, 0.3)
   } else if (props.intro === 'envelope') {
     tl.to(q('.e-flap'), { rotateX: 180, transformOrigin: 'top center', duration: 0.9, ease: 'power2.inOut' }, 0.4)
-    tl.to(q('.e-top'), { yPercent: -100, duration: 1.1, ease: 'power3.inOut' }, 1.3)
-    tl.to(q('.e-bot'), { yPercent: 100, duration: 1.1, ease: 'power3.inOut' }, 1.3)
+    tl.to(q('.e-top'), { yPercent: -100, rotateX: 8, transformOrigin: 'bottom center', duration: 1.1, ease: 'power3.inOut' }, 1.3)
+    tl.to(q('.e-bot'), { yPercent: 100, rotateX: -8, transformOrigin: 'top center', duration: 1.1, ease: 'power3.inOut' }, 1.3)
   } else if (props.intro === 'split') {
     tl.to(q('.s-line'), { opacity: 0, duration: 0.4 }, 0.3)
     tl.to(q('.s-t'), { yPercent: -100, duration: 1.3, ease: 'power4.inOut' }, 0.5)
@@ -68,12 +68,18 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
     tl.to(q('.b-p'), { scale: 3.2, opacity: 0, duration: 1.5, ease: 'power2.in', stagger: 0.06 }, 0.3)
     tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.7)
   } else if (props.intro === 'gunungan') {
-    tl.to(q('.g-leaf'), { scale: 5, opacity: 0, duration: 1.6, ease: 'power3.in' }, 0.3)
+    tl.to(q('.g-leaf'), { scale: 5, opacity: 0, rotateX: 25, rotateY: 15, duration: 1.6, ease: 'power3.in' }, 0.3)
     tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.8)
   } else if (props.intro === 'iris') {
     tl.to(q('.veil'), { clipPath: 'circle(0% at 50% 50%)', duration: 1.6, ease: 'power3.inOut' }, 0.3)
   } else if (props.intro === 'zoom') {
     tl.to(q('.cover-img'), { scale: 1.6, duration: 1.6, ease: 'power2.in' }, 0.2)
+  } else if (props.intro === 'flip') {
+    tl.to(q('.flip-veil'), { rotateY: 180, duration: 1.5, ease: 'power3.inOut' }, 0.3)
+    tl.to(q('.cover-img'), { scale: 1.08, duration: 1.8, ease: 'power2.out' }, 0.3)
+  } else if (props.intro === 'cube') {
+    tl.to(q('.cube-veil'), { rotateY: -90, transformOrigin: 'left center', duration: 1.6, ease: 'power3.inOut' }, 0.3)
+    tl.to(q('.cover-img'), { scale: 1.12, x: 40, duration: 1.8, ease: 'power2.out' }, 0.3)
   }
   if (exit) {
     if (props.intro === 'slide') tl.to(r, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.2')
@@ -171,6 +177,14 @@ onBeforeUnmount(() => {
         <div class="e-top absolute inset-x-0 top-0 z-[5] h-1/2" :style="{ background: 'var(--inv-surface)', borderBottom: '1px solid var(--inv-border)' }" />
         <div class="e-bot absolute inset-x-0 bottom-0 z-[5] h-1/2" :style="{ background: 'var(--inv-surface)' }" />
         <div class="e-flap absolute inset-x-0 top-1/2 z-[6] h-1/3" :style="{ background: 'var(--inv-accent)', clipPath: 'polygon(0 0, 100% 0, 50% 100%)', backfaceVisibility: 'hidden' }" />
+      </template>
+      <template v-else-if="intro === 'flip'">
+        <div class="veil flip-veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-surface)', backfaceVisibility: 'hidden', willChange: 'transform' }" />
+        <div class="absolute inset-0 z-[5] pointer-events-none" :style="{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--inv-accent) 8%, transparent), transparent 40%, color-mix(in srgb, var(--inv-accent) 5%, transparent))' }" />
+      </template>
+      <template v-else-if="intro === 'cube'">
+        <div class="veil cube-veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-surface)', willChange: 'transform' }" />
+        <div class="absolute inset-0 z-[5] pointer-events-none" :style="{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--inv-border) 40%, transparent), transparent 30%)' }" />
       </template>
     </template>
 

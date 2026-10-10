@@ -2,9 +2,9 @@ export type InvitationStatus = 'draft' | 'published' | 'archived'
 export type ThemeId = 'classic' | 'minimal' | 'floral' | 'luxury' | 'gerbang' | 'amplop' | 'sinematik' | 'garden' | 'jawa' | 'celestial' | 'watercolor'
 /** Price tier: higher tiers unlock all themes of lower tiers. */
 export type InvitationTier = 'basic' | 'premium' | 'luxury'
-export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom'
+export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
-export type OrnamentKind = 'garden' | 'batik' | 'stars' | 'wash' | 'frame' | 'lines' | 'bouquet' | 'shine'
+export type OrnamentKind = 'garden' | 'batik' | 'stars' | 'wash' | 'frame' | 'lines' | 'bouquet' | 'shine' | 'jawa'
 export type Attendance = 'attending' | 'not_attending'
 export type GiftType = 'bank_transfer' | 'cash' | 'e_wallet' | 'other'
 

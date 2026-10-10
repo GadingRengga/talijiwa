@@ -3,7 +3,7 @@ import type { ThemeDefinition } from '@/types'
 export const amplop: ThemeDefinition = {
   id: 'amplop',
   name: 'Amplop Romantis',
-  description: 'Amplop yang terbuka dan memunculkan undangan, nuansa blush lembut.',
+  description: 'Amplop 3D terbuka dengan perspektif realistis memunculkan undangan, nuansa blush lembut.',
   intro: 'envelope',
   reveal: 'rise',
   decor: 'petals',

@@ -113,6 +113,8 @@
 .orn-d2 { stroke-dasharray: 260; stroke-dashoffset: 260; animation-delay: 1.6s; animation-duration: 3s; }
 .orn-bud { transform-box: fill-box; transform-origin: center; animation: orn-bud 4s ease-in-out 3s infinite; }
 .orn-batik { position: absolute; inset: -48px; background: var(--inv-accent); opacity: 0.11; mask-size: 48px 48px; -webkit-mask-size: 48px 48px; animation: orn-slide 24s linear infinite; will-change: transform; }
+.orn-batik-detailed { position: absolute; inset: 0; opacity: 0.07; pointer-events: none; contain: strict; }
+.orn-gunungan { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(280px, 50vw); height: auto; opacity: 0.10; pointer-events: none; contain: strict; }
 .orn-star { position: absolute; top: 0; left: 0; width: 1px; height: 1px; background: transparent; animation: inv-twinkle 4s ease-in-out infinite; }
 .orn-star-b { width: 2px; height: 2px; animation-duration: 6s; animation-delay: -2s; }
 .orn-wash { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; opacity: 0.5; will-change: transform; animation: orn-drift 26s ease-in-out infinite alternate; }
