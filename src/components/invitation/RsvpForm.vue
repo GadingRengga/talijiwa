@@ -34,7 +34,7 @@ async function submit() {
   <form v-else class="space-y-3 text-left" novalidate @submit.prevent="submit">
     <input v-model="form.name" class="inv-input" placeholder="Nama lengkap" maxlength="80" autocomplete="name" :disabled="disabled" aria-label="Nama lengkap" />
     <input v-model="form.whatsapp" class="inv-input" placeholder="Nomor WhatsApp" inputmode="tel" autocomplete="tel" :disabled="disabled" aria-label="Nomor WhatsApp" />
-    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+    <div class="grid grid-cols-2 gap-2 @sm:gap-3">
       <select v-model="form.attendance" class="inv-input min-w-0" :disabled="disabled" aria-label="Kehadiran">
         <option value="attending">Hadir</option>
         <option value="not_attending">Tidak hadir</option>

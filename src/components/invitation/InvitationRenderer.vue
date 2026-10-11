@@ -13,6 +13,7 @@ import OrnamentLayer from './OrnamentLayer.vue'
 import GiftSection from './GiftSection.vue'
 import GuestMessageForm from './GuestMessageForm.vue'
 import InvitationCover from './InvitationCover.vue'
+import MusicPlayer from './MusicPlayer.vue'
 import RsvpForm from './RsvpForm.vue'
 
 /**
@@ -160,7 +161,7 @@ onBeforeUnmount(() => ro?.disconnect())
 <template>
   <div
     ref="root"
-    class="inv"
+    class="inv @container"
     @click.capture="onPreviewClick"
     @touchstart.capture="onTouchStart"
     :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`, `inv-t-${theme.id}`]"
@@ -177,13 +178,14 @@ onBeforeUnmount(() => ro?.disconnect())
         :decor="theme.decor"
         :intro="introKind"
         :mode="isPreview ? 'static' : 'overlay'"
+        :interactive="props.interactive"
         @open="emit('open')"
       />
     </div>
 
     <div class="relative flex flex-col">
       <OrnamentLayer v-if="theme.ornament && level === 'full'" :kind="theme.ornament" :class="isPreview ? '' : '!fixed'" />
-      <DecorLayer v-if="!isPreview && level !== 'off'" :kind="theme.decor" class="!fixed" />
+      <DecorLayer v-if="level !== 'off'" :kind="theme.decor" :class="isPreview ? '' : '!fixed'" />
 
       <!-- Couple -->
       <section v-if="on('couple')" data-sec="couple" :style="{ order: ord('couple') }" class="inv-section">
@@ -325,6 +327,10 @@ onBeforeUnmount(() => ro?.disconnect())
         </div>
       </section>
     </div>
+
+    <!-- Uji mode: music plays like release (button floats over the builder
+      viewport, not the device frame — function under test, not position). -->
+    <MusicPlayer v-if="isPreview && props.interactive && invitation.settings.music_enabled" :url="invitation.settings.music_url" />
 
     <!-- Lightbox -->
     <Teleport to="body" :disabled="isPreview && !props.interactive">

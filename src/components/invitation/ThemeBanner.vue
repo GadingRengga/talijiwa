@@ -16,7 +16,7 @@ const src = computed(() => props.image || t.value.coverImage || placeholderImage
 </script>
 
 <template>
-  <div class="inv h-full overflow-hidden [&_.inv-cover]:!min-h-0 [&_.inv-cover]:h-full" :style="themeStyle(theme)">
+  <div class="inv @container h-full overflow-hidden [&_.inv-cover]:!min-h-0 [&_.inv-cover]:h-full" :style="themeStyle(theme)">
     <InvitationCover :couple="couple" :date="date" guest="Nama Tamu" :image="src" :decor="t.decor" :intro="t.intro ?? 'slide'" mode="static" loop :active="active" />
   </div>
 </template>

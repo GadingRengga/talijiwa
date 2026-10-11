@@ -292,8 +292,10 @@ function start(hostEl: HTMLElement): () => void {
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 90)
   let baseZ = 11
   const resize = () => {
-    const w = window.innerWidth
-    const h = window.innerHeight
+    // Size to the host element (device frame in preview), never the window —
+    // otherwise the gate framing breaks inside the builder canvas.
+    const w = hostEl.clientWidth || window.innerWidth
+    const h = hostEl.clientHeight || window.innerHeight
     renderer.setSize(w, h)
     camera.aspect = w / h
     const tanV = Math.tan(THREE.MathUtils.degToRad(20))
@@ -301,7 +303,8 @@ function start(hostEl: HTMLElement): () => void {
     camera.updateProjectionMatrix()
   }
   resize()
-  window.addEventListener('resize', resize)
+  const ro = new ResizeObserver(resize)
+  ro.observe(hostEl)
 
   const H = 4.2
   const LW = 2.0
@@ -531,7 +534,7 @@ function start(hostEl: HTMLElement): () => void {
 
   return () => {
     cancelAnimationFrame(raf)
-    window.removeEventListener('resize', resize)
+    ro.disconnect()
     window.removeEventListener('pointermove', onMove)
     playFn = null
     scene.traverse((o) => {

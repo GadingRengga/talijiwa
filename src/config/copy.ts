@@ -205,6 +205,11 @@ export const copy = {
       formRegion: 'Formulir bagian aktif',
       previewRegion: 'Pratinjau langsung',
       guestSample: 'Nama Tamu',
+      testBlocked: 'Mode uji — data tidak dikirim.',
+      sampleWishes: [
+        { name: 'Keluarga Bapak Harto', message: 'Selamat menempuh hidup baru, semoga menjadi keluarga yang sakinah.' },
+        { name: 'Dinda & Bagas', message: 'Turut berbahagia! Sampai jumpa di hari-H.' },
+      ],
       downloadQr: 'Unduh QR',
       downloadQrTitle: 'Unduh QR kode undangan',
       downloadedQr: 'QR undangan tersimpan',

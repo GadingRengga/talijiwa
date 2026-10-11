@@ -26,8 +26,10 @@ const props = withDefaults(
     active?: boolean
     /** True for the real invitation cover (LCP image). */
     eager?: boolean
+    /** Builder Uji mode: play the full release flow inside the preview. */
+    interactive?: boolean
   }>(),
-  { intro: 'slide', loop: false, active: true, eager: false },
+  { intro: 'slide', loop: false, active: true, eager: false, interactive: false },
 )
 const emit = defineEmits<{ open: [] }>()
 
@@ -113,11 +115,17 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
 let demoTl: gsap.core.Timeline | undefined
 /** Builder preview: play the opening animation, then rewind it. */
 function demo() {
+  hidden.value = false
   if (prefersReducedMotion() || !root.value || !content.value) return
   demoTl?.progress(0).kill()
   if (props.intro === 'gate3d') {
-    // Static/banner replay: gentle title fade only (no canvas here).
-    if (content.value) gsap.fromTo(content.value, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power2.out' })
+    // Full reset: replay always restarts from a visible tableau.
+    resetToGate()
+    if (props.mode === 'static' && !props.interactive) {
+      phase.value = 'title'
+      if (root.value) gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
+      if (content.value) gsap.set([content.value, ...Array.from(content.value.children)], { opacity: 1, y: 0 })
+    }
     return
   }
   if (props.intro === 'flora' && root.value && content.value) {
@@ -186,6 +194,11 @@ function advance() {
 /** Flora act 3: swipe/button dismisses the cover. */
 function dismiss() {
   if (phase.value !== 'title' || !root.value) return
+  if (props.mode !== 'overlay') {
+    // Uji: loop the simulation instead of hiding the cover permanently.
+    resetToGate()
+    return
+  }
   if (prefersReducedMotion() || !content.value) {
     hidden.value = true
     return
@@ -195,11 +208,13 @@ function dismiss() {
   tl.to(root.value, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.1')
 }
 
-/** Gate3D beat 2: dolly finished — flash, drop the canvas, show the name frame. */
+/** Gate3D beat 2: dolly finished — flash peaks, canvas drops behind the flash,
+    then the name frame appears. Unmounting at the peak hides the hard cut. */
 function onGateDone() {
   if (phase.value !== 'gate' || !root.value) return
-  const tl = gsap.timeline({ onComplete: () => (phase.value = 'frame') })
+  const tl = gsap.timeline()
   tl.to(root.value.querySelector('.g3-flash'), { opacity: 1, duration: 0.35, ease: 'power1.in' })
+  tl.add(() => (phase.value = 'frame'))
   tl.to(root.value.querySelector('.g3-flash'), { opacity: 0, duration: 0.7, ease: 'power1.out' })
   tl.add(() => {
     const card = root.value?.querySelector('.g3-card')
@@ -229,6 +244,31 @@ function toTitle() {
   gsap.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 })
 }
 
+/** Back to the opening tableau (Uji loop + replay reset). */
+function resetToGate() {
+  if (!root.value || !content.value) return
+  hidden.value = false
+  phase.value = 'gate'
+  gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  gsap.set(content.value, { opacity: 1, y: 0 })
+  gsap.set(content.value.children, { opacity: 0, y: 26 })
+}
+
+/** Uji toggle in preview: ON restarts the gate flow, OFF settles on the tableau. */
+watch(
+  () => props.interactive,
+  (uji) => {
+    if (props.mode !== 'static' || props.intro !== 'gate3d' || !root.value || !content.value) return
+    if (uji && !prefersReducedMotion()) resetToGate()
+    else {
+      hidden.value = false
+      phase.value = 'title'
+      gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
+      gsap.set([content.value, ...Array.from(content.value.children)], { opacity: 1, y: 0 })
+    }
+  },
+)
+
 function onCoverTouchStart(e: TouchEvent) {
   touchY = e.touches[0]?.clientY ?? null
 }
@@ -243,8 +283,12 @@ function onCoverTouchEnd(e: TouchEvent) {
 
 onMounted(() => {
   if ((props.intro !== 'flora' && props.intro !== 'gate3d') || prefersReducedMotion() || !root.value || !content.value) return
-  if (props.mode === 'static') {
-    // Builder preview & banner: show the title tableau directly (editable at a glance, no GPU cost).
+  if (props.mode === 'static' && !props.interactive) {
+    // Builder edit mode & banner: show the title tableau directly (editable at a glance, no GPU cost).
+    phase.value = 'title'
+    return
+  }
+  if (props.intro === 'gate3d' && props.mode !== 'overlay' && !props.interactive) {
     phase.value = 'title'
     return
   }
@@ -367,14 +411,14 @@ onBeforeUnmount(() => {
       </template>
       <template v-else-if="intro === 'gate3d'">
         <Gate3D
-          v-if="mode === 'overlay' && phase !== 'title'"
+          v-if="(mode === 'overlay' || (mode === 'static' && interactive)) && phase !== 'title'"
           ref="gate3dRef"
           class="absolute inset-0 z-[4]"
           @opened="onGateOpened"
           @done="onGateDone"
           @skipped="onGateSkipped"
         />
-        <div v-if="mode === 'overlay' && phase === 'gate'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
+        <div v-if="(mode === 'overlay' || interactive) && phase === 'gate'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
           <p class="absolute inset-x-0 bottom-30 text-center text-xs tracking-[0.25em]" style="color: var(--inv-text); text-shadow: 0 0 14px var(--inv-surface), 0 0 6px var(--inv-surface)">{{ copy.invitation.tapToOpen }}</p>
         </div>
         <div v-if="phase === 'frame'" class="absolute inset-0 z-[6] grid place-items-center px-6">
@@ -392,7 +436,7 @@ onBeforeUnmount(() => {
 
     <div ref="content" class="relative z-10 w-full max-w-xl px-6">
       <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
-      <h1 class="inv-heading mt-5 break-words text-4xl leading-tight sm:text-5xl lg:text-6xl">
+      <h1 class="inv-heading mt-5 break-words text-4xl leading-tight @sm:text-5xl @lg:text-6xl">
         <template v-if="intro === 'split'"><span v-for="(c, i) in couple.split('')" :key="i" class="ch inline-block">{{ c === ' ' ? '\u00a0' : c }}</span></template>
         <template v-else>{{ couple }}</template>
       </h1>
@@ -404,7 +448,7 @@ onBeforeUnmount(() => {
         <svg class="fl-chev mx-auto" width="28" height="18" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M2 16L14 3l12 13" /></svg>
         <p class="mt-2 text-xs tracking-[0.25em]" style="opacity: 0.85">{{ copy.invitation.swipeUp }}</p>
       </div>
-      <button type="button" class="inv-btn mt-8" :disabled="mode === 'static'" @click="open">{{ copy.invitation.open }}</button>
+      <button type="button" class="inv-btn mt-8" :disabled="mode === 'static' && !interactive" @click="open">{{ copy.invitation.open }}</button>
     </div>
   </section>
 </template>

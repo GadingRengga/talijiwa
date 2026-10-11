@@ -49,11 +49,11 @@ const units = computed(() => {
 
 <template>
   <p v-if="done" class="inv-heading text-3xl inv-accent">{{ copy.invitation.todayIsTheDay }}</p>
-  <div v-else class="grid grid-cols-4 gap-1.5 sm:gap-2" role="timer" aria-live="off">
-    <div v-for="u in units" :key="u.key" class="inv-card min-w-0 px-1 py-2 sm:py-3">
-      <div class="relative h-8 overflow-hidden sm:h-9">
+  <div v-else class="grid grid-cols-4 gap-1.5 @sm:gap-2" role="timer" aria-live="off">
+    <div v-for="u in units" :key="u.key" class="inv-card min-w-0 px-1 py-2 @sm:py-3">
+      <div class="relative h-8 overflow-hidden @sm:h-9">
         <Transition name="tick" mode="out-in">
-          <span :key="u.value" class="inv-heading block text-2xl tabular-nums sm:text-3xl">{{ String(u.value).padStart(2, '0') }}</span>
+          <span :key="u.value" class="inv-heading block text-2xl tabular-nums @sm:text-3xl">{{ String(u.value).padStart(2, '0') }}</span>
         </Transition>
       </div>
       <p class="inv-muted text-xs">{{ u.label }}</p>

@@ -109,7 +109,7 @@ const onGift = (p: GiftPayload) => run(() => rsvpService.createGiftConfirmation(
       <span>Pratinjau admin{{ inv.status !== 'published' ? ' — belum dipublikasikan' : '' }}</span>
       <RouterLink :to="`/admin/invitations/${inv.id}/edit`" class="underline">Kembali ke builder</RouterLink>
     </div>
-    <InvitationRenderer :invitation="inv" :guest="guest" :messages="messages" @open="onOpen" @rsvp="onRsvp" @message="onMessage" @gift="onGift" />
+    <InvitationRenderer :invitation="inv" :guest="guest" :messages="messages" :class="previewId ? 'pt-8' : ''" @open="onOpen" @rsvp="onRsvp" @message="onMessage" @gift="onGift" />
     <MusicPlayer v-if="inv.settings.music_enabled" ref="music" :url="inv.settings.music_url" />
   </template>
 </template>
