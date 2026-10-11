@@ -46,7 +46,7 @@ watch([query, filter], () => pager.reset())
 const paged = computed(() => pager.paginate(filtered.value))
 const customerName = (i: InvitationData) => customers.byId(i.customer_id)?.name ?? '—'
 const orderFor = (id: string) => orders.items.find((o) => o.invitation_id === id)
-const thumb = (i: InvitationData) => i.gallery.find((g) => g.is_cover)?.url || i.gallery[0]?.url || placeholderImage(coupleLabel(i), getTheme(i.theme).swatches[3], getTheme(i.theme).swatches[2])
+const thumb = (i: InvitationData) => i.gallery.find((g) => g.is_cover)?.url || i.gallery[0]?.url || getTheme(i.theme).coverImage || placeholderImage(coupleLabel(i), getTheme(i.theme).swatches[3], getTheme(i.theme).swatches[2])
 
 async function guard(fn: () => Promise<unknown>, ok: string) {
   try {

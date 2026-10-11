@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from '@/types'
+import floralCover from '@/assets/images/floral-cover-1.webp'
 
 export const floral: ThemeDefinition = {
   id: 'floral',
@@ -8,6 +9,7 @@ export const floral: ThemeDefinition = {
   reveal: 'rise',
   ornament: 'floral',
   decor: 'petals',
+  coverImage: floralCover,
   swatches: ['#fbeeee', '#fffaf6', '#4b3b3f', '#c4687b'],
   tokens: {
     bg: '#fbeeee',

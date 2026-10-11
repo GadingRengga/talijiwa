@@ -105,6 +105,7 @@ const coverImage = computed(
   () =>
     props.invitation.gallery.find((g) => g.is_cover)?.url ||
     props.invitation.gallery[0]?.url ||
+    theme.value.coverImage ||
     placeholderImage(label.value, theme.value.swatches[3], theme.value.swatches[2]),
 )
 const countdownTarget = computed(() => {

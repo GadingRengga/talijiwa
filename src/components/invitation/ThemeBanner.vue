@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{ theme: string; couple?: string; date?: 
   image: '',
 })
 const t = computed(() => getTheme(props.theme))
-const src = computed(() => props.image || placeholderImage(props.couple, t.value.swatches[3], t.value.swatches[2]))
+const src = computed(() => props.image || t.value.coverImage || placeholderImage(props.couple, t.value.swatches[3], t.value.swatches[2]))
 </script>
 
 <template>

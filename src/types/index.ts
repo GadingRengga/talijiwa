@@ -286,5 +286,7 @@ export interface ThemeDefinition {
   reveal?: RevealKind
   /** Signature background ornament (light, transform/opacity only) */
   ornament?: OrnamentKind
+  /** Default cover photo when the invitation has no gallery yet */
+  coverImage?: string
   swatches: string[]
 }

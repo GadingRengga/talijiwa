@@ -109,17 +109,33 @@
 .sheen { position: absolute; inset: 0 auto 0 -60%; width: 40%; background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--inv-accent) 40%, transparent), transparent); transform: skewX(-18deg); animation: orn-sheen 3.6s ease-in-out infinite; pointer-events: none; }
 @keyframes orn-sheen { 0%, 40% { transform: skewX(-18deg) translateX(0); } 100% { transform: skewX(-18deg) translateX(900%); } }
 @media (prefers-reduced-motion: reduce) { .sheen { animation: none; opacity: 0; } }
-/* Floral #1 (rebuilt from zero): blush symbols + garlands. 4 loops. */
-.orn-floral { position: absolute; animation: orn-floral-sway 6s ease-in-out infinite alternate; will-change: transform; }
-.orn-floral > svg { display: block; width: 100%; height: auto; }
+/* Floral #1: full asset composition. 3 loops + petals 9 = 12 (budget 14). */
+.orn-floral-veil {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 72% 62% at 50% 46%, color-mix(in srgb, var(--inv-surface) 88%, transparent), transparent 70%);
+}
+.orn-floral-hanging { position: absolute; top: -8px; left: 50%; width: min(560px, 94vw); transform: translateX(-50%); transform-origin: 50% 0; animation: orn-floral-hang 8s ease-in-out infinite alternate; will-change: transform; }
+.orn-floral-hanging > img { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(180deg, black 62%, transparent 98%); mask-image: linear-gradient(180deg, black 62%, transparent 98%); }
+.orn-floral-strip { position: absolute; left: 0; right: 0; height: 104px; opacity: 0.95; -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); }
+.orn-floral-strip > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.orn-floral-strip-top { top: 0; }
+.orn-floral-strip-bottom { bottom: 0; transform: scaleY(-1); }
+.orn-floral-side { position: absolute; top: 34%; width: 84px; opacity: 0.95; }
+.orn-floral-side > img { display: block; width: 100%; height: auto; }
+.orn-floral-side-l { left: -14px; }
+.orn-floral-side-r { right: -14px; }
 .orn-floral-mirror { transform: scaleX(-1); }
-.orn-floral-band { position: absolute; left: 0; right: 0; height: 64px; opacity: 0.9; }
-.orn-floral-band > svg { display: block; width: 100%; height: 100%; }
-.orn-floral-band-top { top: 0; }
-.orn-floral-band-bottom { bottom: 0; transform: scaleY(-1); }
+.orn-floral { position: absolute; animation: orn-floral-sway 6s ease-in-out infinite alternate; will-change: transform; }
+.orn-floral > img { display: block; width: 100%; height: auto; filter: drop-shadow(0 6px 12px rgba(75, 59, 63, 0.18)); }
+.orn-floral-bl { bottom: -20px; left: -20px; width: 190px; transform-origin: 0 100%; }
+.orn-floral-bl > img { transform: rotate(180deg); }
+.orn-floral-br { bottom: -20px; right: -20px; width: 190px; transform-origin: 100% 100%; }
+.orn-floral-br > img { transform: scale(-1, -1); }
+@keyframes orn-floral-hang { from { transform: translateX(-50%) rotate(-1.2deg); } to { transform: translateX(-50%) rotate(1.2deg); } }
 @keyframes orn-floral-sway { from { transform: rotate(-4deg) translateY(0); } to { transform: rotate(4deg) translateY(-9px); } }
 @media (prefers-reduced-motion: reduce) {
-  .orn-floral { animation: none !important; }
+  .orn-floral, .orn-floral-hanging { animation: none !important; }
+  .orn-floral-hanging { transform: translateX(-50%); }
 }
 /* Theme hook: arch-topped cards & photos. */
 .inv-t-floral .inv-card { border-radius: 140px 140px 22px 22px; }

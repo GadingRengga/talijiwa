@@ -20,7 +20,7 @@ useSeo().apply({ title: copy.site.portfolioTitle, description: copy.site.portfol
 const all = ref<InvitationData[]>([])
 const loading = ref(true)
 const items = computed(() => all.value.filter((i) => i.status === 'published' && i.settings.show_in_portfolio))
-const thumb = (i: InvitationData) => i.gallery.find((g) => g.is_cover)?.url || placeholderImage(coupleLabel(i))
+const thumb = (i: InvitationData) => i.gallery.find((g) => g.is_cover)?.url || getTheme(i.theme).coverImage || placeholderImage(coupleLabel(i))
 
 const loadData = async () => {
   try {
