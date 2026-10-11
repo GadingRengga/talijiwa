@@ -149,7 +149,7 @@ defineExpose({ scrollToSection, replay: replayAll })
     class="inv"
     @click.capture="onPreviewClick"
     @touchstart.capture="onTouchStart"
-    :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`]"
+    :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`, `inv-t-${theme.id}`]"
     :style="cssVars"
   >
     <div data-sec="cover">

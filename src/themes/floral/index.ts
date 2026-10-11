@@ -3,12 +3,12 @@ import type { ThemeDefinition } from '@/types'
 export const floral: ThemeDefinition = {
   id: 'floral',
   name: 'Romantic Floral',
-  description: 'Blush, sage, dan mawar dengan kelopak yang melayang pelan.',
+  description: 'Buket mawar blush di setiap sudut dengan untaian bunga dan kelopak jatuh.',
   intro: 'blossom',
   reveal: 'rise',
-  ornament: 'bouquet',
+  ornament: 'floral',
   decor: 'petals',
-  swatches: ['#fbeeee', '#fffaf6', '#8aa190', '#c4687b'],
+  swatches: ['#fbeeee', '#fffaf6', '#4b3b3f', '#c4687b'],
   tokens: {
     bg: '#fbeeee',
     surface: '#fffaf6',

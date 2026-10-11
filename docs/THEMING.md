@@ -8,10 +8,7 @@ Tema adalah data. Satu `ThemeDefinition` menghasilkan CSS variables `--inv-*` ya
 
 | Tema | Dekorasi | Palet |
 |---|---|---|
-| Classic Elegant | float (bulatan lembut) | krem, putih, cokelat tua, emas lembut |
-| Minimal Modern | none | putih, hitam, abu, beige |
-| Romantic Floral | petals (kelopak) | blush, krem, sage, mawar |
-| Luxury Gold | sparkle (kilau emas) | hitam, gading, emas, cokelat tua |
+| Romantic Floral | petals (kelopak jatuh) | blush, krem, sage, mawar |
 
 ## Menambah tema
 
@@ -21,8 +18,9 @@ Tema adalah data. Satu `ThemeDefinition` menghasilkan CSS variables `--inv-*` ya
    ```
 2. Tambahkan `'sunset'` ke `ThemeId` (`types/index.ts`).
 3. Daftarkan di `src/themes/index.ts` (`themes` record). Pemilih tema, builder, dan renderer ikut otomatis.
-4. Database: tambahkan nilai ke enum `theme_id` (`alter type theme_id add value 'sunset'`).
-5. Bila memakai font baru, tambahkan di `index.html` (Google Fonts) atau self-host.
+4. Bila butuh ornamen khusus: tambah kind ke `OrnamentKind`, buat `ornaments/OrnamentX.vue`, daftarkan di `ornaments/types.ts`, tambah CSS `orn-x-*` di `assets/invitation.css`.
+5. Database: `insert into theme_catalog (theme, code, tier, category, is_active, price, position) values ('sunset', '…', 'basic', '…', true, 149000, N)` (kolom `theme` bertipe text, tanpa enum).
+6. Bila memakai font baru, tambahkan di `index.html` (Google Fonts) atau self-host.
 
 ## Aturan
 

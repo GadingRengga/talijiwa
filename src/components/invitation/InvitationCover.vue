@@ -68,7 +68,9 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
     tl.to(q('.b-p'), { scale: 3.2, opacity: 0, duration: 1.5, ease: 'power2.in', stagger: 0.06 }, 0.3)
     tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.7)
   } else if (props.intro === 'gunungan') {
-    tl.to(q('.g-leaf'), { scale: 5, opacity: 0, rotateX: 25, rotateY: 15, duration: 1.6, ease: 'power3.in' }, 0.3)
+    // Stop the idle 3D sway so GSAP owns the transform from here.
+    r.querySelector('.g-leaf')?.classList.remove('g-leaf-idle')
+    tl.to(q('.g-leaf'), { scale: 5, opacity: 0, rotateX: 25, rotateY: 30, y: -40, duration: 1.6, ease: 'power3.in' }, 0.3)
     tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.8)
   } else if (props.intro === 'iris') {
     tl.to(q('.veil'), { clipPath: 'circle(0% at 50% 50%)', duration: 1.6, ease: 'power3.inOut' }, 0.3)
@@ -167,8 +169,30 @@ onBeforeUnmount(() => {
         <div v-for="n in 8" :key="n" class="b-p absolute left-1/2 top-1/2 z-[5] h-[17vmin] w-[34vmin]" :style="{ transform: `rotate(${(n - 1) * 45}deg)`, transformOrigin: '0 50%', background: n % 2 ? 'var(--inv-accent)' : 'color-mix(in srgb, var(--inv-accent) 55%, var(--inv-surface))', borderRadius: '0 100% 0 100% / 50% 100% 0 50%', willChange: 'transform, opacity' }" />
       </template>
       <template v-else-if="intro === 'gunungan'">
-        <div class="veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-bg)' }" />
-        <div class="g-leaf absolute left-1/2 top-1/2 z-[5] h-[78vmin] w-[54vmin] -translate-x-1/2 -translate-y-1/2" :style="{ clipPath: 'polygon(50% 0, 78% 28%, 100% 62%, 78% 100%, 22% 100%, 0 62%, 22% 28%)', background: 'linear-gradient(160deg, var(--inv-accent), color-mix(in srgb, var(--inv-accent) 40%, var(--inv-bg)))', willChange: 'transform, opacity' }" />
+        <div class="veil absolute inset-0 z-[4]" :style="{ background: 'radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--inv-accent) 22%, var(--inv-bg)), var(--inv-bg) 70%)' }" />
+        <div class="g-leaf g-leaf-idle absolute left-1/2 top-1/2 z-[5] h-[80vmin] w-[56vmin] -translate-x-1/2 -translate-y-1/2" :style="{ willChange: 'transform, opacity' }">
+          <svg viewBox="0 0 200 320" class="size-full" fill="none" aria-hidden="true">
+            <path d="M100 4 C108 36,124 74,149 114 C168 143,178 172,180 200 C182 228,179 250,174 266 C169 280,161 288,151 294 L49 294 C39 288,31 280,26 266 C21 250,18 228,20 200 C22 172,32 143,51 114 C76 74,92 36,100 4Z" fill="color-mix(in srgb, var(--inv-accent) 28%, var(--inv-bg))" stroke="var(--inv-accent)" stroke-width="2" />
+            <path d="M100 16 C106 44,120 78,142 114 C158 140,167 166,169 192 C171 216,168 236,164 250 C160 262,154 270,146 275 L54 275 C46 270,40 262,36 250 C32 236,29 216,31 192 C33 166,42 140,58 114 C80 78,94 44,100 16Z" stroke="var(--inv-accent)" stroke-width="0.8" opacity="0.6" />
+            <circle cx="100" cy="52" r="10" fill="var(--inv-accent)" opacity="0.85" />
+            <circle cx="100" cy="52" r="5" fill="var(--inv-bg)" opacity="0.8" />
+            <g stroke="var(--inv-accent)" stroke-width="1" opacity="0.55">
+              <path v-for="a in [0, 45, 90, 135]" :key="a" :d="`M100 52 l ${Math.cos(a * Math.PI / 180) * 22} ${Math.sin(a * Math.PI / 180) * 22}`" />
+            </g>
+            <path d="M99 260 L99 120 M101 260 L101 120" stroke="var(--inv-accent)" stroke-width="2.5" opacity="0.6" />
+            <path d="M99 150 C84 144,70 134,60 122 M99 180 C82 174,66 166,56 154 M101 150 C116 144,130 134,140 122 M101 180 C118 174,134 166,144 154" stroke="var(--inv-accent)" stroke-width="1.6" opacity="0.55" />
+            <g fill="var(--inv-accent)" opacity="0.55">
+              <ellipse cx="60" cy="120" rx="6" ry="3.5" transform="rotate(-25 60 120)" /><ellipse cx="140" cy="120" rx="6" ry="3.5" transform="rotate(25 140 120)" />
+              <ellipse cx="56" cy="152" rx="6" ry="3.5" transform="rotate(-20 56 152)" /><ellipse cx="144" cy="152" rx="6" ry="3.5" transform="rotate(20 144 152)" />
+              <circle cx="66" cy="132" r="2" /><circle cx="134" cy="132" r="2" />
+            </g>
+            <path d="M95 240 C93 228,99 220,106 215 C113 210,106 202,98 198" stroke="var(--inv-accent)" stroke-width="1.8" opacity="0.5" stroke-linecap="round" />
+            <path d="M80 262 C80 250,90 245,100 245 C110 245,120 250,120 262" stroke="var(--inv-accent)" stroke-width="1.8" opacity="0.6" />
+            <rect x="76" y="262" width="6" height="22" rx="2" fill="var(--inv-accent)" opacity="0.5" />
+            <rect x="118" y="262" width="6" height="22" rx="2" fill="var(--inv-accent)" opacity="0.5" />
+            <rect x="48" y="288" width="104" height="7" rx="2" fill="var(--inv-accent)" opacity="0.35" />
+          </svg>
+        </div>
       </template>
       <template v-else-if="intro === 'iris'">
         <div class="veil absolute inset-0 z-[4]" :style="{ clipPath: 'circle(150% at 50% 50%)', background: 'radial-gradient(circle at 25% 25%, color-mix(in srgb, var(--inv-accent) 38%, transparent), transparent 55%), radial-gradient(circle at 75% 80%, color-mix(in srgb, var(--inv-border) 90%, transparent), transparent 55%), var(--inv-bg)', willChange: 'clip-path' }" />

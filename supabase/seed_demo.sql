@@ -7,7 +7,7 @@ on conflict (id) do nothing;
 
 insert into invitations (id, customer_id, title, slug, status, theme, greeting, opening_text, closing_text, published_at) values
   ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111',
-   'Demo & Contoh', 'demo-contoh', 'published', 'classic',
+    'Demo & Contoh', 'demo-contoh', 'published', 'floral',
    'Assalamualaikum Warahmatullahi Wabarakatuh',
    'Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Anda ke pernikahan kami.',
    'Merupakan kehormatan bagi kami atas kehadiran dan doa restu Anda.',

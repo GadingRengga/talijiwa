@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import ThemeBanner from '@/components/invitation/ThemeBanner.vue'
 
-// Embed: <iframe src="https://domain/embed/banner/gerbang?couple=Raka%20%26%20Sinta&date=20%20Des%202026">
+// Embed: <iframe src="https://domain/embed/banner/floral?couple=Raka%20%26%20Sinta&date=20%20Des%202026">
 const route = useRoute()
 const q = (k: string) => (typeof route.query[k] === 'string' ? (route.query[k] as string) : undefined)
 </script>

@@ -87,7 +87,7 @@ export function makeAccessCode(prefix = 'TJ'): string {
 
 export function createEmptyInvitation(
   customerId: string,
-  theme: ThemeId = 'classic',
+  theme: ThemeId = 'floral',
   tier: InvitationTier = 'basic',
 ): InvitationData {
   const now = new Date().toISOString()

@@ -80,6 +80,9 @@ Vue 3 (`<script setup>`) · TypeScript strict · Vite · Vue Router · Pinia · 
 - [x] **Fase 9 — Audit hardening (2026-10-09)**: perbaiki `PublicLayout` typo (`coupleLoginRouterLink` → `coupleLogin`, menu mobile samakan); `workers/wa-preview.js` valid JS + secret via env dashboard (tidak ada hardcode URL/key); pembayaran atomik via RPC `record_payment`/`remove_payment` (`009`, service pakai `rpc()`); rate-limit publik ganda (throttle klien `utils/rateLimit.ts` + RPC `check_public_rate_limit`, migrasi `013`) + throttle view 30 detik; analitik agregasi server `invitation_daily_series` (fallback path lama bila RPC belum deploy); `CountdownTimer` hemat baterai (berhenti saat done/hidden); error panel hanya dev; test rate-limit baru. `typecheck` bersih, `test` 20/20, `build` sukses, `npm audit` 0 high+.
 
 
+- [x] **Fase 18 — Reset roster tema (2026-10-10)**: 12 tema dihapus total, dibangun ulang satu per satu dari nol. Roster saat ini: `floral` saja (basic, ornamen SVG + kartu/foto arch, tanpa aset gambar). Infrastruktur (registry, tier, builder, cover intro, decor) dipertahankan. Migrasi `018_theme_reset.sql`.
+
+
 ## Cara menambah…
 
 - **Tema baru**: `docs/THEMING.md`.

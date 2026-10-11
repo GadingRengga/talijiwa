@@ -1,8 +1,8 @@
 import type { Component } from 'vue'
 import type { OrnamentKind } from '@/types'
-import OrnamentJawa from './OrnamentJawa.vue'
+import OrnamentFloral from './OrnamentFloral.vue'
 
-/** Map ornament kind → dedicated component. Empty = fall back to inline SVG in OrnamentLayer. */
+/** Map ornament kind → dedicated component. Register new theme artwork here. */
 export const ORNAMENT_COMPONENTS: Partial<Record<OrnamentKind, Component>> = {
-  jawa: OrnamentJawa,
+  floral: OrnamentFloral,
 }

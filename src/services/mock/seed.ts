@@ -30,17 +30,7 @@ interface DemoSpec {
 }
 
 const demos: DemoSpec[] = [
-  { slug: 'demo-classic', theme: 'classic', groom: ['Budi Pratama', 'Budi'], bride: ['Ayu Lestari', 'Ayu'], date: '2026-12-20', palette: ['#d8c7a8', '#a98d5f'] },
-  { slug: 'demo-minimal', theme: 'minimal', groom: ['Dimas Anggara', 'Dimas'], bride: ['Rani Maharani', 'Rani'], date: '2026-11-14', palette: ['#cfcfcf', '#8c8c8c'] },
   { slug: 'demo-floral', theme: 'floral', groom: ['Arga Wicaksono', 'Arga'], bride: ['Nadia Safitri', 'Nadia'], date: '2027-01-09', palette: ['#f0c4cb', '#c4687b'] },
-  { slug: 'demo-luxury', theme: 'luxury', groom: ['Reza Mahendra', 'Reza'], bride: ['Salsa Kirana', 'Salsa'], date: '2027-02-06', palette: ['#5a4426', '#d1ab5a'] },
-  { slug: 'demo-gerbang', theme: 'gerbang', groom: ['Bayu Saputra', 'Bayu'], bride: ['Laras Wulandari', 'Laras'], date: '2027-03-13', palette: ['#5a3b25', '#c9a15a'] },
-  { slug: 'demo-amplop', theme: 'amplop', groom: ['Fajar Nugroho', 'Fajar'], bride: ['Mira Anjani', 'Mira'], date: '2027-03-27', palette: ['#e9b8b4', '#b5535f'] },
-  { slug: 'demo-sinematik', theme: 'sinematik', groom: ['Rendra Pranata', 'Rendra'], bride: ['Citra Maheswari', 'Citra'], date: '2027-04-10', palette: ['#1d2b4a', '#7fa8ff'] },
-  { slug: 'demo-garden', theme: 'garden', groom: ['Satria Wibowo', 'Satria'], bride: ['Kirana Dewi', 'Kirana'], date: '2027-04-24', palette: ['#a9c3a5', '#d98a94'] },
-  { slug: 'demo-jawa', theme: 'jawa', groom: ['Aryo Seto', 'Aryo'], bride: ['Sekar Ayu', 'Sekar'], date: '2027-05-08', palette: ['#d9bf94', '#9a5b24'] },
-  { slug: 'demo-celestial', theme: 'celestial', groom: ['Naufal Hakim', 'Naufal'], bride: ['Aurel Safira', 'Aurel'], date: '2027-05-22', palette: ['#262a55', '#b79cff'] },
-  { slug: 'demo-watercolor', theme: 'watercolor', groom: ['Galih Prakoso', 'Galih'], bride: ['Tiara Melati', 'Tiara'], date: '2027-06-05', palette: ['#a9c8d4', '#d98c8c'] },
 ]
 
 function buildDemo(customerId: string, spec: DemoSpec, index: number): InvitationData {
@@ -132,26 +122,15 @@ export function createSeed(): MockDb {
     created_at: iso(i % 14),
   }))
 
-  const categories: Record<string, ThemeCategory> = {
-    classic: 'klasik', minimal: 'modern', floral: 'floral', luxury: 'mewah', gerbang: 'adat',
-    amplop: 'modern', sinematik: 'modern', garden: 'floral', jawa: 'adat', celestial: 'modern', watercolor: 'floral',
-  }
-  const tiers: Record<string, InvitationTier> = {
-    classic: 'basic', minimal: 'basic', floral: 'basic', garden: 'basic', watercolor: 'basic',
-    gerbang: 'premium', amplop: 'premium', sinematik: 'premium', jawa: 'premium', celestial: 'premium',
-    luxury: 'luxury',
-  }
-  const codes: Record<string, string> = {
-    classic: 'CLS', minimal: 'MNM', floral: 'FLR', garden: 'GRD', watercolor: 'WTR',
-    gerbang: 'GRB', amplop: 'AMP', sinematik: 'SNM', jawa: 'JWA', celestial: 'CLT',
-    luxury: 'LUX',
-  }
+  const categories: Record<string, ThemeCategory> = { floral: 'floral' }
+  const tiers: Record<string, InvitationTier> = { floral: 'basic' }
+  const codes: Record<string, string> = { floral: 'FLR' }
   const themeCatalog: ThemeCatalogEntry[] = (Object.keys(Object.fromEntries(demos.map((d) => [d.theme, true]))) as ThemeId[]).map(
     (theme, i) => ({
       theme,
       code: codes[theme] ?? theme.toUpperCase().slice(0, 3),
       is_active: true,
-      price: theme === 'luxury' ? 249000 : ['gerbang', 'amplop', 'sinematik', 'jawa', 'celestial'].includes(theme) ? 199000 : 149000,
+      price: 149000,
       position: i + 1,
       category: categories[theme] ?? 'modern',
       tier: tiers[theme] ?? 'basic',
@@ -159,7 +138,7 @@ export function createSeed(): MockDb {
   )
 
   const orders: Order[] = [
-    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'classic', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
+    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'floral', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
     { id: 'ord_2', customer_id: 'cus_raka', invitation_id: 'inv_raka', tier: 'basic', theme: 'floral', amount: 149000, paid: 50000, status: 'dp', due_date: '2026-12-12', notes: 'Pelunasan maksimal H-7.', delivered_at: null, created_at: iso(4), updated_at: iso(4) },
   ]
   const payments: Payment[] = [
