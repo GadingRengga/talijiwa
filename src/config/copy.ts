@@ -145,6 +145,7 @@ export const copy = {
     open: 'Buka Undangan',
     tapToOpen: 'Ketuk untuk membuka',
     swipeUp: 'Geser ke atas untuk membuka',
+    viewPhoto: 'Lihat foto',
     todayIsTheDay: 'Hari Bahagia Telah Tiba',
     days: 'Hari',
     hours: 'Jam',

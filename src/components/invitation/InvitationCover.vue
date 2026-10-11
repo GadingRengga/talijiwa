@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { copy } from '@/config/copy'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 import DecorLayer from './DecorLayer.vue'
+import Gate3D from './Gate3D.vue'
 import type { DecorKind, IntroKind } from '@/types'
 // Flora gate artwork (static import: single-theme roster, no waste. Switch to
 // dynamic import once the roster grows past one theme).
@@ -34,8 +35,9 @@ const root = ref<HTMLElement | null>(null)
 const content = ref<HTMLElement | null>(null)
 const opening = ref(false)
 const hidden = ref(false)
-/** Flora cover acts: 'gate' (flowers) → 'title' (wedding-of) → dismissed. */
-const phase = ref<'gate' | 'title'>('title')
+/** Flora/gate3d cover acts: 'gate' → 'frame' → 'title' → dismissed. */
+const phase = ref<'gate' | 'frame' | 'title'>('title')
+const gate3dRef = ref<InstanceType<typeof Gate3D> | null>(null)
 let touchY: number | null = null
 let emitted = false
 let plunging = false
@@ -51,7 +53,7 @@ watch(() => props.active, sync)
 function build(tl: gsap.core.Timeline, exit: boolean) {
   const r = root.value!
   const q = (s: string) => r.querySelectorAll(s)
-  if (props.intro !== 'flora') {
+  if (props.intro !== 'flora' && props.intro !== 'gate3d') {
     tl.to(content.value, { opacity: 0, y: -24, scale: 0.97, duration: 0.6, ease: 'power2.in' })
     tl.to(q('.inv-decor > i'), { y: '-=60', opacity: 0, duration: 0.6, stagger: 0.02 }, '<')
   }
@@ -113,6 +115,11 @@ let demoTl: gsap.core.Timeline | undefined
 function demo() {
   if (prefersReducedMotion() || !root.value || !content.value) return
   demoTl?.progress(0).kill()
+  if (props.intro === 'gate3d') {
+    // Static/banner replay: gentle title fade only (no canvas here).
+    if (content.value) gsap.fromTo(content.value, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power2.out' })
+    return
+  }
   if (props.intro === 'flora' && root.value && content.value) {
     // Rewind the gate to its opening tableau before replaying the plunge.
     gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
@@ -141,6 +148,16 @@ function open() {
     }
     if (phase.value === 'gate' && !plunging) advance()
     else if (phase.value === 'title') dismiss()
+    return
+  }
+  if (props.intro === 'gate3d') {
+    if (!emitted) {
+      emitted = true
+      emit('open') // first tap is the user gesture needed to start music
+    }
+    if (phase.value === 'gate') gate3dRef.value?.play()
+    else if (phase.value === 'frame') toTitle()
+    else dismiss()
     return
   }
   if (opening.value) return
@@ -178,12 +195,46 @@ function dismiss() {
   tl.to(root.value, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.1')
 }
 
+/** Gate3D beat 2: dolly finished — flash, drop the canvas, show the name frame. */
+function onGateDone() {
+  if (phase.value !== 'gate' || !root.value) return
+  const tl = gsap.timeline({ onComplete: () => (phase.value = 'frame') })
+  tl.to(root.value.querySelector('.g3-flash'), { opacity: 1, duration: 0.35, ease: 'power1.in' })
+  tl.to(root.value.querySelector('.g3-flash'), { opacity: 0, duration: 0.7, ease: 'power1.out' })
+  tl.add(() => {
+    const card = root.value?.querySelector('.g3-card')
+    if (card) gsap.fromTo(card, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+  })
+}
+
+/** Gate3D flash point: start fading the cover photo in beneath the canvas. */
+function onGateOpened() {
+  const photo = root.value?.querySelector('.cover-img')
+  if (photo) gsap.to(photo, { opacity: 1, scale: 1.06, duration: 1.4, ease: 'power2.out' })
+}
+
+/** Gate3D unavailable (no WebGL): fall back to the title tableau. */
+function onGateSkipped() {
+  phase.value = 'title'
+  if (root.value) gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
+  if (content.value) gsap.set([content.value, ...Array.from(content.value.children)], { opacity: 1, y: 0 })
+}
+
+/** Gate3D beat 3: frame card → photo + full title. */
+function toTitle() {
+  if (phase.value !== 'frame' || !root.value || !content.value) return
+  phase.value = 'title'
+  const photo = root.value.querySelector('.cover-img')
+  if (photo) gsap.fromTo(photo, { opacity: 0, scale: 1.15 }, { opacity: 1, scale: 1.06, duration: 1.2, ease: 'power2.out' })
+  gsap.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 })
+}
+
 function onCoverTouchStart(e: TouchEvent) {
   touchY = e.touches[0]?.clientY ?? null
 }
 
 function onCoverTouchEnd(e: TouchEvent) {
-  if (props.intro !== 'flora' || phase.value !== 'title' || props.mode !== 'overlay' || touchY == null) return
+  if ((props.intro !== 'flora' && props.intro !== 'gate3d') || phase.value !== 'title' || props.mode !== 'overlay' || touchY == null) return
   const endY = e.changedTouches[0]?.clientY ?? touchY
   const dy = endY - touchY
   touchY = null
@@ -191,9 +242,9 @@ function onCoverTouchEnd(e: TouchEvent) {
 }
 
 onMounted(() => {
-  if (props.intro !== 'flora' || prefersReducedMotion() || !root.value || !content.value) return
-  if (props.mode === 'static' && !props.loop) {
-    // Builder preview: show the title tableau directly (editable at a glance).
+  if ((props.intro !== 'flora' && props.intro !== 'gate3d') || prefersReducedMotion() || !root.value || !content.value) return
+  if (props.mode === 'static') {
+    // Builder preview & banner: show the title tableau directly (editable at a glance, no GPU cost).
     phase.value = 'title'
     return
   }
@@ -209,7 +260,7 @@ onMounted(() => {
   }
 })
 onMounted(() => {
-  if (!props.loop || prefersReducedMotion() || !root.value) return
+  if (!props.loop || props.intro === 'gate3d' || prefersReducedMotion() || !root.value) return
   loopTl = gsap.timeline({ repeat: -1, repeatDelay: 1.4, delay: 1.2 })
   build(loopTl, false)
 })
@@ -314,6 +365,29 @@ onBeforeUnmount(() => {
           <p class="absolute inset-x-0 bottom-30 z-[6] text-center text-xs tracking-[0.25em]" style="color: var(--inv-text)">{{ copy.invitation.tapToOpen }}</p>
         </div>
       </template>
+      <template v-else-if="intro === 'gate3d'">
+        <Gate3D
+          v-if="mode === 'overlay' && phase !== 'title'"
+          ref="gate3dRef"
+          class="absolute inset-0 z-[4]"
+          @opened="onGateOpened"
+          @done="onGateDone"
+          @skipped="onGateSkipped"
+        />
+        <div v-if="mode === 'overlay' && phase === 'gate'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
+          <p class="absolute inset-x-0 bottom-30 text-center text-xs tracking-[0.25em]" style="color: var(--inv-text); text-shadow: 0 0 14px var(--inv-surface), 0 0 6px var(--inv-surface)">{{ copy.invitation.tapToOpen }}</p>
+        </div>
+        <div v-if="phase === 'frame'" class="absolute inset-0 z-[6] grid place-items-center px-6">
+          <div class="inv-card g3-card w-full max-w-sm p-8 text-center">
+            <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
+            <h2 class="inv-heading mt-4 break-words text-4xl" style="color: var(--inv-text)">{{ couple }}</h2>
+            <p v-if="date" class="mt-3 text-sm tracking-widest" style="opacity: 0.9">{{ date }}</p>
+            <div class="inv-divider" />
+            <button type="button" class="inv-btn mt-2" @click="toTitle">{{ copy.invitation.viewPhoto }}</button>
+          </div>
+        </div>
+        <div class="g3-flash pointer-events-none absolute inset-0 z-[8]" :style="{ background: 'var(--inv-surface)', opacity: 0 }" />
+      </template>
     </template>
 
     <div ref="content" class="relative z-10 w-full max-w-xl px-6">
@@ -326,7 +400,7 @@ onBeforeUnmount(() => {
       <div class="mx-auto my-8 h-px w-16 bg-white/60" />
       <p class="text-sm" style="opacity: 0.85">{{ copy.invitation.dear }}</p>
       <p class="inv-heading mt-1 break-words text-2xl">{{ guest }}</p>
-      <div v-if="intro === 'flora'" class="mt-6">
+      <div v-if="intro === 'flora' || intro === 'gate3d'" class="mt-6">
         <svg class="fl-chev mx-auto" width="28" height="18" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M2 16L14 3l12 13" /></svg>
         <p class="mt-2 text-xs tracking-[0.25em]" style="opacity: 0.85">{{ copy.invitation.swipeUp }}</p>
       </div>

@@ -4,8 +4,8 @@ import floralCover from '@/assets/images/floral-cover-1.webp'
 export const floral: ThemeDefinition = {
   id: 'floral',
   name: 'Romantic Floral',
-  description: 'Gerbang bunga yang menembus ke The Wedding Of — lalu geser ke atas.',
-  intro: 'flora',
+  description: 'Gerbang bunga 3D yang terbuka ke bingkai nama, foto, lalu undangan.',
+  intro: 'gate3d',
   reveal: 'rise',
   ornament: 'floral',
   decor: 'petals',
