@@ -2,7 +2,7 @@ export type InvitationStatus = 'draft' | 'published' | 'archived'
 export type ThemeId = 'floral'
 /** Price tier: higher tiers unlock all themes of lower tiers. */
 export type InvitationTier = 'basic' | 'premium' | 'luxury'
-export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube'
+export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
 export type OrnamentKind = 'floral'
 export type Attendance = 'attending' | 'not_attending'

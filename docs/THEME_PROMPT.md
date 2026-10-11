@@ -51,7 +51,7 @@ export const [ID]: ThemeDefinition = {
 \```
 
 NILAI YANG BOLEH DIPAKAI (jangan mengarang di luar ini):
-- intro: 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube'
+- intro: 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora'
 - reveal: 'fade' | 'rise' | 'stagger' | 'mask'
 - ornament: 'garden' | 'batik' | 'stars' | 'wash' | 'frame' | 'lines' | 'bouquet' | 'shine' | 'jawa'
 - decor: 'float' | 'petals' | 'sparkle' | 'none'

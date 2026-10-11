@@ -109,6 +109,19 @@
 .sheen { position: absolute; inset: 0 auto 0 -60%; width: 40%; background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--inv-accent) 40%, transparent), transparent); transform: skewX(-18deg); animation: orn-sheen 3.6s ease-in-out infinite; pointer-events: none; }
 @keyframes orn-sheen { 0%, 40% { transform: skewX(-18deg) translateX(0); } 100% { transform: skewX(-18deg) translateX(900%); } }
 @media (prefers-reduced-motion: reduce) { .sheen { animation: none; opacity: 0; } }
+/* Cover gate idle sway (GSAP takes over on open; kept for intro kinds). */
+.g-leaf-idle { animation: g-sway 5s ease-in-out infinite alternate; will-change: transform; }
+@keyframes g-sway { from { transform: translate(-50%, -50%) rotateY(-8deg); } to { transform: translate(-50%, -50%) rotateY(8deg); } }
+@media (prefers-reduced-motion: reduce) { .g-leaf-idle { animation: none; } }
+/* Flora cover: luxury gate idle motion (GSAP owns transforms during plunge). */
+.fl-frame { animation: fl-kenburns 14s ease-in-out infinite alternate; will-change: transform; }
+@keyframes fl-kenburns { from { transform: scale(1) rotate(0deg); } to { transform: scale(1.07) rotate(0.6deg); } }
+.fl-glow { animation: fl-glowpulse 5s ease-in-out infinite alternate; will-change: opacity; }
+@keyframes fl-glowpulse { from { opacity: 0.55; } to { opacity: 1; } }
+/* Flora cover: swipe-up hint chevron. */
+.fl-chev { opacity: 0.8; animation: fl-bob 2s ease-in-out infinite; }
+@keyframes fl-bob { 50% { transform: translateY(-7px); } }
+@media (prefers-reduced-motion: reduce) { .fl-frame, .fl-glow, .fl-chev { animation: none; } }
 /* Floral #1: full asset composition. 3 loops + petals 9 = 12 (budget 14). */
 .orn-floral-veil {
   position: absolute; inset: 0; pointer-events: none;
@@ -153,6 +166,10 @@
   display: block;
   will-change: transform, opacity;
 }
+/* Builder preview: the static cover fills exactly one frame viewport, so the
+   next section never leaks into the first screen. Banners are unaffected
+   (they are not inside .inv-preview and force their own height). */
+.inv-preview [data-sec=cover] > .inv-cover { min-height: var(--pv-h, 34rem); }
 @media (prefers-reduced-motion: reduce) {
   .orn *, .orn { animation: none !important; }
 }

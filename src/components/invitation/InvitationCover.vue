@@ -5,6 +5,9 @@ import { copy } from '@/config/copy'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 import DecorLayer from './DecorLayer.vue'
 import type { DecorKind, IntroKind } from '@/types'
+// Flora gate artwork (static import: single-theme roster, no waste. Switch to
+// dynamic import once the roster grows past one theme).
+import gateFrame from '@/assets/images/floral-frame-1.webp'
 
 const props = withDefaults(
   defineProps<{
@@ -31,6 +34,11 @@ const root = ref<HTMLElement | null>(null)
 const content = ref<HTMLElement | null>(null)
 const opening = ref(false)
 const hidden = ref(false)
+/** Flora cover acts: 'gate' (flowers) → 'title' (wedding-of) → dismissed. */
+const phase = ref<'gate' | 'title'>('title')
+let touchY: number | null = null
+let emitted = false
+let plunging = false
 const folds = computed(() => (props.intro === 'curtain' ? 'repeating-linear-gradient(90deg, transparent 0 18px, rgba(0,0,0,.09) 18px 36px), ' : ''))
 const panels = computed(() => !['slide', 'zoom'].includes(props.intro))
 let loopTl: gsap.core.Timeline | undefined
@@ -43,8 +51,10 @@ watch(() => props.active, sync)
 function build(tl: gsap.core.Timeline, exit: boolean) {
   const r = root.value!
   const q = (s: string) => r.querySelectorAll(s)
-  tl.to(content.value, { opacity: 0, y: -24, scale: 0.97, duration: 0.6, ease: 'power2.in' })
-  tl.to(q('.inv-decor > i'), { y: '-=60', opacity: 0, duration: 0.6, stagger: 0.02 }, '<')
+  if (props.intro !== 'flora') {
+    tl.to(content.value, { opacity: 0, y: -24, scale: 0.97, duration: 0.6, ease: 'power2.in' })
+    tl.to(q('.inv-decor > i'), { y: '-=60', opacity: 0, duration: 0.6, stagger: 0.02 }, '<')
+  }
   if (props.intro === 'door') {
     tl.to(q('.d-l'), { rotateY: -105, transformOrigin: 'left center', duration: 1.5, ease: 'power3.inOut' }, 0.3)
     tl.to(q('.d-r'), { rotateY: 105, transformOrigin: 'right center', duration: 1.5, ease: 'power3.inOut' }, 0.3)
@@ -82,6 +92,15 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
   } else if (props.intro === 'cube') {
     tl.to(q('.cube-veil'), { rotateY: -90, transformOrigin: 'left center', duration: 1.6, ease: 'power3.inOut' }, 0.3)
     tl.to(q('.cover-img'), { scale: 1.12, x: 40, duration: 1.8, ease: 'power2.out' }, 0.3)
+  } else if (props.intro === 'flora') {
+    // Three beats: flower gate → uploaded photo fullscreen → staggered title.
+    tl.to(q('.fl-gate'), { scale: 1.45, rotate: 1.5, opacity: 0, duration: 1.6, ease: 'power2.in' }, 0.2)
+    tl.to(q('.fl-flash'), { opacity: 0.9, duration: 0.5, ease: 'power1.in' }, 0.5)
+    tl.to(q('.fl-flash'), { opacity: 0, duration: 0.7, ease: 'power1.out' }, 1.0)
+    tl.to(q('.fl-veil'), { opacity: 0, duration: 0.9, ease: 'power1.inOut' }, 0.6)
+    tl.to(q('.cover-img'), { opacity: 1, scale: 1.06, duration: 1.6, ease: 'power2.out' }, 0.5)
+    tl.to(q('.cover-img'), { scale: 1.12, duration: 2.4, ease: 'none' }, 2.1)
+    if (content.value) tl.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 }, 2.0)
   }
   if (exit) {
     if (props.intro === 'slide') tl.to(r, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.2')
@@ -94,14 +113,36 @@ let demoTl: gsap.core.Timeline | undefined
 function demo() {
   if (prefersReducedMotion() || !root.value || !content.value) return
   demoTl?.progress(0).kill()
+  if (props.intro === 'flora' && root.value && content.value) {
+    // Rewind the gate to its opening tableau before replaying the plunge.
+    gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+    gsap.set(content.value, { opacity: 1, y: 0 })
+    gsap.set(content.value.children, { opacity: 0, y: 26 })
+    gsap.set(root.value.querySelector('.fl-gate'), { opacity: 1, scale: 1, rotate: 0 })
+    gsap.set(root.value.querySelector('.fl-flash'), { opacity: 0 })
+    gsap.set(root.value.querySelector('.fl-veil'), { opacity: 1 })
+  }
   if (props.intro === 'split') gsap.fromTo(root.value.querySelectorAll('.ch'), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.06 })
-  const t = gsap.timeline({ onComplete: () => void gsap.delayedCall(0.9, () => void t.timeScale(1.8).reverse()) })
+  // Static preview (builder) ends on the visible title tableau; only the
+  // looping banner rewinds. Without this the replay leaves a blank cover:
+  // photo+content end at opacity 0 while the gate stays display:none.
+  const rewind = props.intro !== 'flora' || props.loop
+  const t = gsap.timeline({ onComplete: () => rewind && void gsap.delayedCall(0.9, () => void t.timeScale(1.8).reverse()) })
   demoTl = t
   build(t, false)
 }
 defineExpose({ demo })
 
 function open() {
+  if (props.intro === 'flora') {
+    if (!emitted) {
+      emitted = true
+      emit('open') // first tap is the user gesture needed to start music
+    }
+    if (phase.value === 'gate' && !plunging) advance()
+    else if (phase.value === 'title') dismiss()
+    return
+  }
   if (opening.value) return
   opening.value = true
   emit('open') // the click is the user gesture needed to start music
@@ -113,6 +154,54 @@ function open() {
   build(tl, true)
 }
 
+/** Flora act 2: plunge through the gate, reveal photo + title. */
+function advance() {
+  if (phase.value !== 'gate' || !root.value || !content.value) return
+  if (prefersReducedMotion()) {
+    phase.value = 'title'
+    return
+  }
+  plunging = true
+  const tl = gsap.timeline({ onComplete: () => ((phase.value = 'title'), (plunging = false)) })
+  build(tl, false)
+}
+
+/** Flora act 3: swipe/button dismisses the cover. */
+function dismiss() {
+  if (phase.value !== 'title' || !root.value) return
+  if (prefersReducedMotion() || !content.value) {
+    hidden.value = true
+    return
+  }
+  const tl = gsap.timeline({ onComplete: () => (hidden.value = true) })
+  tl.to(content.value, { opacity: 0, y: -24, duration: 0.5, ease: 'power2.in' })
+  tl.to(root.value, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.1')
+}
+
+function onCoverTouchStart(e: TouchEvent) {
+  touchY = e.touches[0]?.clientY ?? null
+}
+
+function onCoverTouchEnd(e: TouchEvent) {
+  if (props.intro !== 'flora' || phase.value !== 'title' || props.mode !== 'overlay' || touchY == null) return
+  const endY = e.changedTouches[0]?.clientY ?? touchY
+  const dy = endY - touchY
+  touchY = null
+  if (dy < -60) dismiss()
+}
+
+onMounted(() => {
+  if (props.intro !== 'flora' || prefersReducedMotion() || !root.value || !content.value) return
+  if (props.mode === 'static' && !props.loop) {
+    // Builder preview: show the title tableau directly (editable at a glance).
+    phase.value = 'title'
+    return
+  }
+  phase.value = 'gate'
+  gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  gsap.set(content.value, { opacity: 1, y: 0 })
+  gsap.set(content.value.children, { opacity: 0, y: 26 })
+})
 onMounted(() => {
   // Minimal intro: couple name types in letter by letter.
   if (props.intro === 'split' && !prefersReducedMotion() && root.value) {
@@ -144,6 +233,8 @@ onBeforeUnmount(() => {
     class="inv-cover relative isolate flex items-center justify-center overflow-hidden text-center"
     :class="mode === 'overlay' ? 'fixed inset-0 z-50 h-dvh overflow-y-auto py-10' : 'min-h-[34rem]'"
     :style="{ color: '#fff', perspective: '1400px' }"
+    @touchstart="onCoverTouchStart"
+    @touchend="onCoverTouchEnd"
   >
     <img :src="image" alt="" class="cover-img absolute inset-0 -z-20 size-full object-cover" decoding="async" :fetchpriority="eager ? 'high' : 'auto'" :loading="eager ? 'eager' : 'lazy'" />
     <div class="absolute inset-0 -z-10" :style="{ background: 'var(--inv-cover-overlay)' }" />
@@ -210,6 +301,19 @@ onBeforeUnmount(() => {
         <div class="veil cube-veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-surface)', willChange: 'transform' }" />
         <div class="absolute inset-0 z-[5] pointer-events-none" :style="{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--inv-border) 40%, transparent), transparent 30%)' }" />
       </template>
+      <template v-else-if="intro === 'flora'">
+        <div class="fl-veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-bg)' }" />
+        <div
+          class="fl-gate absolute inset-0 z-[5]"
+          :class="[{ hidden: phase === 'title' }, mode === 'overlay' ? 'cursor-pointer' : '']"
+          @click="mode === 'overlay' && open()"
+        >
+          <div class="fl-glow absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" :style="{ background: 'radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 30%, transparent), transparent 65%)' }" />
+          <img :src="gateFrame" alt="" class="fl-frame absolute inset-0 size-full object-cover" decoding="async" />
+          <div class="fl-flash absolute inset-0" :style="{ background: 'radial-gradient(circle at 50% 50%, rgba(255,250,240,.95), transparent 60%)', opacity: 0 }" />
+          <p class="absolute inset-x-0 bottom-30 z-[6] text-center text-xs tracking-[0.25em]" style="color: var(--inv-text)">{{ copy.invitation.tapToOpen }}</p>
+        </div>
+      </template>
     </template>
 
     <div ref="content" class="relative z-10 w-full max-w-xl px-6">
@@ -222,6 +326,10 @@ onBeforeUnmount(() => {
       <div class="mx-auto my-8 h-px w-16 bg-white/60" />
       <p class="text-sm" style="opacity: 0.85">{{ copy.invitation.dear }}</p>
       <p class="inv-heading mt-1 break-words text-2xl">{{ guest }}</p>
+      <div v-if="intro === 'flora'" class="mt-6">
+        <svg class="fl-chev mx-auto" width="28" height="18" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M2 16L14 3l12 13" /></svg>
+        <p class="mt-2 text-xs tracking-[0.25em]" style="opacity: 0.85">{{ copy.invitation.swipeUp }}</p>
+      </div>
       <button type="button" class="inv-btn mt-8" :disabled="mode === 'static'" @click="open">{{ copy.invitation.open }}</button>
     </div>
   </section>

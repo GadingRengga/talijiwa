@@ -143,6 +143,8 @@ export const copy = {
     dear: 'Kepada Yth.',
     defaultGuest: 'Bapak/Ibu/Saudara/i',
     open: 'Buka Undangan',
+    tapToOpen: 'Ketuk untuk membuka',
+    swipeUp: 'Geser ke atas untuk membuka',
     todayIsTheDay: 'Hari Bahagia Telah Tiba',
     days: 'Hari',
     hours: 'Jam',

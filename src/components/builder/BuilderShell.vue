@@ -472,7 +472,7 @@ const goBack = () => {
             :class="device === 'phone' ? 'xl:max-w-none xl:rounded-[2.5rem] xl:border-[10px] xl:border-ink' : 'xl:w-[min(32rem,100%)] xl:max-w-none xl:rounded-[1.5rem] xl:border-[10px] xl:border-ink'"
           >
             <div v-if="device === 'phone'" class="pointer-events-none absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden="true" />
-            <InvitationRenderer v-if="draft" ref="previewRef" :class="device === 'phone' ? 'pt-7' : ''" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" :interactive="previewInteractive" @pick="onPick" />
+            <InvitationRenderer v-if="draft" ref="previewRef" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" :interactive="previewInteractive" @pick="onPick" />
           </div>
           <p class="mt-3 shrink-0 text-center text-xs text-muted lg:hidden">{{ copy.builder.tapHint }}</p>
           <p class="mt-3 hidden shrink-0 text-center text-xs text-muted lg:block">{{ previewInteractive ? copy.builder.edit.tryActive : copy.builder.edit.clickHint }}</p>

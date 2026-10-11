@@ -81,6 +81,7 @@ Vue 3 (`<script setup>`) · TypeScript strict · Vite · Vue Router · Pinia · 
 
 
 - [x] **Fase 18 — Reset roster tema (2026-10-10)**: 12 tema dihapus total, dibangun ulang satu per satu dari nol. Roster saat ini: `floral` saja (basic, ornamen SVG + kartu/foto arch, tanpa aset gambar). Infrastruktur (registry, tier, builder, cover intro, decor) dipertahankan. Migrasi `018_theme_reset.sql`.
+- [x] **Fase 19 — Cover sinematik flora (2026-10-11)**: intro `flora` tiga babak (gerbang bunga → plunge → judul → geser ke atas), cover default `floral-cover-1.webp`, hook `inv-t-*`.
 
 
 ## Cara menambah…

@@ -4,8 +4,8 @@ import floralCover from '@/assets/images/floral-cover-1.webp'
 export const floral: ThemeDefinition = {
   id: 'floral',
   name: 'Romantic Floral',
-  description: 'Buket mawar blush di setiap sudut dengan untaian bunga dan kelopak jatuh.',
-  intro: 'blossom',
+  description: 'Gerbang bunga yang menembus ke The Wedding Of — lalu geser ke atas.',
+  intro: 'flora',
   reveal: 'rise',
   ornament: 'floral',
   decor: 'petals',

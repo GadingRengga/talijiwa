@@ -56,6 +56,9 @@ Semua 5 aset diterima, terverifikasi, dan terpasang: buket sudut,
 garland atas–bawah, tangkai sisi, kanopi gantung, cover default.
 Total WebP ±645 KB (sumber PNG/JPG tetap tersimpan).
 
+Bonus: `floral-cover-1.png` (bingkai 4-sudut transparan) → `floral-frame-1.webp`
+(165 KB) dipakai sebagai gerbang cover sinematik.
+
 ## 5. Gambar opening/cover
 
 File: `floral-cover-1.jpg` — latar cover full-screen (foto, tidak perlu transparan).

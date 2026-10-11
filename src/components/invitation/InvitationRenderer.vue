@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Instagram, MapPin, X } from 'lucide-vue-next'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { copy } from '@/config/copy'
 import { useScrollReveal } from '@/composables/useAnimation'
 import { getTheme, themeStyle } from '@/themes'
@@ -142,6 +142,19 @@ function scrollToSection(key: string) {
   else el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 defineExpose({ scrollToSection, replay: replayAll })
+
+let ro: ResizeObserver | undefined
+onMounted(() => {
+  // Preview frame height → the static cover fills exactly one screen, so
+  // section 2 never leaks into the first viewport. Skipped when unsupported.
+  if (!isPreview.value || !('ResizeObserver' in window) || !root.value) return
+  const el = root.value
+  const syncH = () => el.style.setProperty('--pv-h', `${el.clientHeight}px`)
+  syncH()
+  ro = new ResizeObserver(syncH)
+  ro.observe(el)
+})
+onBeforeUnmount(() => ro?.disconnect())
 </script>
 
 <template>
