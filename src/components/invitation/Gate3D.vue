@@ -46,7 +46,9 @@ onBeforeUnmount(() => cleanup?.())
 
 function start(hostEl: HTMLElement): () => void {
   const DOOR_MS = 2600
-  const DOLLY_START = 900
+  // Dolly starts after the doors near full-open so the camera never meets a
+  // half-swung wingtip at z=0 (was ~70ms margin on desktop).
+  const DOLLY_START = 1100
   const DOLLY_DUR = 3500
   const FLASH_AT = 3700
   const END_MS = 4800
@@ -60,7 +62,7 @@ function start(hostEl: HTMLElement): () => void {
     bg: tok('--inv-bg', '#fbeeee'),
     surface: tok('--inv-surface', '#fffaf6'),
     text: tok('--inv-text', '#4b3b3f'),
-    accent: tok('--inv-accent', '#c4687b'),
+    accent: tok('--inv-accent', '#a94e63'),
     border: tok('--inv-border', '#f0d4d8'),
   }
 
@@ -282,7 +284,7 @@ function start(hostEl: HTMLElement): () => void {
 
   /* ── Scene ── */
   const renderer = new THREE.WebGLRenderer({ antialias: true })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2))
   hostEl.appendChild(renderer.domElement)
 
   const scene = new THREE.Scene()
@@ -440,7 +442,9 @@ function start(hostEl: HTMLElement): () => void {
 
   const beamMat = new THREE.MeshBasicMaterial({ map: beamTexture(P.glow), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
   const beam = new THREE.Mesh(new THREE.PlaneGeometry(4.0, H), beamMat)
-  beam.position.set(0, H / 2, -0.15)
+  // Offset so the dolly never pierces the quad head-on (was a 1-frame
+  // full-screen flash mid-crossing); reads as a side light shaft instead.
+  beam.position.set(2.4, H / 2, -0.15)
   scene.add(beam)
   const glowMat = new THREE.MeshBasicMaterial({ map: radialTexture(P.glow), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), glowMat)
@@ -460,7 +464,7 @@ function start(hostEl: HTMLElement): () => void {
   }
   const pgeo = new THREE.BufferGeometry()
   pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3))
-  scene.add(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: 0.28, map: petalTexture(), transparent: true, alphaTest: 0.05, depthWrite: false })))
+  scene.add(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: small ? 0.42 : 0.28, map: petalTexture(), transparent: true, alphaTest: 0.05, depthWrite: false })))
 
   let tx = 0
   let ty = 0
@@ -478,14 +482,20 @@ function start(hostEl: HTMLElement): () => void {
   let opened = false
   let finished = false
   let last = performance.now()
+  let blendFrom = { x: 0, y: 2.2, z: baseZ }
   const DOOR_MAX = THREE.MathUtils.degToRad(105)
 
   playFn = () => {
     if (phase !== 'idle') return
     phase = 'opening'
     t0 = performance.now()
+    // Blend start: freeze the idle sway/parallax pose and ease onto the dolly
+    // path over the first 400ms (kills the tap-at-extreme jump-cut).
+    blendFrom = { x: px * 0.55, y: 2.2 - py * 0.25, z: baseZ }
     tx = 0
     ty = 0
+    px = 0
+    py = 0
   }
 
   const frame = (now: number) => {
@@ -515,10 +525,18 @@ function start(hostEl: HTMLElement): () => void {
       glowMat.opacity = 0.35 + 0.65 * g
       backLight.intensity = 0.15 + 1.6 * g
       const s = easeIO3(clamp01((t - DOLLY_START) / DOLLY_DUR))
-      camera.position.set(px * 0.55 * (1 - s), lerp(2.2, 2.0, s), lerp(baseZ, -24, s))
+      // End nestled among the flower arches (not past them staring at the
+      // path): the last garden frame before the flash is blossoms + glow.
+      // Ease off the frozen idle pose onto the dolly path (first 400ms).
+      const bt = 1 - Math.pow(1 - clamp01(t / 400), 3)
+      camera.position.set(
+        lerp(blendFrom.x, px * 0.55 * (1 - s), bt),
+        lerp(blendFrom.y, lerp(2.2, 2.0, s), bt),
+        lerp(blendFrom.z, lerp(baseZ, -13, s), bt),
+      )
       camera.fov = lerp(40, 54, s)
       camera.updateProjectionMatrix()
-      camera.lookAt(0, lerp(3.1, 2.4, s), lerp(0, -40, s))
+      camera.lookAt(0, lerp(3.1, 3.4, s), lerp(0, -26, s))
       if (!opened && t >= FLASH_AT) {
         opened = true
         emit('opened')
@@ -538,6 +556,8 @@ function start(hostEl: HTMLElement): () => void {
     window.removeEventListener('pointermove', onMove)
     playFn = null
     scene.traverse((o) => {
+      const inst = o as unknown as THREE.InstancedMesh
+      if (inst.isInstancedMesh) inst.dispose()
       const mesh = o as THREE.Mesh
       if (mesh.geometry) mesh.geometry.dispose()
       const mat = (mesh as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined
@@ -559,5 +579,5 @@ function start(hostEl: HTMLElement): () => void {
 </script>
 
 <template>
-  <div ref="host" class="absolute inset-0" aria-hidden="true" />
+  <div ref="host" class="gate3d-host absolute inset-0" aria-hidden="true" />
 </template>

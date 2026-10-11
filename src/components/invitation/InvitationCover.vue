@@ -1,11 +1,32 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { copy } from '@/config/copy'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 import DecorLayer from './DecorLayer.vue'
-import Gate3D from './Gate3D.vue'
-import type { DecorKind, IntroKind } from '@/types'
+import OrnamentLayer from './OrnamentLayer.vue'
+// Lazy: keeps three.js out of the initial invitation chunk so cover text +
+// photo paint first; the gate mounts only in overlay/interactive mode anyway.
+let gateRetries = 0
+const gateFailed = ref(false)
+const Gate3D = defineAsyncComponent({
+  loader: () => import('./Gate3D.vue'),
+  timeout: 20000,
+  onError(_err, retry, fail) {
+    // Flaky network: one retry, then fall back to the title tableau (same as
+    // no-WebGL) instead of stranding the guest on an unopenable gate.
+    if (gateRetries < 1 && !gateFailed.value) {
+      gateRetries += 1
+      retry()
+    } else {
+      gateFailed.value = true
+      pendingPlay = false
+      onGateSkipped()
+      fail()
+    }
+  },
+})
+import type { DecorKind, IntroKind, OrnamentKind } from '@/types'
 // Flora gate artwork (static import: single-theme roster, no waste. Switch to
 // dynamic import once the roster grows past one theme).
 import gateFrame from '@/assets/images/floral-frame-1.webp'
@@ -17,6 +38,8 @@ const props = withDefaults(
     guest: string
     image: string
     decor: DecorKind
+    /** Theme signature ornament shown over the cover (frame/title phases). */
+    ornament?: OrnamentKind
     /** overlay = full-screen gate (public); static = plain block (builder / banner) */
     mode: 'overlay' | 'static'
     intro?: IntroKind
@@ -31,7 +54,7 @@ const props = withDefaults(
   }>(),
   { intro: 'slide', loop: false, active: true, eager: false, interactive: false },
 )
-const emit = defineEmits<{ open: [] }>()
+const emit = defineEmits<{ open: []; closed: [] }>()
 
 const root = ref<HTMLElement | null>(null)
 const content = ref<HTMLElement | null>(null)
@@ -39,10 +62,24 @@ const opening = ref(false)
 const hidden = ref(false)
 /** Flora/gate3d cover acts: 'gate' → 'frame' → 'title' → dismissed. */
 const phase = ref<'gate' | 'frame' | 'title'>('title')
-const gate3dRef = ref<InstanceType<typeof Gate3D> | null>(null)
+const gate3dRef = ref<{ play: () => void } | null>(null)
 let touchY: number | null = null
 let emitted = false
 let plunging = false
+/** Tap arrived before the lazy 3D chunk loaded: play as soon as it mounts. */
+let pendingPlay = false
+/** True once the garden canvas covers the photo poster (first paint guard). */
+const gateReady = ref(false)
+watch(gate3dRef, (g) => {
+  if (!g) return
+  gateReady.value = true
+  // Hide the poster photo only now that scenery covers it.
+  if (phase.value === 'gate' && root.value) gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  if (pendingPlay) {
+    pendingPlay = false
+    g.play()
+  }
+})
 const folds = computed(() => (props.intro === 'curtain' ? 'repeating-linear-gradient(90deg, transparent 0 18px, rgba(0,0,0,.09) 18px 36px), ' : ''))
 const panels = computed(() => !['slide', 'zoom'].includes(props.intro))
 let loopTl: gsap.core.Timeline | undefined
@@ -163,7 +200,10 @@ function open() {
       emitted = true
       emit('open') // first tap is the user gesture needed to start music
     }
-    if (phase.value === 'gate') gate3dRef.value?.play()
+    if (phase.value === 'gate') {
+      if (gate3dRef.value) gate3dRef.value.play()
+      else pendingPlay = true
+    }
     else if (phase.value === 'frame') toTitle()
     else dismiss()
     return
@@ -192,8 +232,9 @@ function advance() {
 }
 
 /** Flora act 3: swipe/button dismisses the cover. */
+let dismissing = false
 function dismiss() {
-  if (phase.value !== 'title' || !root.value) return
+  if (phase.value !== 'title' || !root.value || dismissing) return
   if (props.mode !== 'overlay') {
     // Uji: loop the simulation instead of hiding the cover permanently.
     resetToGate()
@@ -201,21 +242,26 @@ function dismiss() {
   }
   if (prefersReducedMotion() || !content.value) {
     hidden.value = true
+    emit('closed')
     return
   }
-  const tl = gsap.timeline({ onComplete: () => (hidden.value = true) })
+  dismissing = true
+  titleTl?.kill()
+  const tl = gsap.timeline({ onComplete: () => ((hidden.value = true), emit('closed')) })
   tl.to(content.value, { opacity: 0, y: -24, duration: 0.5, ease: 'power2.in' })
   tl.to(root.value, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.1')
 }
 
-/** Gate3D beat 2: dolly finished — flash peaks, canvas drops behind the flash,
-    then the name frame appears. Unmounting at the peak hides the hard cut. */
+/** Gate3D beat 2: dolly finished — canvas fades under a peaking flash, then
+    the name frame appears. Canvas fades itself (not just unmounts) so no
+    garden/path frame can linger; unmounting at the peak hides the hard cut. */
 function onGateDone() {
   if (phase.value !== 'gate' || !root.value) return
   const tl = gsap.timeline()
-  tl.to(root.value.querySelector('.g3-flash'), { opacity: 1, duration: 0.35, ease: 'power1.in' })
+  tl.to(root.value.querySelector('.gate3d-host'), { opacity: 0, duration: 0.4, ease: 'power1.in' }, 0)
+  tl.to(root.value.querySelector('.g3-flash'), { opacity: 1, duration: 0.4, ease: 'power1.in' }, 0)
   tl.add(() => (phase.value = 'frame'))
-  tl.to(root.value.querySelector('.g3-flash'), { opacity: 0, duration: 0.7, ease: 'power1.out' })
+  tl.to(root.value.querySelector('.g3-flash'), { opacity: 0, duration: 0.8, ease: 'power1.out' })
   tl.add(() => {
     const card = root.value?.querySelector('.g3-card')
     if (card) gsap.fromTo(card, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
@@ -235,13 +281,19 @@ function onGateSkipped() {
   if (content.value) gsap.set([content.value, ...Array.from(content.value.children)], { opacity: 1, y: 0 })
 }
 
-/** Gate3D beat 3: frame card → photo + full title. */
+/** Gate3D beat 3: frame card → photo + full title. Photo is already faded in
+    from the dolly, so keep it visible (fromTo would blink it out and back).
+    Card fades first so the cut to the title tableau is soft. */
+let titleTl: gsap.core.Timeline | undefined
 function toTitle() {
-  if (phase.value !== 'frame' || !root.value || !content.value) return
-  phase.value = 'title'
+  if (phase.value !== 'frame' || !root.value || !content.value || titleTl) return
+  titleTl = gsap.timeline()
+  const card = root.value.querySelector('.g3-card')
+  if (card) titleTl.to(card, { opacity: 0, duration: 0.25, ease: 'power1.out' })
+  titleTl.add(() => (phase.value = 'title'))
   const photo = root.value.querySelector('.cover-img')
-  if (photo) gsap.fromTo(photo, { opacity: 0, scale: 1.15 }, { opacity: 1, scale: 1.06, duration: 1.2, ease: 'power2.out' })
-  gsap.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 })
+  if (photo) titleTl.to(photo, { opacity: 1, scale: 1.06, duration: 1.2, ease: 'power2.out' }, '<')
+  titleTl.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 }, '<+=0.15')
 }
 
 /** Back to the opening tableau (Uji loop + replay reset). */
@@ -249,7 +301,11 @@ function resetToGate() {
   if (!root.value || !content.value) return
   hidden.value = false
   phase.value = 'gate'
+  pendingPlay = false
+  titleTl?.kill()
+  titleTl = undefined
   gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  gsap.set(root.value.querySelector('.g3-flash'), { opacity: 0 })
   gsap.set(content.value, { opacity: 1, y: 0 })
   gsap.set(content.value.children, { opacity: 0, y: 26 })
 }
@@ -263,6 +319,8 @@ watch(
     else {
       hidden.value = false
       phase.value = 'title'
+      pendingPlay = false
+      gsap.set(root.value.querySelector('.g3-flash'), { opacity: 0 })
       gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
       gsap.set([content.value, ...Array.from(content.value.children)], { opacity: 1, y: 0 })
     }
@@ -274,11 +332,19 @@ function onCoverTouchStart(e: TouchEvent) {
 }
 
 function onCoverTouchEnd(e: TouchEvent) {
-  if ((props.intro !== 'flora' && props.intro !== 'gate3d') || phase.value !== 'title' || props.mode !== 'overlay' || touchY == null) return
+  if (props.intro !== 'flora' && props.intro !== 'gate3d') {
+    touchY = null
+    return
+  }
   const endY = e.changedTouches[0]?.clientY ?? touchY
-  const dy = endY - touchY
+  const startY = touchY
   touchY = null
-  if (dy < -60) dismiss()
+  if (props.mode !== 'overlay' || startY == null || endY == null) return
+  if (endY - startY < -60) {
+    if (phase.value === 'title') dismiss()
+    else if (phase.value === 'frame' && props.intro === 'gate3d') toTitle()
+    else if (phase.value === 'gate' && props.intro === 'flora' && !plunging) advance()
+  }
 }
 
 onMounted(() => {
@@ -293,7 +359,8 @@ onMounted(() => {
     return
   }
   phase.value = 'gate'
-  gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  // Poster photo stays visible until the garden canvas mounts (cold cache);
+  // the gateReady watcher hides it then. Content starts hidden regardless.
   gsap.set(content.value, { opacity: 1, y: 0 })
   gsap.set(content.value.children, { opacity: 0, y: 26 })
 })
@@ -334,6 +401,10 @@ onBeforeUnmount(() => {
     <img :src="image" alt="" class="cover-img absolute inset-0 -z-20 size-full object-cover" decoding="async" :fetchpriority="eager ? 'high' : 'auto'" :loading="eager ? 'eager' : 'lazy'" />
     <div class="absolute inset-0 -z-10" :style="{ background: 'var(--inv-cover-overlay)' }" />
     <DecorLayer :kind="decor" />
+    <!-- Theme signature: appears only once the gate has opened (frame/title),
+      so the order stays gate → framed text → photo. z-5 sits below the
+      tap layer / flash / text. -->
+    <OrnamentLayer v-if="ornament && (intro === 'flora' || intro === 'gate3d') && phase !== 'gate'" :kind="ornament" :style="{ zIndex: 5 }" />
 
     <template v-if="panels">
       <template v-if="intro === 'door' || intro === 'curtain'">
@@ -411,7 +482,7 @@ onBeforeUnmount(() => {
       </template>
       <template v-else-if="intro === 'gate3d'">
         <Gate3D
-          v-if="(mode === 'overlay' || (mode === 'static' && interactive)) && phase !== 'title'"
+          v-if="(mode === 'overlay' || (mode === 'static' && interactive)) && phase === 'gate' && !gateFailed"
           ref="gate3dRef"
           class="absolute inset-0 z-[4]"
           @opened="onGateOpened"
@@ -421,7 +492,7 @@ onBeforeUnmount(() => {
         <div v-if="(mode === 'overlay' || interactive) && phase === 'gate'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
           <p class="absolute inset-x-0 bottom-30 text-center text-xs tracking-[0.25em]" style="color: var(--inv-text); text-shadow: 0 0 14px var(--inv-surface), 0 0 6px var(--inv-surface)">{{ copy.invitation.tapToOpen }}</p>
         </div>
-        <div v-if="phase === 'frame'" class="absolute inset-0 z-[6] grid place-items-center px-6">
+        <div v-if="phase === 'frame'" class="absolute inset-0 z-[6] grid cursor-pointer place-items-center px-6" @click="toTitle">
           <div class="inv-card g3-card w-full max-w-sm p-8 text-center">
             <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
             <h2 class="inv-heading mt-4 break-words text-4xl" style="color: var(--inv-text)">{{ couple }}</h2>
@@ -434,7 +505,10 @@ onBeforeUnmount(() => {
       </template>
     </template>
 
-    <div ref="content" class="relative z-10 w-full max-w-xl px-6">
+    <!-- Hidden until the title phase (gate3d): the invisible layer sits at z-10
+      above the frame card (z-6) and would swallow its button taps.
+      Radial scrim lifts white-text contrast over the bright photo center. -->
+    <div v-show="intro !== 'gate3d' || phase === 'title'" ref="content" class="relative z-10 w-full max-w-xl px-6" :style="{ background: 'radial-gradient(ellipse 110% 95% at 50% 40%, color-mix(in srgb, var(--inv-text) 60%, transparent), transparent 70%)' }">
       <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
       <h1 class="inv-heading mt-5 break-words text-4xl leading-tight @sm:text-5xl @lg:text-6xl">
         <template v-if="intro === 'split'"><span v-for="(c, i) in couple.split('')" :key="i" class="ch inline-block">{{ c === ' ' ? '\u00a0' : c }}</span></template>

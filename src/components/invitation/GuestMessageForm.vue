@@ -22,7 +22,7 @@ function submit() {
     <input v-model="form.name" class="inv-input" placeholder="Nama" maxlength="80" :disabled="disabled" aria-label="Nama" />
     <textarea v-model="form.message" rows="3" maxlength="500" class="inv-input" placeholder="Tulis ucapan dan doa" :disabled="disabled" aria-label="Ucapan" />
     <input v-model="form.website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-    <p v-if="error" class="text-sm" style="color: #e0786a" role="alert">{{ error }}</p>
+    <p v-if="error" class="text-sm" style="color: var(--color-danger)" role="alert">{{ error }}</p>
     <button type="submit" class="inv-btn w-full" :disabled="disabled">Kirim Ucapan</button>
   </form>
 </template>

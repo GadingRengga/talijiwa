@@ -34,7 +34,7 @@ async function submit() {
   <form v-else class="space-y-3 text-left" novalidate @submit.prevent="submit">
     <input v-model="form.name" class="inv-input" placeholder="Nama lengkap" maxlength="80" autocomplete="name" :disabled="disabled" aria-label="Nama lengkap" />
     <input v-model="form.whatsapp" class="inv-input" placeholder="Nomor WhatsApp" inputmode="tel" autocomplete="tel" :disabled="disabled" aria-label="Nomor WhatsApp" />
-    <div class="grid grid-cols-2 gap-2 @sm:gap-3">
+    <div class="inv-split grid grid-cols-2 gap-2 @sm:gap-3">
       <select v-model="form.attendance" class="inv-input min-w-0" :disabled="disabled" aria-label="Kehadiran">
         <option value="attending">Hadir</option>
         <option value="not_attending">Tidak hadir</option>
@@ -43,7 +43,7 @@ async function submit() {
     </div>
     <textarea v-model="form.message" rows="3" maxlength="500" class="inv-input" placeholder="Pesan (opsional)" :disabled="disabled" aria-label="Pesan" />
     <input v-model="form.website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-    <p v-if="error" class="text-sm" style="color: #e0786a" role="alert">{{ error }}</p>
+    <p v-if="error" class="text-sm" style="color: var(--color-danger)" role="alert">{{ error }}</p>
     <button type="submit" class="inv-btn w-full" :disabled="disabled || busy">Kirim Konfirmasi</button>
   </form>
 </template>

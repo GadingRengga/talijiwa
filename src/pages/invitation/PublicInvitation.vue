@@ -26,7 +26,7 @@ type State = 'loading' | 'ok' | 'notfound' | 'notpublished' | 'unavailable'
 const state = ref<State>('loading')
 const inv = ref<InvitationData | null>(null)
 const messages = ref<GuestMessage[]>([])
-const opened = ref(false)
+const uncovered = ref(false)
 const music = ref<InstanceType<typeof MusicPlayer> | null>(null)
 const guest = ref('')
 
@@ -60,18 +60,18 @@ async function load() {
 onMounted(load)
 watch(() => route.params.slug, load)
 
-// Keep the page locked on the cover until the guest opens the invitation.
+// Keep the page locked until the cover is fully dismissed (gate3d needs
+// several taps before the guest reaches the content).
 watch(
-  [state, opened],
+  [state, uncovered],
   () => {
-    document.documentElement.style.overflow = state.value === 'ok' && !opened.value ? 'hidden' : ''
+    document.documentElement.style.overflow = state.value === 'ok' && !uncovered.value ? 'hidden' : ''
   },
   { immediate: true },
 )
 onBeforeUnmount(() => (document.documentElement.style.overflow = ''))
 
 function onOpen() {
-  opened.value = true
   if (inv.value?.settings.music_enabled) void music.value?.play()
 }
 
@@ -109,7 +109,7 @@ const onGift = (p: GiftPayload) => run(() => rsvpService.createGiftConfirmation(
       <span>Pratinjau admin{{ inv.status !== 'published' ? ' — belum dipublikasikan' : '' }}</span>
       <RouterLink :to="`/admin/invitations/${inv.id}/edit`" class="underline">Kembali ke builder</RouterLink>
     </div>
-    <InvitationRenderer :invitation="inv" :guest="guest" :messages="messages" :class="previewId ? 'pt-8' : ''" @open="onOpen" @rsvp="onRsvp" @message="onMessage" @gift="onGift" />
+    <InvitationRenderer :invitation="inv" :guest="guest" :messages="messages" :class="previewId ? 'pt-8' : ''" @open="onOpen" @closed="uncovered = true" @rsvp="onRsvp" @message="onMessage" @gift="onGift" />
     <MusicPlayer v-if="inv.settings.music_enabled" ref="music" :url="inv.settings.music_url" />
   </template>
 </template>

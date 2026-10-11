@@ -35,6 +35,7 @@ const props = withDefaults(
 )
 const emit = defineEmits<{
   open: []
+  closed: []
   rsvp: [payload: { name: string; whatsapp: string; guest_count: number; attendance: Attendance; message: string }]
   pick: [pick: string | { sec: string; index: number | null }]
   message: [payload: { name: string; message: string }]
@@ -176,10 +177,12 @@ onBeforeUnmount(() => ro?.disconnect())
         :guest="guestName"
         :image="coverImage"
         :decor="theme.decor"
+        :ornament="theme.ornament"
         :intro="introKind"
         :mode="isPreview ? 'static' : 'overlay'"
         :interactive="props.interactive"
         @open="emit('open')"
+        @closed="emit('closed')"
       />
     </div>
 
@@ -275,7 +278,7 @@ onBeforeUnmount(() => ro?.disconnect())
         <h2 class="inv-heading text-3xl">Galeri</h2>
         <div class="inv-divider" />
         <p v-if="!invitation.gallery.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.gallery }}</p>
-        <div v-else class="mt-6 grid grid-cols-2 gap-2" style="max-width: 36rem">
+        <div v-else class="mt-6 grid grid-cols-2 gap-2 @sm:grid-cols-3" style="max-width: 36rem">
           <button v-for="g in invitation.gallery" :key="g.id" type="button" :data-reveal="reveal" class="overflow-hidden" style="border-radius: var(--inv-radius)" @click="lightbox = g.url">
             <img :src="g.url" :alt="g.caption || 'Foto galeri'" class="aspect-[4/5] w-full object-cover transition-transform duration-500 hover:scale-105" width="600" height="750" loading="lazy" decoding="async" />
           </button>
@@ -326,6 +329,9 @@ onBeforeUnmount(() => ro?.disconnect())
           <p class="inv-heading mt-2 text-4xl">{{ label }}</p>
         </div>
       </section>
+      <!-- Spacer: viewport-fixed ornaments (public mode) would otherwise cover
+        the closing CTA at the bottom of the screen. -->
+      <div v-if="!isPreview" aria-hidden="true" class="h-32 @sm:h-44" :style="{ order: 1000 }" />
     </div>
 
     <!-- Uji mode: music plays like release (button floats over the builder
@@ -335,7 +341,7 @@ onBeforeUnmount(() => ro?.disconnect())
     <!-- Lightbox -->
     <Teleport to="body" :disabled="isPreview && !props.interactive">
       <div v-if="lightbox" class="fixed inset-0 z-[60] grid place-items-center bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="Foto galeri" @click="lightbox = null">
-        <button type="button" class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" aria-label="Tutup" @click="lightbox = null"><X class="size-5" /></button>
+        <button type="button" class="absolute right-4 top-4 rounded-full bg-white/10 p-3 text-white" aria-label="Tutup" @click="lightbox = null"><X class="size-5" /></button>
         <img :src="lightbox" alt="" class="max-h-full max-w-full rounded object-contain" />
       </div>
     </Teleport>

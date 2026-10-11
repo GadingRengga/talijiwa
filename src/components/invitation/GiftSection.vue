@@ -54,7 +54,7 @@ function confirm() {
     <form v-else-if="accounts.length" class="space-y-3 pt-4 text-left" novalidate @submit.prevent="confirm">
       <p class="inv-muted text-center text-sm">Sudah mengirim hadiah? Beri tahu kami.</p>
       <input v-model="form.name" class="inv-input" placeholder="Nama" maxlength="80" :disabled="disabled" aria-label="Nama" />
-      <div class="grid grid-cols-2 gap-2 @sm:gap-3">
+      <div class="inv-split grid grid-cols-2 gap-2 @sm:gap-3">
         <select v-model="form.gift_type" class="inv-input min-w-0" :disabled="disabled" aria-label="Jenis hadiah">
           <option value="bank_transfer">Transfer bank</option>
           <option value="e_wallet">E-wallet</option>
@@ -64,7 +64,7 @@ function confirm() {
         <input v-model="form.amount" type="number" min="0" class="inv-input min-w-0" placeholder="Nominal (Rp)" :disabled="disabled" aria-label="Nominal" />
       </div>
       <textarea v-model="form.message" rows="2" maxlength="500" class="inv-input" placeholder="Pesan (opsional)" :disabled="disabled" aria-label="Pesan" />
-      <p v-if="error" class="text-sm" style="color: #e0786a" role="alert">{{ error }}</p>
+      <p v-if="error" class="text-sm" style="color: var(--color-danger)" role="alert">{{ error }}</p>
       <button type="submit" class="inv-btn w-full" :disabled="disabled">Kirim Konfirmasi</button>
     </form>
   </div>

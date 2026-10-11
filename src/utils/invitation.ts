@@ -196,7 +196,7 @@ export function contrastRatio(a: string, b: string): number {
   const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
   return (x! + 0.05) / (y! + 0.05)
 }
-/** Readable text color (dark/light) for a given background. */
+/** Readable text color (dark/light) for a given background: whichever passes better. */
 export function contrastOn(hex: string): string {
-  return luminance(hex) > 0.45 ? '#1b1b1b' : '#ffffff'
+  return contrastRatio(hex, '#1b1b1b') >= contrastRatio(hex, '#ffffff') ? '#1b1b1b' : '#ffffff'
 }

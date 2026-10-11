@@ -89,7 +89,7 @@
 }
 .inv-input::placeholder {
   color: var(--inv-muted);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 .inv-divider {
   width: 4rem;
@@ -127,7 +127,7 @@
   position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 72% 62% at 50% 46%, color-mix(in srgb, var(--inv-surface) 88%, transparent), transparent 70%);
 }
-.orn-floral-hanging { position: absolute; top: -8px; left: 50%; width: min(560px, 94vw); transform: translateX(-50%); transform-origin: 50% 0; animation: orn-floral-hang 8s ease-in-out infinite alternate; will-change: transform; }
+.orn-floral-hanging { position: absolute; top: -8px; left: 50%; width: min(680px, 94vw); transform: translateX(-50%); transform-origin: 50% 0; animation: orn-floral-hang 8s ease-in-out infinite alternate; will-change: transform; }
 .orn-floral-hanging > img { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(180deg, black 62%, transparent 98%); mask-image: linear-gradient(180deg, black 62%, transparent 98%); }
 .orn-floral-strip { position: absolute; left: 0; right: 0; height: 104px; opacity: 0.95; -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); }
 .orn-floral-strip > img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -146,6 +146,25 @@
 .orn-floral-br > img { transform: scale(-1, -1); }
 @keyframes orn-floral-hang { from { transform: translateX(-50%) rotate(-1.2deg); } to { transform: translateX(-50%) rotate(1.2deg); } }
 @keyframes orn-floral-sway { from { transform: rotate(-4deg) translateY(0); } to { transform: rotate(4deg) translateY(-9px); } }
+/* Narrow phones: shrink corner bouquets (2×190px overlap on 360px) and side
+   sprigs so they frame instead of covering the text. Matches Gate3D `small`. */
+@media (max-width: 480px) {
+  .orn-floral-bl, .orn-floral-br { width: 128px; bottom: -14px; }
+  .orn-floral-bl { left: -14px; }
+  .orn-floral-br { right: -14px; }
+  .orn-floral-side { width: 56px; }
+  .orn-floral-strip { height: 72px; }
+  .orn-floral-hanging { width: 86vw; }
+  /* Arch cards stay elegant without eating a third of a narrow card. */
+  .inv-t-floral .inv-card { border-radius: 88px 88px 18px 18px; }
+}
+@media (min-width: 1024px) {
+  .orn-floral-strip { height: 132px; }
+}
+/* Form split grids (RSVP/gift): stack on very narrow phones. */
+@media (max-width: 380px) {
+  .inv-split { grid-template-columns: 1fr; }
+}
 @media (prefers-reduced-motion: reduce) {
   .orn-floral, .orn-floral-hanging { animation: none !important; }
   .orn-floral-hanging { transform: translateX(-50%); }

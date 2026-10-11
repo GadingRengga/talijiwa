@@ -4,7 +4,7 @@ import { getTheme, themeStyle } from '@/themes'
 import { placeholderImage } from '@/utils/invitation'
 import InvitationCover from './InvitationCover.vue'
 
-/** Cover-only banner of a theme, looping its opening animation. Used in the company profile, theme picker and /embed/banner/:theme. */
+/** Cover-only banner of a theme, looping its opening animation. Used in the company profile, theme picker and /embed/banner/:theme. (gate3d has no loop timeline by design: the banner settles on its title tableau, WebGL never mounts.) */
 const props = withDefaults(defineProps<{ theme: string; couple?: string; date?: string; image?: string; active?: boolean }>(), {
   active: true,
   couple: 'Raka & Sinta',
@@ -17,6 +17,6 @@ const src = computed(() => props.image || t.value.coverImage || placeholderImage
 
 <template>
   <div class="inv @container h-full overflow-hidden [&_.inv-cover]:!min-h-0 [&_.inv-cover]:h-full" :style="themeStyle(theme)">
-    <InvitationCover :couple="couple" :date="date" guest="Nama Tamu" :image="src" :decor="t.decor" :intro="t.intro ?? 'slide'" mode="static" loop :active="active" />
+    <InvitationCover :couple="couple" :date="date" guest="Nama Tamu" :image="src" :decor="t.decor" :ornament="t.ornament" :intro="t.intro ?? 'slide'" mode="static" loop :active="active" />
   </div>
 </template>
