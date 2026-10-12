@@ -1,13 +1,7 @@
--- Theme roster reset (2026-10-10): wipe all themes, keep single Floral #1.
+-- Theme roster reset (2026-10-12): wipe all themes, keep zero-theme roster.
 -- Run once in the Supabase SQL editor. Existing invitations keep their stored
--- theme value (text column, no constraint) and render with Floral via fallback.
+-- theme value (text column, no constraint) and render with the neutral fallback.
+-- Image files in src/assets/images/ are kept untouched for the rebuild.
 
-delete from theme_catalog where theme <> 'floral';
+delete from theme_catalog;
 
-insert into theme_catalog (theme, code, tier, category, is_active, price, position)
-values ('floral', 'FLR', 'basic', 'floral', true, 149000, 1)
-on conflict (theme) do nothing;
-
-update theme_catalog
-set code = 'FLR', tier = 'basic', category = 'floral', is_active = true, price = 149000, position = 1
-where theme = 'floral';

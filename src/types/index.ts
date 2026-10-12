@@ -1,10 +1,11 @@
 export type InvitationStatus = 'draft' | 'published' | 'archived'
-export type ThemeId = 'floral' | 'jawa'
+/** Theme id is free-form: the roster is intentionally empty, rebuilt one theme at a time. */
+export type ThemeId = string
 /** Price tier: higher tiers unlock all themes of lower tiers. */
 export type InvitationTier = 'basic' | 'premium' | 'luxury'
 export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora' | 'gate3d'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
-export type OrnamentKind = 'floral' | 'jawa'
+export type OrnamentKind = string
 export type Attendance = 'attending' | 'not_attending'
 export type GiftType = 'bank_transfer' | 'cash' | 'e_wallet' | 'other'
 

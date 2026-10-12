@@ -1,4 +1,4 @@
-import type { AccessCode, Customer, Faq, GiftConfirmation, GuestMessage, InvitationData, InvitationTier, Order, Payment, Rsvp, Testimonial, ThemeCatalogEntry, ThemeCategory, ThemeId } from '@/types'
+import type { AccessCode, Customer, Faq, GiftConfirmation, GuestMessage, InvitationData, Order, Payment, Rsvp, Testimonial, ThemeCatalogEntry, ThemeId } from '@/types'
 import { createEmptyInvitation, placeholderImage } from '@/utils/invitation'
 
 export interface MockDb {
@@ -30,7 +30,7 @@ interface DemoSpec {
 }
 
 const demos: DemoSpec[] = [
-  { slug: 'demo-floral', theme: 'floral', groom: ['Arga Wicaksono', 'Arga'], bride: ['Nadia Safitri', 'Nadia'], date: '2027-01-09', palette: ['#f0c4cb', '#c4687b'] },
+  { slug: 'demo-default', theme: 'default', groom: ['Arga Wicaksono', 'Arga'], bride: ['Nadia Safitri', 'Nadia'], date: '2027-01-09', palette: ['#f0c4cb', '#9a6b1e'] },
 ]
 
 function buildDemo(customerId: string, spec: DemoSpec, index: number): InvitationData {
@@ -85,11 +85,11 @@ function buildDemo(customerId: string, spec: DemoSpec, index: number): Invitatio
 export function createSeed(): MockDb {
   const customers: Customer[] = [
     { id: 'cus_budi', name: 'Budi Santoso', phone: '081234567890', email: 'budi@example.com', notes: 'Pelanggan demo.', created_at: iso(30), updated_at: iso(30) },
-    { id: 'cus_raka', name: 'Raka Aditya', phone: '081298765432', email: 'raka@example.com', notes: 'Minta tema floral, acara outdoor.', created_at: iso(5), updated_at: iso(5) },
+    { id: 'cus_raka', name: 'Raka Aditya', phone: '081298765432', email: 'raka@example.com', notes: 'Minta tema netral, acara outdoor.', created_at: iso(5), updated_at: iso(5) },
   ]
   const invitations = demos.map((d, i) => buildDemo('cus_budi', d, i))
 
-  const raka = createEmptyInvitation('cus_raka', 'floral')
+  const raka = createEmptyInvitation('cus_raka', 'default')
   raka.id = 'inv_raka'
   raka.title = 'Raka & Sinta'
   raka.slug = 'raka-sinta'
@@ -122,28 +122,13 @@ export function createSeed(): MockDb {
     created_at: iso(i % 14),
   }))
 
-  const categories: Record<string, ThemeCategory> = { floral: 'floral', jawa: 'adat' }
-  const tiers: Record<string, InvitationTier> = { floral: 'basic', jawa: 'premium' }
-  const codes: Record<string, string> = { floral: 'FLR', jawa: 'JW' }
-  const themeCatalog: ThemeCatalogEntry[] = (Object.keys(Object.fromEntries(demos.map((d) => [d.theme, true]))) as ThemeId[]).map(
-    (theme, i) => ({
-      theme,
-      code: codes[theme] ?? theme.toUpperCase().slice(0, 3),
-      is_active: true,
-      price: 149000,
-      position: i + 1,
-      category: categories[theme] ?? 'modern',
-      tier: tiers[theme] ?? 'basic',
-    }),
-  )
-  // Jawa has no demo invitation yet; list it explicitly so Templates shows it in mock mode.
-  if (!themeCatalog.some((t) => t.theme === 'jawa')) {
-    themeCatalog.push({ theme: 'jawa', code: 'JW', is_active: true, price: 249000, position: themeCatalog.length + 1, category: 'adat', tier: 'premium' })
-  }
+  const themeCatalog: ThemeCatalogEntry[] = [
+    { theme: 'default', code: 'DEF', is_active: true, price: 149000, position: 1, category: 'modern', tier: 'basic' },
+  ]
 
   const orders: Order[] = [
-    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'floral', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
-    { id: 'ord_2', customer_id: 'cus_raka', invitation_id: 'inv_raka', tier: 'basic', theme: 'floral', amount: 149000, paid: 50000, status: 'dp', due_date: '2026-12-12', notes: 'Pelunasan maksimal H-7.', delivered_at: null, created_at: iso(4), updated_at: iso(4) },
+    { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'default', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },
+    { id: 'ord_2', customer_id: 'cus_raka', invitation_id: 'inv_raka', tier: 'basic', theme: 'default', amount: 149000, paid: 50000, status: 'dp', due_date: '2026-12-12', notes: 'Pelunasan maksimal H-7.', delivered_at: null, created_at: iso(4), updated_at: iso(4) },
   ]
   const payments: Payment[] = [
     { id: 'pay_1', order_id: 'ord_1', amount: 149000, method: 'transfer', paid_at: '2026-09-20', note: 'Pelunasan', created_at: iso(11) },

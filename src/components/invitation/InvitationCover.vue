@@ -4,8 +4,6 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch 
 import { copy } from '@/config/copy'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 import DecorLayer from './DecorLayer.vue'
-import JawaCoverDressing from './JawaCoverDressing.vue'
-import OrnamentLayer from './OrnamentLayer.vue'
 // Lazy: keeps three.js out of the initial invitation chunk so cover text +
 // photo paint first; the gate mounts only in overlay/interactive mode anyway.
 let gateRetries = 0
@@ -28,10 +26,6 @@ const Gate3D = defineAsyncComponent({
   },
 })
 import type { DecorKind, IntroKind, OrnamentKind } from '@/types'
-// Flora gate artwork (static import: single-theme roster, no waste. Switch to
-// dynamic import once the roster grows past one theme).
-import gateFrame from '@/assets/images/floral-frame-1.webp'
-import gununganGate from '@/assets/images/gunungan-1.webp'
 
 const props = withDefaults(
   defineProps<{
@@ -423,13 +417,8 @@ onBeforeUnmount(() => {
   >
     <img :src="image" alt="" class="cover-img absolute inset-0 -z-20 size-full object-cover" decoding="async" :fetchpriority="eager ? 'high' : 'auto'" :loading="eager ? 'eager' : 'lazy'" />
     <div class="absolute inset-0 -z-10" :style="{ background: 'var(--inv-cover-overlay)' }" />
-    <DecorLayer v-if="ornament !== 'jawa'" :kind="decor" />
-    <!-- Jawa cover dressing replaces the sparkle layer: janur + butterflies. -->
-    <JawaCoverDressing v-if="ornament === 'jawa' && (intro === 'flora' || intro === 'gunungan' || intro === 'gate3d') && phase !== 'gate' && phase !== 'frame'" />
-    <!-- Theme signature: appears only once the gate has opened (frame/title),
-      so the order stays gate → framed text → photo. z-5 sits below the
-      tap layer / flash / text. -->
-    <OrnamentLayer v-if="ornament && (intro === 'flora' || intro === 'gunungan' || intro === 'gate3d') && phase !== 'gate' && phase !== 'frame'" :kind="ornament" :style="{ zIndex: 5 }" />
+    <DecorLayer :kind="decor" />
+    <!-- Ornament slots are intentionally empty until the first new theme lands. -->
 
     <template v-if="panels">
       <template v-if="intro === 'door' || intro === 'curtain'">
@@ -458,7 +447,6 @@ onBeforeUnmount(() => {
           @click="mode === 'overlay' && open()"
         >
           <div class="gn-glow absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" :style="{ background: 'radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 30%, transparent), transparent 65%)' }" />
-          <img :src="gununganGate" alt="" class="gn-frame absolute inset-0 size-full object-contain p-6" decoding="async" />
           <div class="gn-flash absolute inset-0" :style="{ background: 'radial-gradient(circle at 50% 50%, rgba(255,250,240,.95), transparent 60%)', opacity: 0 }" />
           <p class="absolute inset-x-0 bottom-30 z-[6] text-center text-xs tracking-[0.25em]" style="color: var(--inv-text)">{{ copy.invitation.tapToOpen }}</p>
         </div>
@@ -487,7 +475,6 @@ onBeforeUnmount(() => {
           @click="mode === 'overlay' && open()"
         >
           <div class="fl-glow absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" :style="{ background: 'radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 30%, transparent), transparent 65%)' }" />
-          <img :src="gateFrame" alt="" class="fl-frame absolute inset-0 size-full object-cover" decoding="async" />
           <div class="fl-flash absolute inset-0" :style="{ background: 'radial-gradient(circle at 50% 50%, rgba(255,250,240,.95), transparent 60%)', opacity: 0 }" />
           <p class="absolute inset-x-0 bottom-30 z-[6] text-center text-xs tracking-[0.25em]" style="color: var(--inv-text)">{{ copy.invitation.tapToOpen }}</p>
         </div>
@@ -497,7 +484,6 @@ onBeforeUnmount(() => {
           v-if="(mode === 'overlay' || (mode === 'static' && interactive)) && phase === 'gate' && !gateFailed"
           ref="gate3dRef"
           class="absolute inset-0 z-[4]"
-          :motif="ornament === 'jawa' ? 'jawa' : 'floral'"
           @opened="onGateOpened"
           @done="onGateDone"
           @skipped="onGateSkipped"

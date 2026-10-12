@@ -2,23 +2,27 @@
 
 Tema adalah data. Satu `ThemeDefinition` menghasilkan CSS variables `--inv-*` yang dipakai seluruh komponen undangan.
 
+Roster saat ini: **kosong** (reset 2026-10-12 — `floral` + `jawa` dihapus total, gambar di `src/assets/images/` dipertahankan). Tema dibangun ulang satu per satu dari pola aset baru:
+
+```text
+src/assets/images/{theme}/{theme}-{motif}-{slot}[-{pos}]-{nn}.webp
+```
+
+Contoh: `src/assets/images/jawa-village/jawa-village-jasmine-corner-tl-01.webp`.
+Satu manifest per tema (`src/themes/<id>/assets.ts`) adalah source of truth agar AI tidak menebak path.
+
 ## Token
 
 `bg, surface, text, muted, accent, accentContrast, border, fontHeading, fontBody, radius, coverOverlay`, ditambah `decor` (`float | petals | sparkle | none`) dan `swatches` (empat warna untuk kartu pemilih).
 
 | Tema | Dekorasi | Palet |
 |---|---|---|
-| Romantic Floral | petals (kelopak jatuh) | blush, krem, sage, mawar |
-| Adat Jawa | sparkle (debu emas naik di gerbang 3D) | krem batik, krem terang, coklat tua, emas |
+| _(kosong — tema pertama: `jawa-village`)_ | `none` | netral krem/emas |
 
 ## Menambah tema
 
-1. `src/themes/<id>/index.ts`:
-   ```ts
-   export const sunset: ThemeDefinition = { id: 'sunset', name: 'Sunset', description: '…', decor: 'float', swatches: [...], tokens: { ... } }
-   ```
-2. Tambahkan `'sunset'` ke `ThemeId` (`types/index.ts`).
-3. Daftarkan di `src/themes/index.ts` (`themes` record). Pemilih tema, builder, dan renderer ikut otomatis.
+1. `src/themes/<id>/index.ts` + `src/themes/<id>/assets.ts` (manifest impor WebP pola baru).
+2. Daftarkan di `src/themes/index.ts` (`themes` record). `ThemeId`/`OrnamentKind` bebas (string) — tidak perlu edit `types/index.ts`. Pemilih tema, builder, dan renderer ikut otomatis.
 4. Bila butuh ornamen khusus: tambah kind ke `OrnamentKind`, buat `ornaments/OrnamentX.vue`, daftarkan di `ornaments/types.ts`, tambah CSS `orn-x-*` di `assets/invitation.css`.
 5. Database: `insert into theme_catalog (theme, code, tier, category, is_active, price, position) values ('sunset', '…', 'basic', '…', true, 149000, N)` (kolom `theme` bertipe text, tanpa enum).
 6. Bila memakai font baru, tambahkan di `index.html` (Google Fonts) atau self-host.

@@ -56,26 +56,26 @@ describe('resolveOrder', () => {
 
 describe('tier entitlement (Option B: higher tiers unlock lower ones)', () => {
   const active: Pick<ThemeCatalogEntry, 'theme' | 'is_active' | 'tier'>[] = [
-    { theme: 'floral', is_active: true, tier: 'basic' },
+    { theme: 'default', is_active: true, tier: 'basic' },
   ]
   const inactive: Pick<ThemeCatalogEntry, 'theme' | 'is_active' | 'tier'>[] = [
-    { theme: 'floral', is_active: false, tier: 'basic' },
+    { theme: 'default', is_active: false, tier: 'basic' },
   ]
   it('basic unlocks the active theme', () => {
-    expect(allowedThemes('basic', active)).toEqual(['floral'])
+    expect(allowedThemes('basic', active)).toEqual(['default'])
   })
   it('premium unlocks basic themes too', () => {
-    expect(allowedThemes('premium', active)).toEqual(['floral'])
+    expect(allowedThemes('premium', active)).toEqual(['default'])
   })
   it('luxury unlocks everything active', () => {
-    expect(allowedThemes('luxury', active)).toEqual(['floral'])
+    expect(allowedThemes('luxury', active)).toEqual(['default'])
   })
   it('hides inactive themes', () => {
     expect(allowedThemes('basic', inactive)).toEqual([])
   })
   it('guards a single theme', () => {
-    expect(isThemeAllowed('floral', 'basic', active)).toBe(true)
-    expect(isThemeAllowed('floral', 'basic', inactive)).toBe(false)
+    expect(isThemeAllowed('default', 'basic', active)).toBe(true)
+    expect(isThemeAllowed('default', 'basic', inactive)).toBe(false)
   })
 })
 

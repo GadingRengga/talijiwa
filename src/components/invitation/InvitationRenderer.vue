@@ -9,7 +9,6 @@ import { formatDate, formatLongDate, parseLocalDate } from '@/utils/format'
 import { FONT_FAMILY, contrastOn, coupleLabel, placeholderImage, resolveOrder, resolveStyle, weddingDate } from '@/utils/invitation'
 import CountdownTimer from './CountdownTimer.vue'
 import DecorLayer from './DecorLayer.vue'
-import OrnamentLayer from './OrnamentLayer.vue'
 import GiftSection from './GiftSection.vue'
 import GuestMessageForm from './GuestMessageForm.vue'
 import InvitationCover from './InvitationCover.vue'
@@ -201,7 +200,6 @@ onBeforeUnmount(() => ro?.disconnect())
     </div>
 
     <div class="relative flex flex-col pt-20 @sm:pt-32">
-      <OrnamentLayer v-if="theme.ornament && level === 'full'" :kind="theme.ornament" :class="isPreview ? '' : '!fixed'" />
       <DecorLayer v-if="level !== 'off'" :kind="theme.decor" :class="isPreview ? '' : '!fixed'" />
 
       <!-- Couple -->

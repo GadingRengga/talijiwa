@@ -1,13 +1,33 @@
-import type { ThemeDefinition, ThemeId } from '@/types'
-import { floral } from './floral'
-import { jawa } from './jawa'
+import type { ThemeDefinition } from '@/types'
 
-/** Register new themes here. Nothing else needs to change. */
-export const themes: Record<ThemeId, ThemeDefinition> = { floral, jawa }
+/** Empty roster: themes are rebuilt one by one from the new asset pattern. */
+export const themes: Record<string, ThemeDefinition> = {}
 export const themeList: ThemeDefinition[] = Object.values(themes)
 
+/** Neutral fallback so the renderer/builder stay compilable with zero themes. */
+const fallback: ThemeDefinition = {
+  id: 'default',
+  name: 'Default',
+  description: 'Placeholder theme while the roster is rebuilt.',
+  tokens: {
+    bg: '#f6efe3',
+    surface: '#fffaf6',
+    text: '#3d2b2b',
+    muted: '#7a6a6a',
+    accent: '#9a6b1e',
+    accentContrast: '#ffffff',
+    border: '#e5d5b8',
+    fontHeading: "'Playfair Display', Georgia, serif",
+    fontBody: "'Inter', system-ui, sans-serif",
+    radius: '14px',
+    coverOverlay: 'linear-gradient(180deg, rgba(61,43,43,.68), rgba(61,43,43,.5) 34%, rgba(61,43,43,.68) 66%, rgba(61,43,43,.84))',
+  },
+  decor: 'none',
+  swatches: ['#f6efe3', '#fffaf6', '#3d2b2b', '#9a6b1e'],
+}
+
 export function getTheme(id: string): ThemeDefinition {
-  return themes[id as ThemeId] ?? floral
+  return themes[id] ?? fallback
 }
 
 /** Convert theme tokens into CSS variables scoped to an invitation container. */
