@@ -3,7 +3,7 @@ export type InvitationStatus = 'draft' | 'published' | 'archived'
 export type ThemeId = string
 /** Price tier: higher tiers unlock all themes of lower tiers. */
 export type InvitationTier = 'basic' | 'premium' | 'luxury'
-export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora' | 'gate3d'
+export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora' | 'gate3d' | 'gebyok'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
 export type OrnamentKind = string
 export type Attendance = 'attending' | 'not_attending'
@@ -289,6 +289,8 @@ export interface ThemeDefinition {
   ornament?: OrnamentKind
   /** Tiled parchment/texture backdrop for the whole invitation (optional) */
   bgImage?: string
+  /** Wide screens: pin a static cover panel beside the content column (optional) */
+  sidePanel?: boolean
   /** Default cover photo when the invitation has no gallery yet */
   coverImage?: string
   swatches: string[]

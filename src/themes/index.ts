@@ -1,7 +1,10 @@
 import type { ThemeDefinition } from '@/types'
+import { centralJavaVillage } from './central-java-village'
 
-/** Empty roster: themes are rebuilt one by one from the new asset pattern. */
-export const themes: Record<string, ThemeDefinition> = {}
+/** Theme roster, rebuilt one theme at a time from the new asset pattern. */
+export const themes: Record<string, ThemeDefinition> = {
+  [centralJavaVillage.id]: centralJavaVillage,
+}
 export const themeList: ThemeDefinition[] = Object.values(themes)
 
 /** Neutral fallback so the renderer/builder stay compilable with zero themes. */

@@ -27,6 +27,10 @@ const Gate3D = defineAsyncComponent({
 })
 import type { DecorKind, IntroKind, OrnamentKind } from '@/types'
 
+// Theme-private gate (central-java-village only): loaded on demand so other
+// themes never pay for its artwork chunk.
+const GebyokGate = defineAsyncComponent(() => import('@/themes/central-java-village/GebyokGate.vue'))
+
 const props = withDefaults(
   defineProps<{
     couple: string
@@ -60,6 +64,8 @@ const hidden = ref(false)
  *  Flora/gunungan acts: 'gate' → 'title' → dismissed. */
 const phase = ref<'cover' | 'gate' | 'frame' | 'title'>('title')
 const gate3dRef = ref<{ play: () => void } | null>(null)
+const gebyokRef = ref<{ play: () => void; reset: () => void } | null>(null)
+const gebyokDone = ref(false)
 let touchY: number | null = null
 let emitted = false
 let plunging = false
@@ -163,6 +169,10 @@ function demo() {
   hidden.value = false
   if (prefersReducedMotion() || !root.value || !content.value) return
   demoTl?.progress(0).kill()
+  if (props.intro === 'gebyok') {
+    gebyokRef.value?.reset()
+    return
+  }
   if (props.intro === 'gate3d') {
     // Full reset: replay always restarts from the cover tableau.
     resetToGate()
@@ -183,9 +193,18 @@ function demo() {
   demoTl = t
   build(t, false)
 }
-defineExpose({ demo })
+/** External trigger (e.g. the opener card in the content column). */
+function playGate() {
+  open()
+}
+defineExpose({ demo, playGate })
 
 function open() {
+  if (props.intro === 'gebyok') {
+    // The gate owns its timeline; the cover just forwards music + dismissal.
+    gebyokRef.value?.play()
+    return
+  }
   if (props.intro === 'flora' || props.intro === 'gunungan') {
     if (!emitted) {
       emitted = true
@@ -224,6 +243,27 @@ function open() {
   }
   const tl = gsap.timeline({ onComplete: () => (hidden.value = true) })
   build(tl, true)
+}
+
+/** Gebyok act 1: the CTA tap is the user gesture that starts music. */
+function onGebyokOpen() {
+  if (!emitted) {
+    emitted = true
+    emit('open')
+  }
+}
+
+/** Gebyok act 2: the dolly finished — fade the whole cover out.
+ *  Opacity-only, so it stays gentle under prefers-reduced-motion too. */
+function onGebyokFinished() {
+  if (gebyokDone.value) return
+  gebyokDone.value = true
+  if (!root.value) {
+    hidden.value = true
+    emit('closed')
+    return
+  }
+  gsap.to(root.value, { opacity: 0, duration: 0.5, ease: 'power1.out', onComplete: () => ((hidden.value = true), emit('closed')) })
 }
 
 /** Flora act 2: plunge through the gate, reveal photo + title. */
@@ -344,7 +384,7 @@ function onCoverTouchStart(e: TouchEvent) {
 }
 
 function onCoverTouchEnd(e: TouchEvent) {
-  if (props.intro !== 'flora' && props.intro !== 'gunungan' && props.intro !== 'gate3d') {
+  if (props.intro !== 'flora' && props.intro !== 'gunungan' && props.intro !== 'gate3d' && props.intro !== 'gebyok') {
     touchY = null
     return
   }
@@ -353,6 +393,10 @@ function onCoverTouchEnd(e: TouchEvent) {
   touchY = null
   if (props.mode !== 'overlay' || startY == null || endY == null) return
   if (endY - startY < -60) {
+    if (props.intro === 'gebyok') {
+      if (!gebyokDone.value) open()
+      return
+    }
     if (phase.value === 'title') dismiss()
     else if (phase.value === 'frame' && props.intro === 'gate3d') toTitle()
     else if (phase.value === 'gate' && (props.intro === 'flora' || props.intro === 'gunungan') && !plunging) advance()
@@ -388,7 +432,7 @@ onMounted(() => {
   }
 })
 onMounted(() => {
-  if (!props.loop || props.intro === 'gate3d' || prefersReducedMotion() || !root.value) return
+  if (!props.loop || props.intro === 'gate3d' || props.intro === 'gebyok' || prefersReducedMotion() || !root.value) return
   loopTl = gsap.timeline({ repeat: -1, repeatDelay: 1.4, delay: 1.2 })
   build(loopTl, false)
 })
@@ -507,10 +551,24 @@ onBeforeUnmount(() => {
         </div>
         <div class="g3-flash pointer-events-none absolute inset-0 z-[8]" :style="{ background: 'var(--inv-surface)', opacity: 0 }" />
       </template>
+      <template v-else-if="intro === 'gebyok'">
+        <GebyokGate
+          ref="gebyokRef"
+          class="absolute inset-0 z-[4]"
+          :couple="couple"
+          :date="date"
+          :guest="guest"
+          :mode="mode"
+          :interactive="interactive"
+          @open="onGebyokOpen"
+          @finished="onGebyokFinished"
+        />
+      </template>
     </template>
 
-    <!-- Content: visible on cover + title phases; hidden during gate/frame sequence -->
-    <div v-show="intro !== 'gate3d' || phase === 'cover' || phase === 'title'" ref="content" class="relative z-10 w-full max-w-[34rem] px-6" :style="{ background: 'radial-gradient(ellipse 110% 95% at 50% 40%, color-mix(in srgb, var(--inv-text) 60%, transparent), transparent 70%)' }">
+    <!-- Content: visible on cover + title phases; hidden during gate/frame sequence.
+         The gebyok gate brings its own card, so the generic content stays off. -->
+    <div v-show="(intro !== 'gate3d' || phase === 'cover' || phase === 'title') && intro !== 'gebyok'" ref="content" class="relative z-10 w-full max-w-[34rem] px-6" :style="{ background: 'radial-gradient(ellipse 110% 95% at 50% 40%, color-mix(in srgb, var(--inv-text) 60%, transparent), transparent 70%)' }">
       <p class="text-xs tracking-[0.3em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
       <h1 class="inv-heading mt-4 break-words text-4xl leading-tight @sm:text-5xl @lg:text-6xl">
         <template v-if="intro === 'split'"><span v-for="(c, i) in couple.split('')" :key="i" class="ch inline-block">{{ c === ' ' ? '\u00a0' : c }}</span></template>

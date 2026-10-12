@@ -53,6 +53,11 @@ const revealKind = computed(() => (level.value === 'off' ? 'none' : level.value 
 const { replay } = useScrollReveal(root, () => revealKind.value, isPreview.value ? root : undefined)
 watch(revealKind, () => nextTick(replay))
 const coverRef = ref<InstanceType<typeof InvitationCover> | null>(null)
+const opened = ref(false)
+function onCoverClosed() {
+  opened.value = true
+  emit('closed')
+}
 function replayAll() {
   root.value?.scrollTo?.({ top: 0 })
   replay()
@@ -181,7 +186,10 @@ onBeforeUnmount(() => ro?.disconnect())
     :class="[isPreview ? 'inv-preview h-full overflow-y-auto overflow-x-hidden' : 'min-h-dvh overflow-x-hidden', `inv-h-${st.headingScale}`, `inv-t-${theme.id}`]"
     :style="cssVars"
   >
-    <div data-sec="cover">
+    <!-- In-flow cover host. Side-panel themes replace the static (builder)
+         cover with the persistent hero below, so it only renders for the
+         public overlay, Uji interactive, and non-side-panel themes. -->
+    <div v-if="!theme.sidePanel || !isPreview || props.interactive" data-sec="cover">
       <InvitationCover
         ref="coverRef"
         eager
@@ -195,11 +203,41 @@ onBeforeUnmount(() => ro?.disconnect())
         :mode="isPreview ? 'static' : 'overlay'"
         :interactive="props.interactive"
         @open="emit('open')"
-        @closed="emit('closed')"
+        @closed="onCoverClosed"
       />
     </div>
 
-    <div class="relative flex flex-col pt-20 @sm:pt-32">
+    <div class="inv-mainwrap">
+      <!-- Persistent cover hero (theme opt-in via sidePanel). Rendered in ALL
+           modes so builder, preview, and public look identical: stacked on top
+           below 64rem (container width), sticky 70% beside the content at and
+           above it. The content column stays the source of truth for assistive
+           tech, so this mirror is aria-hidden. -->
+      <aside v-if="theme.sidePanel" class="inv-side" aria-hidden="true">
+        <img :src="coverImage" alt="" decoding="async" loading="lazy" />
+        <div class="inv-side-shade" />
+        <div class="inv-side-card">
+          <p class="inv-side-eyebrow">{{ copy.invitation.gateEyebrow }}</p>
+          <p class="inv-side-names">{{ label }}</p>
+          <p v-if="dateValue" class="inv-side-date">{{ formatDate(dateValue) }}</p>
+        </div>
+      </aside>
+
+      <div class="inv-content relative flex min-w-0 flex-1 flex-col pt-20 @sm:pt-32">
+      <!-- Opener card (sidePanel themes): guest greeting + open button on top
+           of the content column. Hidden after opening; static (disabled) in
+           builder preview so all modes share the layout. -->
+      <div v-if="theme.sidePanel && !opened" class="inv-opener">
+        <p class="inv-opener-eyebrow">{{ copy.invitation.gateEyebrow }}</p>
+        <p class="inv-opener-names">{{ label }}</p>
+        <p v-if="dateValue" class="inv-opener-date">{{ formatDate(dateValue) }}</p>
+        <div class="inv-divider" />
+        <p class="inv-opener-dear">{{ copy.invitation.dear }}</p>
+        <p class="inv-opener-guest">{{ guestName }}</p>
+        <button type="button" class="inv-btn mt-5 w-full" :disabled="isPreview && !props.interactive" @click="coverRef?.playGate()">
+          {{ copy.invitation.open }}
+        </button>
+      </div>
       <DecorLayer v-if="level !== 'off'" :kind="theme.decor" :class="isPreview ? '' : '!fixed'" />
 
       <!-- Couple -->
@@ -344,6 +382,7 @@ onBeforeUnmount(() => ro?.disconnect())
       <!-- Spacer: viewport-fixed ornaments (public mode) would otherwise cover
         the closing CTA at the bottom of the screen. -->
       <div v-if="!isPreview" aria-hidden="true" class="h-32 @sm:h-44" :style="{ order: 1000 }" />
+      </div>
     </div>
 
     <!-- Uji mode: music plays like release (button floats over the builder

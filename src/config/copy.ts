@@ -143,6 +143,7 @@ export const copy = {
     dear: 'Kepada Yth.',
     defaultGuest: 'Bapak/Ibu/Saudara/i',
     open: 'Buka Undangan',
+    gateEyebrow: 'Undangan Pernikahan',
     tapToOpen: 'Ketuk untuk membuka',
     swipeUp: 'Geser ke atas untuk membuka',
     viewPhoto: 'Lihat foto',
@@ -355,7 +356,7 @@ export const copy = {
       themeSelector: 'Pilih tema',
       fontTheme: 'Ikuti tema',
       fonts: { serif: 'Serif elegan', classic: 'Klasik', script: 'Tulisan tangan', modern: 'Modern' },
-      intros: { theme: 'Ikuti tema', door: 'Pintu', curtain: 'Tirai', envelope: 'Amplop', zoom: 'Zoom', bloom: 'Bunga mekar', blossom: 'Bunga berputar', gunungan: 'Gunungan', iris: 'Iris', split: 'Belah layar', slide: 'Geser', flip: 'Balik 3D', cube: 'Kubus 3D', flora: 'Gerbang flora', gate3d: 'Gerbang 3D' },
+      intros: { theme: 'Ikuti tema', door: 'Pintu', curtain: 'Tirai', envelope: 'Amplop', zoom: 'Zoom', bloom: 'Bunga mekar', blossom: 'Bunga berputar', gunungan: 'Gunungan', iris: 'Iris', split: 'Belah layar', slide: 'Geser', flip: 'Balik 3D', cube: 'Kubus 3D', flora: 'Gerbang flora', gate3d: 'Gerbang 3D', gebyok: 'Gerbang gebyok' },
       levels: {
         full: { label: 'Penuh', hint: 'Semua animasi' },
         light: { label: 'Ringan', hint: 'Tanpa ornamen' },

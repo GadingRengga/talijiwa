@@ -1,0 +1,474 @@
+/* Central Java Village theme dressing. Only --inv-* tokens plus this theme's own
+   artwork are used here; no business logic, no layout properties animated. */
+.inv-t-central-java-village {
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: 50% 62%;
+  background-repeat: no-repeat;
+  background-color: #bfe0f0;
+}
+/* Cream legibility veil + faint golden-hour tint, both under the content.
+   Kept subtle: the backdrop is flat cream now (scene lives in gate + hero). */
+.inv-t-central-java-village::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(251, 244, 227, 0.25), rgba(251, 244, 227, 0.4) 45%, rgba(251, 244, 227, 0.5));
+}
+.inv-t-central-java-village::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #f2b35a;
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+}
+/* Builder/preview: `fixed` escapes the device frame and tints the whole
+   builder page yellow — confine the veils to the invitation itself. */
+.inv-t-central-java-village.inv-preview::before,
+.inv-t-central-java-village.inv-preview::after {
+  position: absolute;
+}
+.inv-t-central-java-village > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Paper panels: ivory card, double gold frame, warm shadow. */
+.inv-t-central-java-village .inv-card {
+  background: rgba(255, 250, 239, 0.92);
+  border: 1px solid #c9a24a;
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 162, 74, 0.55),
+    inset 0 0 0 5px #fffaef,
+    inset 0 0 0 6px rgba(201, 162, 74, 0.55),
+    0 12px 40px rgba(107, 68, 35, 0.18);
+}
+.inv-t-central-java-village .inv-input:focus {
+  box-shadow: 0 0 0 3px rgba(201, 162, 74, 0.35);
+}
+.inv-t-central-java-village :focus-visible {
+  outline: 2px solid #8a6a22;
+  outline-offset: 2px;
+}
+
+/* Couple names, closing names, side-panel names: script in gold gradient. */
+.inv-t-central-java-village [data-sec='couple'] h2,
+.inv-t-central-java-village [data-sec='closing'] .inv-heading,
+.inv-t-central-java-village .inv-side-names {
+  font-family: 'Great Vibes', 'Cormorant Garamond', cursive;
+  font-weight: 400;
+  background: linear-gradient(135deg, #9c7a2e, #ebd59b 45%, #c9a24a 70%, #8a6a22);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Crown divider above the couple + closing names only (not every section). */
+.inv-t-central-java-village [data-sec='couple'] h2::before,
+.inv-t-central-java-village [data-sec='closing'] .inv-heading::before {
+  content: '';
+  display: block;
+  width: min(220px, 64%);
+  aspect-ratio: 1742 / 832;
+  margin: 0 auto 1rem;
+  background: url('../../assets/images/central-java-village/crown-ornament-900.webp') center / contain no-repeat;
+}
+
+/* In-flow scene banners (block ::before/::after inside their section). */
+.inv-t-central-java-village [data-sec='couple']::before,
+.inv-t-central-java-village [data-sec='closing']::before {
+  content: '';
+  display: block;
+  width: min(100%, 24rem);
+  aspect-ratio: 1268 / 1223;
+  margin: 0 auto 0.5rem;
+  background: url('../../assets/images/central-java-village/jasmine-pair-top-900.webp') center / contain no-repeat;
+}
+.inv-t-central-java-village [data-sec='profile']::before {
+  content: '';
+  display: block;
+  width: min(100%, 32rem);
+  aspect-ratio: 1535 / 964;
+  margin: 0 auto 1.5rem;
+  background: url('../../assets/images/central-java-village/monument-pair-1280.webp') center / cover no-repeat;
+  border: 1px solid rgba(201, 162, 74, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(107, 68, 35, 0.18);
+}
+.inv-t-central-java-village [data-sec='countdown']::before {
+  content: '';
+  display: block;
+  width: min(100%, 30rem);
+  aspect-ratio: 1494 / 991;
+  margin: 0 auto 1.5rem;
+  background: url('../../assets/images/central-java-village/pelaminan-seat-1280.webp') center / cover no-repeat;
+  border: 1px solid rgba(201, 162, 74, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(107, 68, 35, 0.18);
+}
+.inv-t-central-java-village [data-sec='events']::after,
+.inv-t-central-java-village [data-sec='closing']::after {
+  content: '';
+  display: block;
+  width: min(100%, 36rem);
+  aspect-ratio: 1536 / 730;
+  margin: 2rem auto 0;
+  background: url('../../assets/images/central-java-village/wedding-floor-1280.webp') center / cover no-repeat;
+  border: 1px solid rgba(201, 162, 74, 0.7);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 12px 40px rgba(107, 68, 35, 0.18);
+}
+/* Hanging lamp over the maps card, gently swaying. */
+.inv-t-central-java-village [data-sec='maps']::before {
+  content: '';
+  display: block;
+  width: 110px;
+  aspect-ratio: 1247 / 1204;
+  margin: 0 auto 1rem;
+  background: url('../../assets/images/central-java-village/hanging-lamp-480.webp') center / contain no-repeat;
+  transform-origin: top center;
+  animation: cjv-sway 5.5s ease-in-out infinite alternate;
+}
+@keyframes cjv-sway {
+  from {
+    rotate: -1.8deg;
+  }
+  to {
+    rotate: 1.8deg;
+  }
+}
+
+/* Corner + edge decor. Right-side corners mirror the left artwork. */
+.inv-t-central-java-village [data-sec='couple'],
+.inv-t-central-java-village [data-sec='profile'],
+.inv-t-central-java-village [data-sec='events'],
+.inv-t-central-java-village [data-sec='story'],
+.inv-t-central-java-village [data-sec='gallery'],
+.inv-t-central-java-village [data-sec='rsvp'],
+.inv-t-central-java-village [data-sec='messages'],
+.inv-t-central-java-village [data-sec='gift'] {
+  position: relative;
+}
+.inv-t-central-java-village .inv-section > * {
+  position: relative;
+  z-index: 1;
+}
+.inv-t-central-java-village [data-sec='rsvp']::before,
+.inv-t-central-java-village [data-sec='gift']::before,
+.inv-t-central-java-village [data-sec='events']::before {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  left: 0.5rem;
+  width: clamp(120px, 34%, 260px);
+  aspect-ratio: 1219 / 1216;
+  background: url('../../assets/images/central-java-village/jasmine-corner-tl-480.webp') top left / contain no-repeat;
+  pointer-events: none;
+}
+.inv-t-central-java-village [data-sec='rsvp']::after,
+.inv-t-central-java-village [data-sec='gift']::after,
+.inv-t-central-java-village [data-sec='story']::after {
+  content: '';
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.75rem;
+  width: clamp(120px, 34%, 260px);
+  aspect-ratio: 1192 / 1317;
+  background: url('../../assets/images/central-java-village/jasmine-corner-bl-480.webp') bottom right / contain no-repeat;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+.inv-t-central-java-village [data-sec='messages']::before {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  right: 0.5rem;
+  width: clamp(120px, 34%, 260px);
+  aspect-ratio: 1219 / 1216;
+  background: url('../../assets/images/central-java-village/jasmine-corner-tl-480.webp') top right / contain no-repeat;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+.inv-t-central-java-village [data-sec='messages']::after {
+  content: '';
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.5rem;
+  width: clamp(120px, 34%, 260px);
+  aspect-ratio: 1192 / 1317;
+  background: url('../../assets/images/central-java-village/jasmine-corner-bl-480.webp') bottom left / contain no-repeat;
+  pointer-events: none;
+}
+/* Batik leaf accents: hero bottom-left, gallery top-left. */
+.inv-t-central-java-village [data-sec='couple']::after {
+  content: '';
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.25rem;
+  width: clamp(120px, 36%, 240px);
+  aspect-ratio: 1009 / 1198;
+  background: url('../../assets/images/central-java-village/batik-leaf-bl-480.webp') bottom left / contain no-repeat;
+  opacity: 0.4;
+  pointer-events: none;
+}
+.inv-t-central-java-village [data-sec='gallery']::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  left: 0.25rem;
+  width: clamp(110px, 30%, 220px);
+  aspect-ratio: 1009 / 1198;
+  background: url('../../assets/images/central-java-village/batik-leaf-bl-480.webp') top left / contain no-repeat;
+  opacity: 0.35;
+  pointer-events: none;
+}
+/* Flower strand edges: story left, gallery right. */
+.inv-t-central-java-village [data-sec='story']::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: clamp(48px, 12%, 110px);
+  background: url('../../assets/images/central-java-village/flower-strand-480.webp') top left / 100% auto no-repeat;
+  pointer-events: none;
+}
+.inv-t-central-java-village [data-sec='gallery']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: clamp(48px, 12%, 110px);
+  background: url('../../assets/images/central-java-village/flower-strand-480.webp') top right / 100% auto no-repeat;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+/* Mempelai photos: round-ish gold frame echoing the monument pillars. */
+.inv-t-central-java-village [data-sec='profile'] .inv-photo {
+  border: 2px solid #c9a24a;
+  box-shadow:
+    0 0 0 4px #fffaef,
+    0 0 0 5px rgba(201, 162, 74, 0.7),
+    0 12px 40px rgba(107, 68, 35, 0.2);
+}
+
+/* Ambient petals become jasmine: cream petal, gold edge. */
+.inv-t-central-java-village .inv-decor > .inv-petal {
+  background: rgba(255, 250, 239, 0.85);
+  border: 1px solid rgba(201, 162, 74, 0.8);
+  border-radius: 80% 5% 80% 5%;
+}
+
+/* Persistent cover hero, scoped to this theme. Stacked on top below 64rem of
+   CONTAINER width (so the builder device frame follows the frame, not the
+   viewport); sticky 70% beside the 30% content column at and above it.
+   Identical in builder, preview, and public — the public gate overlay simply
+   lifts off it. Photo motion is CSS-only (no JS) to stay cheap. */
+.inv-t-central-java-village .inv-side {
+  display: block;
+  position: relative;
+  /* min-height (not height): a tall card on short screens grows the hero
+     instead of getting clipped by overflow. */
+  min-height: min(78svh, 32rem);
+  overflow: hidden;
+  background: linear-gradient(180deg, #bfe0f0 0%, #ede3c8 34%, #fbf4e3 60%);
+}
+@container (min-width: 64rem) {
+  .inv-t-central-java-village .inv-mainwrap {
+    display: flex;
+    align-items: stretch;
+  }
+  .inv-t-central-java-village .inv-side {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    flex: 7 1 0%;
+    min-width: 0;
+  }
+  .inv-t-central-java-village .inv-content {
+    flex: 3 1 0%;
+    min-width: 0;
+  }
+  /* Public opener: the gate lives inside the 70% hero panel, so the split is
+     visible from the very first paint (page scroll stays locked until the
+     cover dismisses). Narrow screens keep the full-screen gate. */
+  .inv-t-central-java-village [data-sec='cover'] > .inv-cover {
+    left: 0;
+    right: auto;
+    width: 70%;
+  }
+}
+.inv-t-central-java-village .inv-side > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+  animation: cjv-heropan 36s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes cjv-heropan {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+.inv-t-central-java-village .inv-side-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(251, 244, 227, 0.55) 62%, rgba(251, 244, 227, 0.94));
+}
+.inv-t-central-java-village .inv-side-card {
+  position: absolute;
+  inset-inline: 0;
+  bottom: max(2.5rem, env(safe-area-inset-bottom));
+  margin-inline: auto;
+  width: min(88%, 30rem);
+  text-align: center;
+}
+.inv-t-central-java-village .inv-side-card::before {
+  content: '';
+  display: block;
+  width: 160px;
+  aspect-ratio: 1742 / 832;
+  margin: 0 auto 1rem;
+  background: url('../../assets/images/central-java-village/crown-ornament-480.webp') center / contain no-repeat;
+}
+.inv-t-central-java-village .inv-side-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: #7a6248;
+}
+.inv-t-central-java-village .inv-side-names {
+  margin-top: 0.75rem;
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+.inv-t-central-java-village .inv-side-date {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.2em;
+  color: #3a2a1a;
+}
+/* Jasmine ornaments on the photo hero (below the card, above the photo). */
+.inv-t-central-java-village .inv-side::before,
+.inv-t-central-java-village .inv-side::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  width: clamp(120px, 30%, 240px);
+  aspect-ratio: 1219 / 1216;
+  pointer-events: none;
+}
+.inv-t-central-java-village .inv-side::before {
+  top: 0.75rem;
+  left: 0.5rem;
+  background: url('../../assets/images/central-java-village/jasmine-corner-tl-480.webp') top left / contain no-repeat;
+}
+.inv-t-central-java-village .inv-side::after {
+  right: 0.5rem;
+  bottom: 0.75rem;
+  background: url('../../assets/images/central-java-village/jasmine-corner-tl-480.webp') bottom right / contain no-repeat;
+  transform: scaleX(-1);
+}
+.inv-t-central-java-village .inv-side-card {
+  z-index: 1;
+}
+
+/* Opener card on top of the content column: paper, crown, gold names,
+   guest greeting, open button. Generic markup, theme-private dressing. */
+.inv-t-central-java-village .inv-opener {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto 0.5rem;
+  width: min(100%, 26rem);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  background: rgba(255, 250, 239, 0.94);
+  border: 1px solid #c9a24a;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 162, 74, 0.55),
+    inset 0 0 0 5px #fffaef,
+    inset 0 0 0 6px rgba(201, 162, 74, 0.55),
+    0 12px 40px rgba(107, 68, 35, 0.18);
+}
+.inv-t-central-java-village .inv-opener::before {
+  content: '';
+  display: block;
+  width: 150px;
+  aspect-ratio: 1742 / 832;
+  margin: 0 auto 1rem;
+  background: url('../../assets/images/central-java-village/crown-ornament-480.webp') center / contain no-repeat;
+}
+.inv-t-central-java-village .inv-opener-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: #7a6248;
+}
+.inv-t-central-java-village .inv-opener-names {
+  margin-top: 0.75rem;
+  font-family: 'Great Vibes', 'Cormorant Garamond', cursive;
+  font-size: clamp(1.9rem, 3vw + 1rem, 2.6rem);
+  line-height: 1.15;
+  overflow-wrap: break-word;
+  background: linear-gradient(135deg, #9c7a2e, #ebd59b 45%, #c9a24a 70%, #8a6a22);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.inv-t-central-java-village .inv-opener-date {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: #3a2a1a;
+}
+.inv-t-central-java-village .inv-opener-dear {
+  font-size: 0.75rem;
+  color: #7a6248;
+}
+.inv-t-central-java-village .inv-opener-guest {
+  margin-top: 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  overflow-wrap: break-word;
+  color: #3a2a1a;
+}
+
+/* Narrow container (phones, builder phone frame): shrink corner decor so it
+   never covers the text; drop the full-height flower strands entirely. */
+@container (max-width: 40rem) {
+  .inv-t-central-java-village [data-sec='rsvp']::before,
+  .inv-t-central-java-village [data-sec='gift']::before,
+  .inv-t-central-java-village [data-sec='events']::before,
+  .inv-t-central-java-village [data-sec='rsvp']::after,
+  .inv-t-central-java-village [data-sec='gift']::after,
+  .inv-t-central-java-village [data-sec='story']::after,
+  .inv-t-central-java-village [data-sec='messages']::before,
+  .inv-t-central-java-village [data-sec='messages']::after,
+  .inv-t-central-java-village [data-sec='couple']::after,
+  .inv-t-central-java-village [data-sec='gallery']::before {
+    width: clamp(96px, 26%, 170px);
+  }
+  .inv-t-central-java-village [data-sec='story']::before,
+  .inv-t-central-java-village [data-sec='gallery']::after {
+    content: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-t-central-java-village [data-sec='maps']::before,
+  .inv-t-central-java-village .inv-side > img {
+    animation: none;
+  }
+}

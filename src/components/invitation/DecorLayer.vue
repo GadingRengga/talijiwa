@@ -27,24 +27,22 @@ function style(it: (typeof items.value)[number]) {
     return {
       ...base,
       top: it.top,
-      background: 'var(--inv-accent)',
-      borderRadius: '50%',
-      boxShadow: '0 0 8px var(--inv-accent)',
       animation: `inv-twinkle ${it.duration} ease-in-out ${it.delay} infinite`,
     }
   }
   return {
     ...base,
-    background: props.kind === 'petals' ? 'var(--inv-accent)' : 'var(--inv-border)',
-    borderRadius: props.kind === 'petals' ? '80% 0 80% 0' : '50%',
-    opacity: '0',
     animation: `inv-drift ${it.duration} linear ${it.delay} infinite`,
   }
+}
+
+function cls(): string {
+  return props.kind === 'sparkle' ? 'inv-spark' : props.kind === 'petals' ? 'inv-petal' : 'inv-drop'
 }
 </script>
 
 <template>
   <div v-if="kind !== 'none'" class="inv-decor" aria-hidden="true">
-    <i v-for="(it, n) in items" :key="n" :style="style(it)" />
+    <i v-for="(it, n) in items" :key="n" :class="cls()" :style="style(it)" />
   </div>
 </template>

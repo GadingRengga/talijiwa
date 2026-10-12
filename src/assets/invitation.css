@@ -151,6 +151,22 @@
   display: block;
   will-change: transform, opacity;
 }
+/* Decor item looks live in CSS so themes can restyle them without touching JS. */
+.inv-decor > .inv-spark {
+  background: var(--inv-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--inv-accent);
+}
+.inv-decor > .inv-petal {
+  background: var(--inv-accent);
+  border-radius: 80% 0 80% 0;
+  opacity: 0;
+}
+.inv-decor > .inv-drop {
+  background: var(--inv-border);
+  border-radius: 50%;
+  opacity: 0;
+}
 /* Builder preview: the static cover fills exactly one frame viewport, so the
    next section never leaks into the first screen. Banners are unaffected
    (they are not inside .inv-preview and force their own height). */

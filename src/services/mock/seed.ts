@@ -31,6 +31,7 @@ interface DemoSpec {
 
 const demos: DemoSpec[] = [
   { slug: 'demo-default', theme: 'default', groom: ['Arga Wicaksono', 'Arga'], bride: ['Nadia Safitri', 'Nadia'], date: '2027-01-09', palette: ['#f0c4cb', '#9a6b1e'] },
+  { slug: 'demo-central-java-village', theme: 'central-java-village', groom: ['Raka Pradana', 'Raka'], bride: ['Sinta Maharani', 'Sinta'], date: '2027-02-14', palette: ['#ebd59b', '#8a6a22'] },
 ]
 
 function buildDemo(customerId: string, spec: DemoSpec, index: number): InvitationData {
@@ -124,6 +125,7 @@ export function createSeed(): MockDb {
 
   const themeCatalog: ThemeCatalogEntry[] = [
     { theme: 'default', code: 'DEF', is_active: true, price: 149000, position: 1, category: 'modern', tier: 'basic' },
+    { theme: 'central-java-village', code: 'CJV', is_active: true, price: 199000, position: 2, category: 'adat', tier: 'premium' },
   ]
 
   const orders: Order[] = [
