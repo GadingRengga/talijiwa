@@ -122,9 +122,9 @@ export function createSeed(): MockDb {
     created_at: iso(i % 14),
   }))
 
-  const categories: Record<string, ThemeCategory> = { floral: 'floral' }
-  const tiers: Record<string, InvitationTier> = { floral: 'basic' }
-  const codes: Record<string, string> = { floral: 'FLR' }
+  const categories: Record<string, ThemeCategory> = { floral: 'floral', jawa: 'adat' }
+  const tiers: Record<string, InvitationTier> = { floral: 'basic', jawa: 'premium' }
+  const codes: Record<string, string> = { floral: 'FLR', jawa: 'JW' }
   const themeCatalog: ThemeCatalogEntry[] = (Object.keys(Object.fromEntries(demos.map((d) => [d.theme, true]))) as ThemeId[]).map(
     (theme, i) => ({
       theme,
@@ -136,6 +136,10 @@ export function createSeed(): MockDb {
       tier: tiers[theme] ?? 'basic',
     }),
   )
+  // Jawa has no demo invitation yet; list it explicitly so Templates shows it in mock mode.
+  if (!themeCatalog.some((t) => t.theme === 'jawa')) {
+    themeCatalog.push({ theme: 'jawa', code: 'JW', is_active: true, price: 249000, position: themeCatalog.length + 1, category: 'adat', tier: 'premium' })
+  }
 
   const orders: Order[] = [
     { id: 'ord_1', customer_id: 'cus_budi', invitation_id: 'inv_demo_0', tier: 'luxury', theme: 'floral', amount: 149000, paid: 149000, status: 'paid', due_date: '2026-12-20', notes: '', delivered_at: iso(9), created_at: iso(25), updated_at: iso(11) },

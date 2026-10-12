@@ -4,6 +4,7 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch 
 import { copy } from '@/config/copy'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 import DecorLayer from './DecorLayer.vue'
+import JawaCoverDressing from './JawaCoverDressing.vue'
 import OrnamentLayer from './OrnamentLayer.vue'
 // Lazy: keeps three.js out of the initial invitation chunk so cover text +
 // photo paint first; the gate mounts only in overlay/interactive mode anyway.
@@ -30,6 +31,7 @@ import type { DecorKind, IntroKind, OrnamentKind } from '@/types'
 // Flora gate artwork (static import: single-theme roster, no waste. Switch to
 // dynamic import once the roster grows past one theme).
 import gateFrame from '@/assets/images/floral-frame-1.webp'
+import gununganGate from '@/assets/images/gunungan-1.webp'
 
 const props = withDefaults(
   defineProps<{
@@ -60,8 +62,9 @@ const root = ref<HTMLElement | null>(null)
 const content = ref<HTMLElement | null>(null)
 const opening = ref(false)
 const hidden = ref(false)
-/** Flora/gate3d cover acts: 'gate' → 'frame' → 'title' → dismissed. */
-const phase = ref<'gate' | 'frame' | 'title'>('title')
+/** Cover acts: gate3d 'cover' → 'gate' → 'frame' → 'title' → dismissed.
+ *  Flora/gunungan acts: 'gate' → 'title' → dismissed. */
+const phase = ref<'cover' | 'gate' | 'frame' | 'title'>('title')
 const gate3dRef = ref<{ play: () => void } | null>(null)
 let touchY: number | null = null
 let emitted = false
@@ -118,11 +121,6 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
   } else if (props.intro === 'bloom') {
     tl.to(q('.b-p'), { scale: 3.2, opacity: 0, duration: 1.5, ease: 'power2.in', stagger: 0.06 }, 0.3)
     tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.7)
-  } else if (props.intro === 'gunungan') {
-    // Stop the idle 3D sway so GSAP owns the transform from here.
-    r.querySelector('.g-leaf')?.classList.remove('g-leaf-idle')
-    tl.to(q('.g-leaf'), { scale: 5, opacity: 0, rotateX: 25, rotateY: 30, y: -40, duration: 1.6, ease: 'power3.in' }, 0.3)
-    tl.to(q('.veil'), { opacity: 0, duration: 1.1, ease: 'power1.inOut' }, 0.8)
   } else if (props.intro === 'iris') {
     tl.to(q('.veil'), { clipPath: 'circle(0% at 50% 50%)', duration: 1.6, ease: 'power3.inOut' }, 0.3)
   } else if (props.intro === 'zoom') {
@@ -133,12 +131,14 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
   } else if (props.intro === 'cube') {
     tl.to(q('.cube-veil'), { rotateY: -90, transformOrigin: 'left center', duration: 1.6, ease: 'power3.inOut' }, 0.3)
     tl.to(q('.cover-img'), { scale: 1.12, x: 40, duration: 1.8, ease: 'power2.out' }, 0.3)
-  } else if (props.intro === 'flora') {
-    // Three beats: flower gate → uploaded photo fullscreen → staggered title.
-    tl.to(q('.fl-gate'), { scale: 1.45, rotate: 1.5, opacity: 0, duration: 1.6, ease: 'power2.in' }, 0.2)
-    tl.to(q('.fl-flash'), { opacity: 0.9, duration: 0.5, ease: 'power1.in' }, 0.5)
-    tl.to(q('.fl-flash'), { opacity: 0, duration: 0.7, ease: 'power1.out' }, 1.0)
-    tl.to(q('.fl-veil'), { opacity: 0, duration: 0.9, ease: 'power1.inOut' }, 0.6)
+  } else if (props.intro === 'flora' || props.intro === 'gunungan') {
+    // Three beats: art gate (flower frame / gunungan) → uploaded photo
+    // fullscreen → staggered title.
+    const p = props.intro === 'gunungan' ? 'gn' : 'fl'
+    tl.to(q(`.${p}-gate`), { scale: 1.45, rotate: 1.5, opacity: 0, duration: 1.6, ease: 'power2.in' }, 0.2)
+    tl.to(q(`.${p}-flash`), { opacity: 0.9, duration: 0.5, ease: 'power1.in' }, 0.5)
+    tl.to(q(`.${p}-flash`), { opacity: 0, duration: 0.7, ease: 'power1.out' }, 1.0)
+    tl.to(q(`.${p}-veil`), { opacity: 0, duration: 0.9, ease: 'power1.inOut' }, 0.6)
     tl.to(q('.cover-img'), { opacity: 1, scale: 1.06, duration: 1.6, ease: 'power2.out' }, 0.5)
     tl.to(q('.cover-img'), { scale: 1.12, duration: 2.4, ease: 'none' }, 2.1)
     if (content.value) tl.fromTo(Array.from(content.value.children), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.09 }, 2.0)
@@ -150,13 +150,27 @@ function build(tl: gsap.core.Timeline, exit: boolean) {
 }
 
 let demoTl: gsap.core.Timeline | undefined
+/** Back to the art-gate opening tableau (flora / gunungan; replay + Uji). */
+function resetArtGate() {
+  if (!root.value || !content.value) return
+  hidden.value = false
+  phase.value = 'gate'
+  const p = props.intro === 'gunungan' ? 'gn' : 'fl'
+  // Rewind the gate to its opening tableau before replaying the plunge.
+  gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  gsap.set(content.value, { opacity: 1, y: 0 })
+  gsap.set(content.value.children, { opacity: 0, y: 26 })
+  gsap.set(root.value.querySelector(`.${p}-gate`), { opacity: 1, scale: 1, rotate: 0 })
+  gsap.set(root.value.querySelector(`.${p}-flash`), { opacity: 0 })
+  gsap.set(root.value.querySelector(`.${p}-veil`), { opacity: 1 })
+}
 /** Builder preview: play the opening animation, then rewind it. */
 function demo() {
   hidden.value = false
   if (prefersReducedMotion() || !root.value || !content.value) return
   demoTl?.progress(0).kill()
   if (props.intro === 'gate3d') {
-    // Full reset: replay always restarts from a visible tableau.
+    // Full reset: replay always restarts from the cover tableau.
     resetToGate()
     if (props.mode === 'static' && !props.interactive) {
       phase.value = 'title'
@@ -165,20 +179,12 @@ function demo() {
     }
     return
   }
-  if (props.intro === 'flora' && root.value && content.value) {
-    // Rewind the gate to its opening tableau before replaying the plunge.
-    gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
-    gsap.set(content.value, { opacity: 1, y: 0 })
-    gsap.set(content.value.children, { opacity: 0, y: 26 })
-    gsap.set(root.value.querySelector('.fl-gate'), { opacity: 1, scale: 1, rotate: 0 })
-    gsap.set(root.value.querySelector('.fl-flash'), { opacity: 0 })
-    gsap.set(root.value.querySelector('.fl-veil'), { opacity: 1 })
-  }
+  if (props.intro === 'flora' || props.intro === 'gunungan') resetArtGate()
   if (props.intro === 'split') gsap.fromTo(root.value.querySelectorAll('.ch'), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.06 })
   // Static preview (builder) ends on the visible title tableau; only the
   // looping banner rewinds. Without this the replay leaves a blank cover:
   // photo+content end at opacity 0 while the gate stays display:none.
-  const rewind = props.intro !== 'flora' || props.loop
+  const rewind = (props.intro !== 'flora' && props.intro !== 'gunungan') || props.loop
   const t = gsap.timeline({ onComplete: () => rewind && void gsap.delayedCall(0.9, () => void t.timeScale(1.8).reverse()) })
   demoTl = t
   build(t, false)
@@ -186,7 +192,7 @@ function demo() {
 defineExpose({ demo })
 
 function open() {
-  if (props.intro === 'flora') {
+  if (props.intro === 'flora' || props.intro === 'gunungan') {
     if (!emitted) {
       emitted = true
       emit('open') // first tap is the user gesture needed to start music
@@ -200,7 +206,14 @@ function open() {
       emitted = true
       emit('open') // first tap is the user gesture needed to start music
     }
-    if (phase.value === 'gate') {
+    if (phase.value === 'cover') {
+      // First tap: launch Gate3D. The poster photo stays until the garden
+      // canvas actually paints (gateReady watcher hides it then) — no flash.
+      phase.value = 'gate'
+      if (gate3dRef.value) gate3dRef.value.play()
+      else pendingPlay = true
+    }
+    else if (phase.value === 'gate') {
       if (gate3dRef.value) gate3dRef.value.play()
       else pendingPlay = true
     }
@@ -235,8 +248,9 @@ function advance() {
 let dismissing = false
 function dismiss() {
   if (phase.value !== 'title' || !root.value || dismissing) return
-  if (props.mode !== 'overlay') {
-    // Uji: loop the simulation instead of hiding the cover permanently.
+  // Builder edit (static, not interactive): loop back to gate for repeated preview.
+  // Uji staging (static + interactive) or public (overlay): dismiss permanently.
+  if (props.mode !== 'overlay' && !props.interactive) {
     resetToGate()
     return
   }
@@ -300,22 +314,26 @@ function toTitle() {
 function resetToGate() {
   if (!root.value || !content.value) return
   hidden.value = false
-  phase.value = 'gate'
+  phase.value = 'cover'
   pendingPlay = false
+  dismissing = false
   titleTl?.kill()
   titleTl = undefined
-  gsap.set(root.value.querySelector('.cover-img'), { opacity: 0, scale: 1.15 })
+  gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
   gsap.set(root.value.querySelector('.g3-flash'), { opacity: 0 })
   gsap.set(content.value, { opacity: 1, y: 0 })
-  gsap.set(content.value.children, { opacity: 0, y: 26 })
+  gsap.set(Array.from(content.value.children), { opacity: 1, y: 0 })
 }
 
-/** Uji toggle in preview: ON restarts the gate flow, OFF settles on the tableau. */
+/** Uji toggle in preview: ON restarts from cover, OFF settles on the tableau. */
 watch(
   () => props.interactive,
   (uji) => {
-    if (props.mode !== 'static' || props.intro !== 'gate3d' || !root.value || !content.value) return
-    if (uji && !prefersReducedMotion()) resetToGate()
+    if (props.mode !== 'static' || (props.intro !== 'gate3d' && props.intro !== 'flora' && props.intro !== 'gunungan') || !root.value || !content.value) return
+    if (uji && !prefersReducedMotion()) {
+      if (props.intro === 'flora' || props.intro === 'gunungan') resetArtGate()
+      else resetToGate()
+    }
     else {
       hidden.value = false
       phase.value = 'title'
@@ -332,7 +350,7 @@ function onCoverTouchStart(e: TouchEvent) {
 }
 
 function onCoverTouchEnd(e: TouchEvent) {
-  if (props.intro !== 'flora' && props.intro !== 'gate3d') {
+  if (props.intro !== 'flora' && props.intro !== 'gunungan' && props.intro !== 'gate3d') {
     touchY = null
     return
   }
@@ -343,19 +361,24 @@ function onCoverTouchEnd(e: TouchEvent) {
   if (endY - startY < -60) {
     if (phase.value === 'title') dismiss()
     else if (phase.value === 'frame' && props.intro === 'gate3d') toTitle()
-    else if (phase.value === 'gate' && props.intro === 'flora' && !plunging) advance()
+    else if (phase.value === 'gate' && (props.intro === 'flora' || props.intro === 'gunungan') && !plunging) advance()
+    else if (phase.value === 'cover' && props.intro === 'gate3d') open()
   }
 }
 
 onMounted(() => {
-  if ((props.intro !== 'flora' && props.intro !== 'gate3d') || prefersReducedMotion() || !root.value || !content.value) return
+  if ((props.intro !== 'flora' && props.intro !== 'gunungan' && props.intro !== 'gate3d') || prefersReducedMotion() || !root.value || !content.value) return
   if (props.mode === 'static' && !props.interactive) {
     // Builder edit mode & banner: show the title tableau directly (editable at a glance, no GPU cost).
     phase.value = 'title'
     return
   }
-  if (props.intro === 'gate3d' && props.mode !== 'overlay' && !props.interactive) {
-    phase.value = 'title'
+  if (props.intro === 'gate3d') {
+    // Start on the cover photo tableau; Gate3D mounts only after first tap.
+    phase.value = 'cover'
+    gsap.set(root.value.querySelector('.cover-img'), { opacity: 1, scale: 1 })
+    gsap.set(content.value, { opacity: 1, y: 0 })
+    gsap.set(Array.from(content.value.children), { opacity: 1, y: 0 })
     return
   }
   phase.value = 'gate'
@@ -400,11 +423,13 @@ onBeforeUnmount(() => {
   >
     <img :src="image" alt="" class="cover-img absolute inset-0 -z-20 size-full object-cover" decoding="async" :fetchpriority="eager ? 'high' : 'auto'" :loading="eager ? 'eager' : 'lazy'" />
     <div class="absolute inset-0 -z-10" :style="{ background: 'var(--inv-cover-overlay)' }" />
-    <DecorLayer :kind="decor" />
+    <DecorLayer v-if="ornament !== 'jawa'" :kind="decor" />
+    <!-- Jawa cover dressing replaces the sparkle layer: janur + butterflies. -->
+    <JawaCoverDressing v-if="ornament === 'jawa' && (intro === 'flora' || intro === 'gunungan' || intro === 'gate3d') && phase !== 'gate' && phase !== 'frame'" />
     <!-- Theme signature: appears only once the gate has opened (frame/title),
       so the order stays gate → framed text → photo. z-5 sits below the
       tap layer / flash / text. -->
-    <OrnamentLayer v-if="ornament && (intro === 'flora' || intro === 'gate3d') && phase !== 'gate'" :kind="ornament" :style="{ zIndex: 5 }" />
+    <OrnamentLayer v-if="ornament && (intro === 'flora' || intro === 'gunungan' || intro === 'gate3d') && phase !== 'gate' && phase !== 'frame'" :kind="ornament" :style="{ zIndex: 5 }" />
 
     <template v-if="panels">
       <template v-if="intro === 'door' || intro === 'curtain'">
@@ -426,29 +451,16 @@ onBeforeUnmount(() => {
         <div v-for="n in 8" :key="n" class="b-p absolute left-1/2 top-1/2 z-[5] h-[17vmin] w-[34vmin]" :style="{ transform: `rotate(${(n - 1) * 45}deg)`, transformOrigin: '0 50%', background: n % 2 ? 'var(--inv-accent)' : 'color-mix(in srgb, var(--inv-accent) 55%, var(--inv-surface))', borderRadius: '0 100% 0 100% / 50% 100% 0 50%', willChange: 'transform, opacity' }" />
       </template>
       <template v-else-if="intro === 'gunungan'">
-        <div class="veil absolute inset-0 z-[4]" :style="{ background: 'radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--inv-accent) 22%, var(--inv-bg)), var(--inv-bg) 70%)' }" />
-        <div class="g-leaf g-leaf-idle absolute left-1/2 top-1/2 z-[5] h-[80vmin] w-[56vmin] -translate-x-1/2 -translate-y-1/2" :style="{ willChange: 'transform, opacity' }">
-          <svg viewBox="0 0 200 320" class="size-full" fill="none" aria-hidden="true">
-            <path d="M100 4 C108 36,124 74,149 114 C168 143,178 172,180 200 C182 228,179 250,174 266 C169 280,161 288,151 294 L49 294 C39 288,31 280,26 266 C21 250,18 228,20 200 C22 172,32 143,51 114 C76 74,92 36,100 4Z" fill="color-mix(in srgb, var(--inv-accent) 28%, var(--inv-bg))" stroke="var(--inv-accent)" stroke-width="2" />
-            <path d="M100 16 C106 44,120 78,142 114 C158 140,167 166,169 192 C171 216,168 236,164 250 C160 262,154 270,146 275 L54 275 C46 270,40 262,36 250 C32 236,29 216,31 192 C33 166,42 140,58 114 C80 78,94 44,100 16Z" stroke="var(--inv-accent)" stroke-width="0.8" opacity="0.6" />
-            <circle cx="100" cy="52" r="10" fill="var(--inv-accent)" opacity="0.85" />
-            <circle cx="100" cy="52" r="5" fill="var(--inv-bg)" opacity="0.8" />
-            <g stroke="var(--inv-accent)" stroke-width="1" opacity="0.55">
-              <path v-for="a in [0, 45, 90, 135]" :key="a" :d="`M100 52 l ${Math.cos(a * Math.PI / 180) * 22} ${Math.sin(a * Math.PI / 180) * 22}`" />
-            </g>
-            <path d="M99 260 L99 120 M101 260 L101 120" stroke="var(--inv-accent)" stroke-width="2.5" opacity="0.6" />
-            <path d="M99 150 C84 144,70 134,60 122 M99 180 C82 174,66 166,56 154 M101 150 C116 144,130 134,140 122 M101 180 C118 174,134 166,144 154" stroke="var(--inv-accent)" stroke-width="1.6" opacity="0.55" />
-            <g fill="var(--inv-accent)" opacity="0.55">
-              <ellipse cx="60" cy="120" rx="6" ry="3.5" transform="rotate(-25 60 120)" /><ellipse cx="140" cy="120" rx="6" ry="3.5" transform="rotate(25 140 120)" />
-              <ellipse cx="56" cy="152" rx="6" ry="3.5" transform="rotate(-20 56 152)" /><ellipse cx="144" cy="152" rx="6" ry="3.5" transform="rotate(20 144 152)" />
-              <circle cx="66" cy="132" r="2" /><circle cx="134" cy="132" r="2" />
-            </g>
-            <path d="M95 240 C93 228,99 220,106 215 C113 210,106 202,98 198" stroke="var(--inv-accent)" stroke-width="1.8" opacity="0.5" stroke-linecap="round" />
-            <path d="M80 262 C80 250,90 245,100 245 C110 245,120 250,120 262" stroke="var(--inv-accent)" stroke-width="1.8" opacity="0.6" />
-            <rect x="76" y="262" width="6" height="22" rx="2" fill="var(--inv-accent)" opacity="0.5" />
-            <rect x="118" y="262" width="6" height="22" rx="2" fill="var(--inv-accent)" opacity="0.5" />
-            <rect x="48" y="288" width="104" height="7" rx="2" fill="var(--inv-accent)" opacity="0.35" />
-          </svg>
+        <div class="gn-veil absolute inset-0 z-[4]" :style="{ background: 'var(--inv-bg)' }" />
+        <div
+          class="gn-gate absolute inset-0 z-[5]"
+          :class="[{ hidden: phase === 'title' }, mode === 'overlay' ? 'cursor-pointer' : '']"
+          @click="mode === 'overlay' && open()"
+        >
+          <div class="gn-glow absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" :style="{ background: 'radial-gradient(circle, color-mix(in srgb, var(--inv-accent) 30%, transparent), transparent 65%)' }" />
+          <img :src="gununganGate" alt="" class="gn-frame absolute inset-0 size-full object-contain p-6" decoding="async" />
+          <div class="gn-flash absolute inset-0" :style="{ background: 'radial-gradient(circle at 50% 50%, rgba(255,250,240,.95), transparent 60%)', opacity: 0 }" />
+          <p class="absolute inset-x-0 bottom-30 z-[6] text-center text-xs tracking-[0.25em]" style="color: var(--inv-text)">{{ copy.invitation.tapToOpen }}</p>
         </div>
       </template>
       <template v-else-if="intro === 'iris'">
@@ -485,16 +497,22 @@ onBeforeUnmount(() => {
           v-if="(mode === 'overlay' || (mode === 'static' && interactive)) && phase === 'gate' && !gateFailed"
           ref="gate3dRef"
           class="absolute inset-0 z-[4]"
+          :motif="ornament === 'jawa' ? 'jawa' : 'floral'"
           @opened="onGateOpened"
           @done="onGateDone"
           @skipped="onGateSkipped"
         />
+        <!-- Cover phase: full-screen tap target over the cover photo -->
+        <div v-if="(mode === 'overlay' || interactive) && phase === 'cover'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
+          <p class="absolute inset-x-0 bottom-30 text-center text-xs tracking-[0.25em]" style="color: rgba(255,255,255,0.85); text-shadow: 0 0 14px rgba(0,0,0,0.5)">{{ copy.invitation.tapToOpen }}</p>
+        </div>
+        <!-- Gate phase: tap to start/continue the 3D sequence -->
         <div v-if="(mode === 'overlay' || interactive) && phase === 'gate'" class="absolute inset-0 z-[7] cursor-pointer" @click="open()">
           <p class="absolute inset-x-0 bottom-30 text-center text-xs tracking-[0.25em]" style="color: var(--inv-text); text-shadow: 0 0 14px var(--inv-surface), 0 0 6px var(--inv-surface)">{{ copy.invitation.tapToOpen }}</p>
         </div>
         <div v-if="phase === 'frame'" class="absolute inset-0 z-[6] grid cursor-pointer place-items-center px-6" @click="toTitle">
-          <div class="inv-card g3-card w-full max-w-sm p-8 text-center">
-            <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
+          <div class="inv-card g3-card w-full max-w-sm p-8 text-center" style="color: var(--inv-text)">
+            <p class="text-xs tracking-[0.3em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
             <h2 class="inv-heading mt-4 break-words text-4xl" style="color: var(--inv-text)">{{ couple }}</h2>
             <p v-if="date" class="mt-3 text-sm tracking-widest" style="opacity: 0.9">{{ date }}</p>
             <div class="inv-divider" />
@@ -505,24 +523,22 @@ onBeforeUnmount(() => {
       </template>
     </template>
 
-    <!-- Hidden until the title phase (gate3d): the invisible layer sits at z-10
-      above the frame card (z-6) and would swallow its button taps.
-      Radial scrim lifts white-text contrast over the bright photo center. -->
-    <div v-show="intro !== 'gate3d' || phase === 'title'" ref="content" class="relative z-10 w-full max-w-xl px-6" :style="{ background: 'radial-gradient(ellipse 110% 95% at 50% 40%, color-mix(in srgb, var(--inv-text) 60%, transparent), transparent 70%)' }">
-      <p class="text-xs tracking-[0.35em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
-      <h1 class="inv-heading mt-5 break-words text-4xl leading-tight @sm:text-5xl @lg:text-6xl">
+    <!-- Content: visible on cover + title phases; hidden during gate/frame sequence -->
+    <div v-show="intro !== 'gate3d' || phase === 'cover' || phase === 'title'" ref="content" class="relative z-10 w-full max-w-[34rem] px-6" :style="{ background: 'radial-gradient(ellipse 110% 95% at 50% 40%, color-mix(in srgb, var(--inv-text) 60%, transparent), transparent 70%)' }">
+      <p class="text-xs tracking-[0.3em]" style="opacity: 0.85">{{ copy.invitation.weddingOf }}</p>
+      <h1 class="inv-heading mt-4 break-words text-4xl leading-tight @sm:text-5xl @lg:text-6xl">
         <template v-if="intro === 'split'"><span v-for="(c, i) in couple.split('')" :key="i" class="ch inline-block">{{ c === ' ' ? '\u00a0' : c }}</span></template>
         <template v-else>{{ couple }}</template>
       </h1>
       <p v-if="date" class="mt-4 text-sm tracking-widest" style="opacity: 0.9">{{ date }}</p>
-      <div class="mx-auto my-8 h-px w-16 bg-white/60" />
+      <div class="inv-divider" style="background: rgba(255,255,255,.6)" />
       <p class="text-sm" style="opacity: 0.85">{{ copy.invitation.dear }}</p>
       <p class="inv-heading mt-1 break-words text-2xl">{{ guest }}</p>
-      <div v-if="intro === 'flora' || intro === 'gate3d'" class="mt-6">
+      <div v-if="intro === 'flora' || intro === 'gunungan' || intro === 'gate3d'" class="mt-6">
         <svg class="fl-chev mx-auto" width="28" height="18" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M2 16L14 3l12 13" /></svg>
         <p class="mt-2 text-xs tracking-[0.25em]" style="opacity: 0.85">{{ copy.invitation.swipeUp }}</p>
       </div>
-      <button type="button" class="inv-btn mt-8" :disabled="mode === 'static' && !interactive" @click="open">{{ copy.invitation.open }}</button>
+      <button type="button" class="inv-btn mt-6" :class="{ 'pointer-events-none': mode === 'static' && !interactive }" :disabled="mode === 'static' && !interactive" @click="open">{{ copy.invitation.open }}</button>
     </div>
   </section>
 </template>

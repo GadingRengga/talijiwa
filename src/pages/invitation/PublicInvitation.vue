@@ -14,7 +14,15 @@ import { sanitizeGuestName } from '@/utils/format'
 import { coupleLabel } from '@/utils/invitation'
 
 /** previewId set = admin preview (any status, no view tracking). Otherwise public /invite/:slug. */
-const props = defineProps<{ previewId?: string }>()
+const props = defineProps<{
+  previewId?: string
+  /** Staging preview: run Gate3D + forms like the real launch (Uji mode). */
+  interactive?: boolean
+  /** Staging preview: pre-built sample messages to show in Uji mode. */
+  sampleMessages?: GuestMessage[]
+  /** Staging preview: hide the admin banner so the frame looks clean. */
+  hideBar?: boolean
+}>()
 const route = useRoute()
 const toast = useToast()
 const seo = useSeo()
@@ -60,12 +68,13 @@ async function load() {
 onMounted(load)
 watch(() => route.params.slug, load)
 
-// Keep the page locked until the cover is fully dismissed (gate3d needs
-// several taps before the guest reaches the content).
+// Keep the public page locked until the cover is fully dismissed (gate3d
+// needs several taps before the guest reaches the content). The admin
+// preview renders a static cover, so it never locks.
 watch(
   [state, uncovered],
   () => {
-    document.documentElement.style.overflow = state.value === 'ok' && !uncovered.value ? 'hidden' : ''
+    document.documentElement.style.overflow = state.value === 'ok' && !uncovered.value && !props.previewId ? 'hidden' : ''
   },
   { immediate: true },
 )
@@ -104,12 +113,24 @@ const onGift = (p: GiftPayload) => run(() => rsvpService.createGiftConfirmation(
     </div>
   </main>
 
-  <template v-else-if="inv">
-    <div v-if="previewId" class="fixed inset-x-0 top-0 z-[70] flex items-center justify-between bg-ink px-4 py-1.5 text-xs text-white">
+  <div v-else-if="inv" :class="previewId ? 'h-full' : ''">
+    <div v-if="previewId && !hideBar" class="sticky inset-x-0 top-0 z-[70] flex items-center justify-between bg-ink px-4 py-1.5 text-xs text-white">
       <span>Pratinjau admin{{ inv.status !== 'published' ? ' — belum dipublikasikan' : '' }}</span>
       <RouterLink :to="`/admin/invitations/${inv.id}/edit`" class="underline">Kembali ke builder</RouterLink>
     </div>
-    <InvitationRenderer :invitation="inv" :guest="guest" :messages="messages" :class="previewId ? 'pt-8' : ''" @open="onOpen" @closed="uncovered = true" @rsvp="onRsvp" @message="onMessage" @gift="onGift" />
-    <MusicPlayer v-if="inv.settings.music_enabled" ref="music" :url="inv.settings.music_url" />
-  </template>
+    <InvitationRenderer
+      :invitation="inv"
+      :mode="previewId ? 'preview' : 'public'"
+      :guest="previewId ? copy.builder.edit.guestSample : guest"
+      :messages="sampleMessages ?? messages"
+      :interactive="interactive"
+      :class="previewId ? 'h-full' : ''"
+      @open="onOpen"
+      @closed="uncovered = true"
+      @rsvp="onRsvp"
+      @message="onMessage"
+      @gift="onGift"
+    />
+    <MusicPlayer v-if="inv.settings.music_enabled && (interactive || !previewId)" ref="music" :url="inv.settings.music_url" />
+  </div>
 </template>

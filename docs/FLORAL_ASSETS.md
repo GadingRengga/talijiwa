@@ -54,7 +54,7 @@ Hanging wedding greenery: trailing sage vines, soft leaves and tiny white blosso
 
 Semua 5 aset diterima, terverifikasi, dan terpasang: buket sudut,
 garland atas–bawah, tangkai sisi, kanopi gantung, cover default.
-Total WebP ±645 KB (sumber PNG/JPG tetap tersimpan).
+Total WebP ±645 KB (sumber PNG sudah dihapus 2026-10-12 — master ada di git history).
 
 Bonus: `floral-cover-1.png` (bingkai 4-sudut transparan) → `floral-frame-1.webp`
 (165 KB) dipakai sebagai gerbang cover sinematik.

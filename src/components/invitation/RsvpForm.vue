@@ -30,7 +30,7 @@ async function submit() {
 </script>
 
 <template>
-  <p v-if="sent" class="inv-card p-6 text-sm">Terima kasih, konfirmasi kehadiran Anda sudah kami terima.</p>
+  <p v-if="sent" class="inv-card p-5 text-sm">Terima kasih, konfirmasi kehadiran Anda sudah kami terima.</p>
   <form v-else class="space-y-3 text-left" novalidate @submit.prevent="submit">
     <input v-model="form.name" class="inv-input" placeholder="Nama lengkap" maxlength="80" autocomplete="name" :disabled="disabled" aria-label="Nama lengkap" />
     <input v-model="form.whatsapp" class="inv-input" placeholder="Nomor WhatsApp" inputmode="tel" autocomplete="tel" :disabled="disabled" aria-label="Nomor WhatsApp" />

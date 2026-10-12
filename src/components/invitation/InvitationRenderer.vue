@@ -88,6 +88,14 @@ function onPreviewClick(e: MouseEvent) {
 }
 const cssVars = computed(() => {
   const v = themeStyle(props.invitation.theme)
+  const t = getTheme(props.invitation.theme)
+  // Optional tiled artwork backdrop (e.g. Jawa parchment). Inline style wins
+  // over the `.inv` background shorthand for the image longhands only.
+  if (t.bgImage) {
+    v['background-image'] = `url("${t.bgImage}")`
+    v['background-size'] = '100% auto'
+    v['background-repeat'] = 'repeat-y'
+  }
   const s = resolveStyle(props.invitation.settings)
   if (s.accent) {
     v['--inv-accent'] = s.accent
@@ -151,7 +159,13 @@ onMounted(() => {
   // section 2 never leaks into the first viewport. Skipped when unsupported.
   if (!isPreview.value || !('ResizeObserver' in window) || !root.value) return
   const el = root.value
-  const syncH = () => el.style.setProperty('--pv-h', `${el.clientHeight}px`)
+  // Only when the preview frame bounds the height (builder device frame).
+  // On an unbounded page the root grows with the content — setting --pv-h
+  // there would stretch the cover to the full page height.
+  const syncH = () => {
+    if (el.clientHeight < el.scrollHeight - 1) el.style.setProperty('--pv-h', `${el.clientHeight}px`)
+    else el.style.removeProperty('--pv-h')
+  }
   syncH()
   ro = new ResizeObserver(syncH)
   ro.observe(el)
@@ -186,22 +200,22 @@ onBeforeUnmount(() => ro?.disconnect())
       />
     </div>
 
-    <div class="relative flex flex-col">
+    <div class="relative flex flex-col pt-20 @sm:pt-32">
       <OrnamentLayer v-if="theme.ornament && level === 'full'" :kind="theme.ornament" :class="isPreview ? '' : '!fixed'" />
       <DecorLayer v-if="level !== 'off'" :kind="theme.decor" :class="isPreview ? '' : '!fixed'" />
 
       <!-- Couple -->
       <section v-if="on('couple')" data-sec="couple" :style="{ order: ord('couple') }" class="inv-section">
         <div :data-reveal="reveal">
-          <p v-if="invitation.greeting" class="inv-muted text-sm">{{ invitation.greeting }}</p>
-          <p v-if="invitation.opening_text" class="mt-4 text-sm leading-relaxed">{{ invitation.opening_text }}</p>
+          <p v-if="invitation.greeting" class="inv-readable inv-muted text-sm">{{ invitation.greeting }}</p>
+          <p v-if="invitation.opening_text" class="inv-readable mt-4 text-sm leading-relaxed">{{ invitation.opening_text }}</p>
           <div class="inv-divider" />
           <h2 class="inv-heading text-4xl">{{ label }}</h2>
         </div>
       </section>
 
       <!-- Date -->
-      <section v-if="on('date') && dateValue" data-sec="date" :style="{ order: ord('date') }" class="inv-section !py-10">
+      <section v-if="on('date') && dateValue" data-sec="date" :style="{ order: ord('date') }" class="inv-section inv-section-dense">
         <div :data-reveal="reveal">
           <p class="inv-muted text-xs tracking-[0.3em]">SAVE THE DATE</p>
           <p class="inv-heading inv-accent mt-3 text-3xl">{{ formatLongDate(dateValue) }}</p>
@@ -209,7 +223,7 @@ onBeforeUnmount(() => ro?.disconnect())
       </section>
 
       <!-- Countdown -->
-      <section v-if="on('countdown') && countdownTarget" data-sec="countdown" :style="{ order: ord('countdown') }" class="inv-section !py-10">
+      <section v-if="on('countdown') && countdownTarget" data-sec="countdown" :style="{ order: ord('countdown') }" class="inv-section inv-section-dense">
         <div :data-reveal="reveal"><CountdownTimer :target="countdownTarget" /></div>
       </section>
 
@@ -217,7 +231,7 @@ onBeforeUnmount(() => ro?.disconnect())
       <section v-if="on('profile')" data-sec="profile" :style="{ order: ord('profile') }" class="inv-section">
         <div :data-reveal="reveal" class="space-y-12">
           <div v-for="(item, i) in people" :key="item.role">
-            <p class="inv-muted text-xs tracking-[0.25em]">{{ item.role.toUpperCase() }}</p>
+            <p class="inv-muted text-xs tracking-[0.3em]">{{ item.role.toUpperCase() }}</p>
             <div class="mx-auto mt-4 w-56">
               <img :src="item.p.photo || placeholderImage(item.p.nickname || item.p.name || item.role, theme.swatches[3], theme.swatches[2])" :alt="item.p.name || item.role" class="inv-photo" width="448" height="560" loading="lazy" decoding="async" />
             </div>
@@ -237,8 +251,8 @@ onBeforeUnmount(() => ro?.disconnect())
       <section v-if="on('story') && (sortedStories.length || isPreview)" data-sec="story" :style="{ order: ord('story') }" class="inv-section">
         <h2 class="inv-heading text-3xl">Kisah Cinta</h2>
         <div class="inv-divider" />
-        <p v-if="!sortedStories.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.stories }}</p>
-        <ol v-else class="mt-8 space-y-8 text-left">
+        <p v-if="!sortedStories.length" class="inv-muted border border-dashed p-4 text-sm" style="border-color: var(--inv-border); border-radius: var(--inv-radius)">{{ copy.empty.stories }}</p>
+        <ol v-else class="inv-story mt-8 space-y-8 text-left">
           <li v-for="s in sortedStories" :key="s.id" :data-reveal="reveal" class="border-l pl-5" style="border-color: var(--inv-accent)">
             <p class="inv-accent text-xs">{{ formatDate(s.date) }}</p>
             <h3 class="inv-heading mt-1 text-2xl">{{ s.title }}</h3>
@@ -252,9 +266,9 @@ onBeforeUnmount(() => ro?.disconnect())
       <section v-if="on('events') && (invitation.events.length || isPreview)" data-sec="events" :style="{ order: ord('events') }" class="inv-section">
         <h2 class="inv-heading text-3xl">Rangkaian Acara</h2>
         <div class="inv-divider" />
-        <p v-if="!invitation.events.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.events }}</p>
+        <p v-if="!invitation.events.length" class="inv-muted border border-dashed p-4 text-sm" style="border-color: var(--inv-border); border-radius: var(--inv-radius)">{{ copy.empty.events }}</p>
         <div v-else class="mt-8 space-y-4">
-          <article v-for="(e, i) in invitation.events" :key="e.id" :data-idx="i" :data-reveal="reveal" class="inv-card p-6">
+          <article v-for="(e, i) in invitation.events" :key="e.id" :data-idx="i" :data-reveal="reveal" class="inv-card p-5">
             <h3 class="inv-heading inv-accent text-2xl">{{ e.name }}</h3>
             <p class="mt-3 text-sm">{{ formatLongDate(e.date) }}</p>
             <p class="inv-muted text-sm">{{ timeRange(e.start_time, e.end_time) }}</p>
@@ -265,7 +279,7 @@ onBeforeUnmount(() => ro?.disconnect())
       </section>
 
       <!-- Maps -->
-      <section v-if="on('maps') && invitation.events.some((e) => e.maps_url)" data-sec="maps" :style="{ order: ord('maps') }" class="inv-section !py-10">
+      <section v-if="on('maps') && invitation.events.some((e) => e.maps_url)" data-sec="maps" :style="{ order: ord('maps') }" class="inv-section inv-section-dense">
         <div :data-reveal="reveal" class="space-y-3">
           <a v-for="e in invitation.events.filter((x) => x.maps_url)" :key="e.id" :data-idx="invitation.events.indexOf(e)" :href="e.maps_url" target="_blank" rel="noopener noreferrer" class="inv-btn inv-btn-outline w-full">
             <MapPin class="size-4" /> {{ copy.invitation.openMaps }} — {{ e.name }}
@@ -277,8 +291,8 @@ onBeforeUnmount(() => ro?.disconnect())
       <section v-if="on('gallery') && (invitation.gallery.length || isPreview)" data-sec="gallery" :style="{ order: ord('gallery') }" class="inv-section">
         <h2 class="inv-heading text-3xl">Galeri</h2>
         <div class="inv-divider" />
-        <p v-if="!invitation.gallery.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.gallery }}</p>
-        <div v-else class="mt-6 grid grid-cols-2 gap-2 @sm:grid-cols-3" style="max-width: 36rem">
+        <p v-if="!invitation.gallery.length" class="inv-muted border border-dashed p-4 text-sm" style="border-color: var(--inv-border); border-radius: var(--inv-radius)">{{ copy.empty.gallery }}</p>
+        <div v-else class="mt-6 grid grid-cols-2 gap-2 @sm:grid-cols-3" style="max-width: 34rem">
           <button v-for="g in invitation.gallery" :key="g.id" type="button" :data-reveal="reveal" class="overflow-hidden" style="border-radius: var(--inv-radius)" @click="lightbox = g.url">
             <img :src="g.url" :alt="g.caption || 'Foto galeri'" class="aspect-[4/5] w-full object-cover transition-transform duration-500 hover:scale-105" width="600" height="750" loading="lazy" decoding="async" />
           </button>
@@ -291,7 +305,7 @@ onBeforeUnmount(() => ro?.disconnect())
           <h2 class="inv-heading text-3xl">Konfirmasi Kehadiran</h2>
           <div class="inv-divider" />
           <p v-if="invitation.settings.rsvp_deadline" class="inv-muted mb-5 text-sm">Mohon konfirmasi sebelum {{ formatDate(invitation.settings.rsvp_deadline) }}.</p>
-          <RsvpForm :disabled="isPreview && !props.interactive" @submit="emit('rsvp', $event)" />
+          <RsvpForm :disabled="isPreview" @submit="emit('rsvp', $event)" />
         </div>
       </section>
 
@@ -300,11 +314,11 @@ onBeforeUnmount(() => ro?.disconnect())
         <div :data-reveal="reveal">
           <h2 class="inv-heading text-3xl">Ucapan &amp; Doa</h2>
           <div class="inv-divider" />
-          <GuestMessageForm :disabled="isPreview && !props.interactive" @submit="emit('message', $event)" />
-          <ul v-if="messages.length" class="mt-8 max-h-96 space-y-3 overflow-y-auto text-left">
-            <li v-for="m in messages" :key="m.id" class="inv-card p-4">
-              <p class="text-sm font-medium">{{ m.name }}</p>
-              <p class="inv-muted mt-1 text-sm whitespace-pre-line">{{ m.message }}</p>
+          <GuestMessageForm :disabled="isPreview" @submit="emit('message', $event)" />
+          <ul v-if="messages.length" class="inv-scroll mt-8 max-h-96 space-y-3 overflow-y-auto text-left">
+              <li v-for="m in messages" :key="m.id" class="inv-card p-5">
+              <p class="text-sm font-medium break-words">{{ m.name }}</p>
+              <p class="inv-muted mt-1 text-sm whitespace-pre-line break-words">{{ m.message }}</p>
             </li>
           </ul>
         </div>
@@ -315,15 +329,15 @@ onBeforeUnmount(() => ro?.disconnect())
         <div :data-reveal="reveal">
           <h2 class="inv-heading text-3xl">Amplop Digital</h2>
           <div class="inv-divider" />
-          <p v-if="!invitation.gifts.length" class="inv-muted rounded border border-dashed p-4 text-sm" style="border-color: var(--inv-border)">{{ copy.empty.gifts }}</p>
-          <GiftSection v-else :accounts="invitation.gifts" :disabled="isPreview && !props.interactive" @confirm="emit('gift', $event)" />
+          <p v-if="!invitation.gifts.length" class="inv-muted border border-dashed p-4 text-sm" style="border-color: var(--inv-border); border-radius: var(--inv-radius)">{{ copy.empty.gifts }}</p>
+          <GiftSection v-else :accounts="invitation.gifts" :disabled="isPreview" @confirm="emit('gift', $event)" />
         </div>
       </section>
 
       <!-- Closing -->
       <section data-sec="closing" style="order: 999" class="inv-section">
         <div :data-reveal="reveal">
-          <p v-if="invitation.closing_text" class="text-sm leading-relaxed">{{ invitation.closing_text }}</p>
+          <p v-if="invitation.closing_text" class="inv-readable text-sm leading-relaxed">{{ invitation.closing_text }}</p>
           <div class="inv-divider" />
           <p class="inv-muted text-sm">Kami yang berbahagia,</p>
           <p class="inv-heading mt-2 text-4xl">{{ label }}</p>

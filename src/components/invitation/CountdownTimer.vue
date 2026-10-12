@@ -56,7 +56,7 @@ const units = computed(() => {
           <span :key="u.value" class="inv-heading block text-2xl tabular-nums @sm:text-3xl">{{ String(u.value).padStart(2, '0') }}</span>
         </Transition>
       </div>
-      <p class="inv-muted text-xs">{{ u.label }}</p>
+      <p class="inv-muted text-xs tracking-widest">{{ u.label }}</p>
     </div>
   </div>
 </template>

@@ -195,7 +195,7 @@ export const copy = {
       reloadTitle: 'Muat ulang halaman ini (kosongkan jika kosong)',
       completeAction: 'lengkapi',
       shortcuts: 'Pintasan: Ctrl+S simpan · Ctrl+Z urungkan · Ctrl+Shift+Z ulangi · Alt+←/→ pindah bagian',
-      phone: 'Ponsel',
+      phone: 'Mobile',
       tablet: 'Tablet',
       try: 'Uji',
       tryHint: 'Coba interaksi asli (tautan, galeri, musik). Matikan untuk kembali mengedit.',

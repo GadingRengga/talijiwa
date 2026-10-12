@@ -4,19 +4,24 @@ import * as THREE from 'three'
 import { prefersReducedMotion } from '@/composables/useAnimation'
 
 /**
- * Pink flower gate intro (WebGL). Morning garden: an arch smothered in
+ * Flower gate intro (WebGL). Morning garden: an arch smothered in
  * blossoms, two lattice doors, falling petals. Doors swing inward, the camera
  * dollies through flower arches, then hands off. All text lives in DOM
  * overlays owned by InvitationCover — this component is pure scenery.
  *
  * Flower/leaf colors derive from the active theme (--inv-*) read off the host
  * element; garden sage is a fixed green tinted 35% by the theme accent.
+ *
+ * motif="jawa": gold kenanga blossoms, rising gold dust (not falling petals),
+ * and a procedural kawung batik backdrop (pure GLSL, zero image assets).
  */
 const emit = defineEmits<{
   opened: []
   done: []
   skipped: []
 }>()
+
+const props = withDefaults(defineProps<{ motif?: 'floral' | 'jawa' }>(), { motif: 'floral' })
 
 defineExpose({ play })
 
@@ -65,6 +70,8 @@ function start(hostEl: HTMLElement): () => void {
     accent: tok('--inv-accent', '#a94e63'),
     border: tok('--inv-border', '#f0d4d8'),
   }
+  // Jawa motif: gold kenanga garden on procedural kawung batik.
+  const JAWA = props.motif === 'jawa'
 
   const col = (h: string) => new THREE.Color(h)
   const mix = (a: string, b: string, t: number) => col(a).lerp(col(b), t)
@@ -238,11 +245,17 @@ function start(hostEl: HTMLElement): () => void {
     return new THREE.CanvasTexture(cv)
   }
 
-  const FLOWER_TEX = [
-    flowerTexture({ petals: 5, layers: 1, color: mix(T.accent, '#ffffff', 0.15), light: mix(T.accent, '#ffffff', 0.5), deep: P.rose }),
-    flowerTexture({ petals: 6, layers: 1, color: P.blush, light: mix(T.border, '#ffffff', 0.7), deep: mix(T.border, T.accent, 0.4) }),
-    flowerTexture({ petals: 8, layers: 2, color: P.mid, light: mix(T.border, '#ffffff', 0.35), deep: mix(T.accent, '#000000', 0.1) }),
-  ]
+  const FLOWER_TEX = JAWA
+    ? [
+        flowerTexture({ petals: 6, layers: 2, color: mix(T.accent, T.surface, 0.2), light: mix(T.accent, '#ffffff', 0.55), deep: mix(T.accent, '#000000', 0.18) }),
+        flowerTexture({ petals: 5, layers: 1, color: mix(T.border, '#ffffff', 0.3), light: mix(T.surface, '#ffffff', 0.5), deep: mix(T.accent, T.border, 0.45) }),
+        flowerTexture({ petals: 8, layers: 2, color: mix(T.accent, T.surface, 0.4), light: mix(T.border, '#ffffff', 0.5), deep: mix(T.accent, '#000000', 0.08) }),
+      ]
+    : [
+        flowerTexture({ petals: 5, layers: 1, color: mix(T.accent, '#ffffff', 0.15), light: mix(T.accent, '#ffffff', 0.5), deep: P.rose }),
+        flowerTexture({ petals: 6, layers: 1, color: P.blush, light: mix(T.border, '#ffffff', 0.7), deep: mix(T.border, T.accent, 0.4) }),
+        flowerTexture({ petals: 8, layers: 2, color: P.mid, light: mix(T.border, '#ffffff', 0.35), deep: mix(T.accent, '#000000', 0.1) }),
+      ]
   const LEAF_TEX = leafTexture()
   const SAGE_TINTS = [sage, sageDk, sage.clone().lerp(sageDk, 0.5)]
 
@@ -329,9 +342,60 @@ function start(hostEl: HTMLElement): () => void {
 
   const woodMat = new THREE.MeshStandardMaterial({ color: P.cream, roughness: 0.55, metalness: 0.05 })
   const goldMat = new THREE.MeshStandardMaterial({ color: mix(T.border, T.accent, 0.35), metalness: 0.7, roughness: 0.35 })
+  // Jawa-only shared materials: temple stone + ember gold.
+  const stoneMat = new THREE.MeshStandardMaterial({ color: mix(T.surface, T.border, 0.5), roughness: 0.9 })
+  const flameMat = new THREE.MeshStandardMaterial({ color: mix(T.accent, '#ffffff', 0.3), emissive: mix(T.accent, '#ffffff', 0.2), emissiveIntensity: 0.8, roughness: 0.5 })
   const sceneSet = flowerSet(scene)
+  // Per-frame sway registry (canopies, fronds). Filled by builders below.
+  const swayers: { o: THREE.Object3D; ph: number; amp: number }[] = []
+
+  // Jawa: banyan trees flanking the mid path (canopy sways in the loop).
+  const waringinAt = (x: number, z: number, s: number, ph: number) => {
+    const g = new THREE.Group()
+    g.position.set(x, 0, z)
+    g.scale.setScalar(s)
+    const trunkMat = new THREE.MeshStandardMaterial({ color: mix(T.text, T.surface, 0.15), roughness: 1 })
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 3.0, 10), trunkMat)
+    trunk.position.y = 1.5
+    g.add(trunk)
+    const canopy = new THREE.Group()
+    canopy.position.y = 3.2
+    g.add(canopy)
+    const leafMat = new THREE.MeshStandardMaterial({ color: mix('#3f5a2a', T.accent, 0.3), roughness: 1 })
+    const blobs: [number, number, number, number][] = [[0, 0.5, 0, 1.5], [-1.1, 0.1, 0.2, 1.0], [1.1, 0.15, -0.2, 1.05]]
+    blobs.forEach((b) => {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(b[3], 14, 10), leafMat)
+      m.position.set(b[0], b[1], b[2])
+      m.scale.y = 0.8
+      canopy.add(m)
+    })
+    for (let i = 0; i < 3; i++) {
+      const r = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 1.6, 6), trunkMat)
+      const a = (i / 3) * Math.PI * 2 + 0.5
+      r.position.set(Math.cos(a) * 0.9, -0.5, Math.sin(a) * 0.9)
+      canopy.add(r)
+    }
+    scene.add(g)
+    swayers.push({ o: canopy, ph, amp: 0.03 })
+  }
 
   const bushes: [number, number, number][] = [[-4.3, -6, 1.5], [4.5, -7.5, 1.7], [-5, -12, 1.8], [5.3, -13, 1.6], [-4.6, -18, 1.8], [4.9, -19, 1.7], [-5.2, -25, 1.9]]
+  if (JAWA) {
+    // Stone lanterns guard the gate; banyans shade the mid path.
+    const lanterns: [number, number][] = [[-3.4, -5], [3.4, -5], [-3.8, -12], [3.8, -12]]
+    lanterns.forEach(([x, z]) => {
+      const ped = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.55), stoneMat)
+      ped.position.set(x, 0.5, z)
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.7), stoneMat)
+      box.position.set(x, 1.27, z)
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.3, 0.72), flameMat)
+      win.position.set(x, 1.27, z)
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.45, 4), stoneMat)
+      roof.position.set(x, 1.77, z)
+      roof.rotation.y = Math.PI / 4
+      scene.add(ped, box, win, roof)
+    })
+  } else {
   bushes.forEach((b) => {
     const m = new THREE.Mesh(new THREE.SphereGeometry(b[2], 18, 12), new THREE.MeshStandardMaterial({ color: sageDk, roughness: 1 }))
     m.scale.y = 0.85
@@ -345,6 +409,13 @@ function start(hostEl: HTMLElement): () => void {
       sceneSet.flower(b[0] + (dx / l) * b[2] * 1.03, b[2] * 0.75 + (dy / l) * b[2] * 0.87, b[1] + (dz / l) * b[2] * 1.03, rnd(0.5, 0.85))
     }
   })
+  }
+  if (JAWA) {
+    waringinAt(-5.2, -9, 1.0, 0)
+    waringinAt(5.2, -10, 1.1, 1.3)
+    waringinAt(-5.6, -17, 1.2, 2.1)
+    waringinAt(5.6, -18, 0.95, 2.9)
+  }
 
   const archAt = (z: number, s: number, n: number, detail: boolean) => {
     const R = LW + 0.16
@@ -381,10 +452,46 @@ function start(hostEl: HTMLElement): () => void {
     }
     scene.add(grp)
   }
-  archAt(0, 1, 130, true)
-  archAt(-8, 0.92, 80, false)
-  archAt(-14, 0.84, 70, false)
-  archAt(-20, 0.76, 60, false)
+  if (!JAWA) {
+    archAt(0, 1, 130, true)
+    archAt(-8, 0.92, 80, false)
+    archAt(-14, 0.84, 70, false)
+    archAt(-20, 0.76, 60, false)
+  }
+
+  // Jawa: candi bentar split-gates instead of flower arches — stepped
+  // stone towers with gold trims and ember finials.
+  const bentarAt = (z: number, s: number) => {
+    const grp = new THREE.Group()
+    grp.position.set(0, 0, z)
+    grp.scale.setScalar(s)
+    const widths = [1.25, 1.05, 0.85, 0.65, 0.45]
+    const stepH = 0.72
+    ;[-1, 1].forEach((sd) => {
+      const tx = sd * (LW + 0.55)
+      widths.forEach((wdt, i) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(wdt, stepH, 0.9 - i * 0.08), stoneMat)
+        m.position.set(tx, stepH / 2 + i * stepH, 0)
+        grp.add(m)
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(wdt + 0.08, 0.07, 0.98 - i * 0.08), goldMat)
+        trim.position.set(tx, (i + 1) * stepH, 0)
+        grp.add(trim)
+      })
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 10), flameMat)
+      flame.position.set(tx, widths.length * stepH + 0.25, 0)
+      grp.add(flame)
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 1.2), stoneMat)
+      base.position.set(tx, 0.17, 0)
+      grp.add(base)
+    })
+    scene.add(grp)
+  }
+  if (JAWA) {
+    bentarAt(0, 1)
+    bentarAt(-8, 0.92)
+    bentarAt(-14, 0.84)
+    bentarAt(-20, 0.76)
+  }
 
   const latticeMap = latticeTexture()
   const door = (side: number) => {
@@ -436,8 +543,120 @@ function start(hostEl: HTMLElement): () => void {
     scene.add(grp)
     return grp
   }
-  const doorL = door(-1)
-  const doorR = door(1)
+  // Jawa: the opening IS a gunungan — two carved halves split apart.
+  // Silhouette: pointed apex, tumpal-serrated sides, scalloped ocean base.
+  const fitUV = (geo: THREE.BufferGeometry, w: number, h: number) => {
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    const uv = geo.attributes.uv as THREE.BufferAttribute
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / w, pos.getY(i) / h)
+    uv.needsUpdate = true
+  }
+  const carveTexture = () => {
+    const cv = mk(256, 512)
+    const g = cv.getContext('2d')!
+    const base = g.createLinearGradient(0, 0, 0, 512)
+    base.addColorStop(0, css(mix(T.text, T.surface, 0.3)))
+    base.addColorStop(1, css(col(T.text)))
+    g.fillStyle = base
+    g.fillRect(0, 0, 256, 512)
+    const gold = css(mix(T.accent, '#ffffff', 0.15))
+    g.strokeStyle = gold
+    g.fillStyle = gold
+    g.lineWidth = 5
+    g.strokeRect(10, 10, 236, 492)
+    // Spine on the inner (center) edge.
+    g.lineWidth = 7
+    g.beginPath()
+    g.moveTo(234, 24)
+    g.lineTo(234, 436)
+    g.stroke()
+    // Vine curls opening outward from the spine.
+    g.lineWidth = 4
+    for (let k = 0; k < 3; k++) {
+      const y = 130 + k * 105
+      g.beginPath()
+      g.moveTo(234, y)
+      g.bezierCurveTo(190, y - 46, 150, y - 38, 132, y + 4)
+      g.bezierCurveTo(122, y + 30, 140, y + 48, 158, y + 40)
+      g.stroke()
+      g.beginPath()
+      g.arc(158, y + 40, 7, 0, Math.PI * 2)
+      g.fill()
+    }
+    // Faint kawung dot lattice.
+    g.globalAlpha = 0.3
+    for (let gx = 52; gx <= 204; gx += 38) {
+      for (let gy = 70; gy <= 430; gy += 60) {
+        g.beginPath()
+        g.arc(gx, gy, 4, 0, Math.PI * 2)
+        g.fill()
+        g.lineWidth = 2
+        g.beginPath()
+        g.arc(gx, gy, 10, 0, Math.PI * 2)
+        g.stroke()
+      }
+    }
+    g.globalAlpha = 1
+    // Tumpal triangles along the outer edge.
+    for (let y = 30; y < 470; y += 36) {
+      g.beginPath()
+      g.moveTo(12, y)
+      g.lineTo(44, y + 18)
+      g.lineTo(12, y + 36)
+      g.closePath()
+      g.fill()
+    }
+    // Ocean waves along the base.
+    g.lineWidth = 4
+    for (let i = 0; i < 3; i++) {
+      g.beginPath()
+      g.arc(64 + i * 64, 478, 26, Math.PI, 0)
+      g.stroke()
+    }
+    return tex(cv)
+  }
+  const gununganDoor = (side: number) => {
+    const grp = new THREE.Group()
+    grp.position.set(side * LW, 0, 0)
+    const w = LW
+    const h = H
+    const s = new THREE.Shape()
+    // Ocean scallops along the base.
+    s.moveTo(0.02, 0.3)
+    s.quadraticCurveTo(0.35, 0.02, 0.68, 0.3)
+    s.quadraticCurveTo(1.0, 0.02, 1.33, 0.3)
+    s.quadraticCurveTo(1.66, 0.02, 1.98, 0.3)
+    // Inner spine rises to the pointed apex.
+    s.lineTo(w - 0.02, h)
+    // Shoulder down to the serrated outer edge.
+    s.quadraticCurveTo(1.15, 4.02, 0.35, 3.86)
+    const teeth = 12
+    for (let i = 0; i <= teeth; i++) {
+      const y = 3.86 - (3.86 - 0.3) * (i / teeth)
+      s.lineTo(i % 2 === 0 ? 0.35 : 0.02, y)
+    }
+    s.closePath()
+    const carvedMat = new THREE.MeshStandardMaterial({ map: carveTexture(), roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide })
+    const mkHalf = (mirror: boolean) => {
+      const geo = new THREE.ExtrudeGeometry(s, { depth: 0.12, bevelEnabled: false })
+      fitUV(geo, w, h)
+      // Right hinge needs inner edge toward -x; mirroring keeps UVs on vertices.
+      if (mirror) geo.scale(-1, 1, 1)
+      geo.translate(0, 0, -0.06)
+      return new THREE.Mesh(geo, carvedMat)
+    }
+    grp.add(mkHalf(side === 1))
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), goldMat)
+    knob.position.set(-side * (w - 0.3), h * 0.5, 0.12)
+    grp.add(knob)
+    const k2 = knob.clone()
+    k2.position.z = -0.12
+    grp.add(k2)
+    scene.add(grp)
+    return grp
+  }
+  const doorL = JAWA ? gununganDoor(-1) : door(-1)
+  const doorR = JAWA ? gununganDoor(1) : door(1)
   sceneSet.commit()
 
   const beamMat = new THREE.MeshBasicMaterial({ map: beamTexture(P.glow), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
@@ -450,6 +669,214 @@ function start(hostEl: HTMLElement): () => void {
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), glowMat)
   glow.position.set(0, 4, -34)
   scene.add(glow)
+
+  // Jawa only: procedural kawung batik backdrop (pure GLSL, zero assets).
+  // ShaderMaterial skips three's output transform, so uniforms are converted
+  // to sRGB on the CPU to match the theme hexes.
+  let kawungMat: THREE.ShaderMaterial | null = null
+  if (JAWA) {
+    const srgb = (h: string) => {
+      const c = col(h).convertLinearToSRGB()
+      return new THREE.Vector3(c.r, c.g, c.b)
+    }
+    kawungMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uA: { value: srgb(T.accent) },
+        uB: { value: srgb(T.border) },
+        uS: { value: srgb(T.surface) },
+        uT: { value: 0 },
+      },
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform vec3 uA;
+        uniform vec3 uB;
+        uniform vec3 uS;
+        uniform float uT;
+        void main() {
+          vec2 uv = vUv * vec2(9.0, 5.0);
+          uv += vec2(uT * 0.008, uT * 0.005);
+          vec2 cell = fract(uv) - 0.5;
+          float d1 = length(cell);
+          vec2 q = abs(cell);
+          float d2 = min(length(q - vec2(0.25, 0.0)), length(q - vec2(0.0, 0.25)));
+          float ring1 = 1.0 - smoothstep(0.0, 0.035, abs(d1 - 0.30));
+          float ring2 = 1.0 - smoothstep(0.0, 0.030, abs(d2 - 0.13));
+          float dotm = 1.0 - smoothstep(0.0, 0.05, d1);
+          vec3 colr = mix(uS, uB, 0.55);
+          colr = mix(colr, uA, clamp(ring1 + ring2, 0.0, 1.0) * 0.85);
+          colr = mix(colr, uA, dotm * 0.9);
+          float vig = smoothstep(1.15, 0.35, length(vUv - 0.5));
+          colr *= mix(0.55, 1.0, vig);
+          gl_FragColor = vec4(colr, 1.0);
+        }
+      `,
+      fog: false,
+      depthWrite: false,
+    })
+    const kawung = new THREE.Mesh(new THREE.PlaneGeometry(60, 34), kawungMat)
+    kawung.position.set(0, 6, -34)
+    scene.add(kawung)
+  }
+
+  // Jawa only: living sky — drifting gull silhouettes (1 draw call).
+  let birdSys: { geo: THREE.BufferGeometry; cx: number; cy: number; cz: number; r: Float32Array; sp: Float32Array; ph: Float32Array; n: number } | null = null
+  if (JAWA) {
+    const cv = mk(64, 32)
+    const g2 = cv.getContext('2d')!
+    g2.strokeStyle = css(mix(T.text, '#ffffff', 0.2))
+    g2.lineWidth = 4
+    g2.lineCap = 'round'
+    g2.beginPath()
+    g2.moveTo(6, 20)
+    g2.quadraticCurveTo(20, 6, 32, 18)
+    g2.quadraticCurveTo(44, 6, 58, 20)
+    g2.stroke()
+    const n = small ? 8 : 12
+    const bp = new Float32Array(n * 3)
+    const r = new Float32Array(n)
+    const sp = new Float32Array(n)
+    const ph = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      r[i] = rnd(6, 10)
+      sp[i] = rnd(0.08, 0.2) * (Math.random() < 0.5 ? 1 : -1)
+      ph[i] = rnd(0, 6.28)
+    }
+    const bgeo = new THREE.BufferGeometry()
+    bgeo.setAttribute('position', new THREE.BufferAttribute(bp, 3))
+    const bmat = new THREE.PointsMaterial({ size: 0.55, map: tex(cv), transparent: true, alphaTest: 0.05, depthWrite: false })
+    const pts = new THREE.Points(bgeo, bmat)
+    pts.frustumCulled = false
+    scene.add(pts)
+    birdSys = { geo: bgeo, cx: 0, cy: 7.5, cz: -14, r, sp, ph, n }
+  }
+
+  // Jawa only: gold butterflies wandering the path (CPU flap, ~12 matrices).
+  let flySys: { mesh: THREE.InstancedMesh; c: Float32Array; s: Float32Array; ph: Float32Array; fl: Float32Array; n: number; dummy: THREE.Object3D } | null = null
+  if (JAWA) {
+    const cv = mk(64, 64)
+    const g2 = cv.getContext('2d')!
+    const wing = css(mix(T.accent, '#ffffff', 0.25))
+    g2.fillStyle = wing
+    g2.beginPath()
+    g2.ellipse(20, 32, 13, 20, -0.35, 0, Math.PI * 2)
+    g2.fill()
+    g2.beginPath()
+    g2.ellipse(44, 32, 13, 20, 0.35, 0, Math.PI * 2)
+    g2.fill()
+    g2.strokeStyle = css(col(T.text))
+    g2.lineWidth = 3
+    g2.beginPath()
+    g2.moveTo(32, 12)
+    g2.lineTo(32, 54)
+    g2.stroke()
+    const n = small ? 8 : 12
+    const mesh = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(0.34, 0.34),
+      new THREE.MeshBasicMaterial({ map: tex(cv), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide }),
+      n,
+    )
+    const tints = [col(T.accent), mix(T.accent, '#ffffff', 0.3), mix(T.accent, T.text, 0.4)]
+    const c = new Float32Array(n * 3)
+    const s = new Float32Array(n * 2)
+    const ph = new Float32Array(n)
+    const fl = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      mesh.setColorAt(i, tints[i % tints.length])
+      c[i * 3] = rnd(-3, 3)
+      c[i * 3 + 1] = rnd(1, 3.5)
+      c[i * 3 + 2] = rnd(-16, -2)
+      s[i * 2] = rnd(0.5, 1.2)
+      s[i * 2 + 1] = rnd(0.15, 0.35)
+      ph[i] = rnd(0, 6.28)
+      fl[i] = rnd(9, 14)
+    }
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    mesh.frustumCulled = false
+    scene.add(mesh)
+    flySys = { mesh, c, s, ph, fl, n, dummy: new THREE.Object3D() }
+  }
+
+  // Jawa only: full carved gebyok wall — the dolly's final backdrop.
+  // Couple names stay in the DOM frame card floating before it.
+  if (JAWA) {
+    const cv = mk(512, 288)
+    const g2 = cv.getContext('2d')!
+    const base = g2.createLinearGradient(0, 0, 0, 288)
+    base.addColorStop(0, css(mix(T.text, T.surface, 0.18)))
+    base.addColorStop(1, css(col(T.text)))
+    g2.fillStyle = base
+    g2.fillRect(0, 0, 512, 288)
+    const gold = css(mix(T.accent, '#ffffff', 0.15))
+    g2.strokeStyle = gold
+    g2.fillStyle = gold
+    // Tumpal frieze.
+    for (let x = 8; x < 512; x += 32) {
+      g2.beginPath()
+      g2.moveTo(x, 8)
+      g2.lineTo(x + 16, 36)
+      g2.lineTo(x + 32, 8)
+      g2.closePath()
+      g2.fill()
+    }
+    // Five carved panels with kawung medallions.
+    for (let i = 0; i < 5; i++) {
+      const x0 = 14 + i * 98
+      const wdt = 78
+      g2.lineWidth = 4
+      g2.strokeRect(x0, 52, wdt, 168)
+      g2.lineWidth = 2
+      g2.strokeRect(x0 + 9, 61, wdt - 18, 150)
+      const mx = x0 + wdt / 2
+      const my = 136
+      g2.lineWidth = 3
+      g2.beginPath()
+      g2.arc(mx, my, 26, 0, Math.PI * 2)
+      g2.stroke()
+      for (let k = 0; k < 8; k++) {
+        g2.save()
+        g2.translate(mx, my)
+        g2.rotate((k * Math.PI) / 4)
+        g2.beginPath()
+        g2.ellipse(0, -17, 6, 11, 0, 0, Math.PI * 2)
+        g2.stroke()
+        g2.restore()
+      }
+      g2.beginPath()
+      g2.arc(mx, my, 5, 0, Math.PI * 2)
+      g2.fill()
+    }
+    // Base wave band.
+    g2.lineWidth = 3
+    for (let i = 0; i < 8; i++) {
+      g2.beginPath()
+      g2.arc(32 + i * 64, 262, 24, Math.PI, 0)
+      g2.stroke()
+    }
+    const wall = new THREE.Mesh(
+      new THREE.PlaneGeometry(17, 7.5),
+      new THREE.MeshStandardMaterial({ map: tex(cv), roughness: 0.8 }),
+    )
+    wall.position.set(0, 3.6, -31)
+    scene.add(wall)
+    ;[-1, 1].forEach((sd) => {
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.9, 8, 0.9), stoneMat)
+      pil.position.set(sd * 9, 4, -31)
+      scene.add(pil)
+    })
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(19.5, 0.8, 1.1), stoneMat)
+    beam.position.set(0, 7.9, -31)
+    scene.add(beam)
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(19.6, 0.15, 1.15), goldMat)
+    trim.position.set(0, 7.45, -31)
+    scene.add(trim)
+  }
 
   const N = PETALS
   const ppos = new Float32Array(N * 3)
@@ -464,7 +891,16 @@ function start(hostEl: HTMLElement): () => void {
   }
   const pgeo = new THREE.BufferGeometry()
   pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3))
-  scene.add(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: small ? 0.42 : 0.28, map: petalTexture(), transparent: true, alphaTest: 0.05, depthWrite: false })))
+  // Jawa: rising gold dust (additive); floral: falling petals.
+  const dustMat = new THREE.PointsMaterial({
+    size: small ? 0.42 : 0.28,
+    map: JAWA ? radialTexture(mix(T.accent, '#ffffff', 0.35)) : petalTexture(),
+    transparent: true,
+    alphaTest: 0.05,
+    depthWrite: false,
+    ...(JAWA ? { blending: THREE.AdditiveBlending } : {}),
+  })
+  scene.add(new THREE.Points(pgeo, dustMat))
 
   let tx = 0
   let ty = 0
@@ -506,11 +942,49 @@ function start(hostEl: HTMLElement): () => void {
     py += (ty - py) * 0.06
 
     for (let i = 0; i < N; i++) {
-      ppos[i * 3 + 1] -= pspd[i] * dt
-      ppos[i * 3] += Math.sin(now / 1200 + pph[i]) * 0.35 * dt
-      if (ppos[i * 3 + 1] < 0) ppos[i * 3 + 1] = 9
+      if (JAWA) {
+        ppos[i * 3 + 1] += pspd[i] * dt * 0.7
+        ppos[i * 3] += Math.sin(now / 1400 + pph[i]) * 0.3 * dt
+        if (ppos[i * 3 + 1] > 9) ppos[i * 3 + 1] = 0
+      } else {
+        ppos[i * 3 + 1] -= pspd[i] * dt
+        ppos[i * 3] += Math.sin(now / 1200 + pph[i]) * 0.35 * dt
+        if (ppos[i * 3 + 1] < 0) ppos[i * 3 + 1] = 9
+      }
     }
     pgeo.attributes.position.needsUpdate = true
+    if (kawungMat) kawungMat.uniforms.uT.value = now / 1000
+
+    if (JAWA) {
+      const tt = now / 1000
+      swayers.forEach((sw) => {
+        sw.o.rotation.z = Math.sin(tt * 1.1 + sw.ph) * sw.amp
+        sw.o.rotation.x = Math.cos(tt * 0.9 + sw.ph) * sw.amp * 0.6
+      })
+      flameMat.emissiveIntensity = 0.8 + Math.sin(tt * 7) * 0.12 + Math.sin(tt * 13.7) * 0.08
+      if (birdSys) {
+        const bp = birdSys.geo.attributes.position as THREE.BufferAttribute
+        for (let i = 0; i < birdSys.n; i++) {
+          const a = birdSys.ph[i] + now / 1000 * birdSys.sp[i]
+          bp.setXYZ(i, birdSys.cx + Math.cos(a) * birdSys.r[i], birdSys.cy + Math.sin(tt * 0.9 + birdSys.ph[i]) * 0.5, birdSys.cz + Math.sin(a) * birdSys.r[i] * 0.6)
+        }
+        bp.needsUpdate = true
+      }
+      if (flySys) {
+        for (let i = 0; i < flySys.n; i++) {
+          const fx = flySys.c[i * 3] + Math.sin(tt * flySys.s[i * 2 + 1] + flySys.ph[i]) * 1.2
+          const fy = flySys.c[i * 3 + 1] + Math.sin(tt * flySys.s[i * 2] + flySys.ph[i] * 2) * 0.5
+          const fz = flySys.c[i * 3 + 2] + Math.cos(tt * flySys.s[i * 2 + 1] * 0.8 + flySys.ph[i]) * 1.0
+          flySys.dummy.position.set(fx, fy, fz)
+          flySys.dummy.rotation.set(0, Math.sin(tt * 0.7 + flySys.ph[i]) * 0.6, 0)
+          const flap = 0.25 + Math.abs(Math.sin(tt * flySys.fl[i] + flySys.ph[i])) * 0.75
+          flySys.dummy.scale.set(flap, 1, 1)
+          flySys.dummy.updateMatrix()
+          flySys.mesh.setMatrixAt(i, flySys.dummy.matrix)
+        }
+        flySys.mesh.instanceMatrix.needsUpdate = true
+      }
+    }
 
     if (phase === 'idle') {
       camera.position.set(px * 0.55, 2.2 - py * 0.25 + Math.sin(now / 2200) * 0.04, baseZ + Math.sin(now / 3000) * 0.1)

@@ -1,10 +1,10 @@
 export type InvitationStatus = 'draft' | 'published' | 'archived'
-export type ThemeId = 'floral'
+export type ThemeId = 'floral' | 'jawa'
 /** Price tier: higher tiers unlock all themes of lower tiers. */
 export type InvitationTier = 'basic' | 'premium' | 'luxury'
 export type IntroKind = 'slide' | 'door' | 'curtain' | 'envelope' | 'zoom' | 'bloom' | 'gunungan' | 'iris' | 'split' | 'blossom' | 'flip' | 'cube' | 'flora' | 'gate3d'
 export type RevealKind = 'fade' | 'rise' | 'stagger' | 'mask'
-export type OrnamentKind = 'floral'
+export type OrnamentKind = 'floral' | 'jawa'
 export type Attendance = 'attending' | 'not_attending'
 export type GiftType = 'bank_transfer' | 'cash' | 'e_wallet' | 'other'
 
@@ -286,6 +286,8 @@ export interface ThemeDefinition {
   reveal?: RevealKind
   /** Signature background ornament (light, transform/opacity only) */
   ornament?: OrnamentKind
+  /** Tiled parchment/texture backdrop for the whole invitation (optional) */
+  bgImage?: string
   /** Default cover photo when the invitation has no gallery yet */
   coverImage?: string
   swatches: string[]

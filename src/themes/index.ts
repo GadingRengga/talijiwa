@@ -1,8 +1,9 @@
 import type { ThemeDefinition, ThemeId } from '@/types'
 import { floral } from './floral'
+import { jawa } from './jawa'
 
 /** Register new themes here. Nothing else needs to change. */
-export const themes: Record<ThemeId, ThemeDefinition> = { floral }
+export const themes: Record<ThemeId, ThemeDefinition> = { floral, jawa }
 export const themeList: ThemeDefinition[] = Object.values(themes)
 
 export function getTheme(id: string): ThemeDefinition {

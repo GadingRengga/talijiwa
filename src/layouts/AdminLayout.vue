@@ -38,8 +38,9 @@ const items = [
   { to: '/admin/settings', label: copy.nav.settings, icon: Settings },
 ]
 
-// The builder needs the full viewport, so it renders without the page padding wrapper.
-const fullBleed = () => route.name === 'admin-invitation-edit'
+// The builder and the invitation preview need the full viewport, so they
+// render without the page padding wrapper.
+const fullBleed = () => route.name === 'admin-invitation-edit' || route.name === 'admin-invitation-preview'
 
 watch(() => route.fullPath, () => (drawer.value = false))
 

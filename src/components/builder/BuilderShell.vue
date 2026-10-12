@@ -391,8 +391,8 @@ const goBack = () => {
       </div>
 
       <!-- Body: split form + live preview from lg up (tablets included);
-        single-tab layout below lg. -->
-      <div class="grid min-h-0 flex-1 grid-cols-1 px-2 pb-2 pt-1.5 sm:px-4 sm:pb-3 sm:pt-3 lg:grid-cols-[5.5rem_minmax(0,1fr)_minmax(0,22rem)] lg:gap-3 lg:pl-0 xl:grid-cols-[5.5rem_minmax(0,1fr)_var(--pv)]" :style="{ '--pv': device === 'phone' ? '24rem' : '35rem' }">
+        single-tab layout below lg (flex-col so the visible pane fills the viewport). -->
+      <div class="min-h-0 flex-1 max-lg:flex max-lg:flex-col px-2 pb-2 pt-1.5 sm:px-4 sm:pb-3 sm:pt-3 lg:grid lg:grid-cols-[5.5rem_minmax(0,1fr)_minmax(0,22rem)] lg:gap-3 lg:pl-0 xl:grid-cols-[5.5rem_minmax(0,1fr)_var(--pv)]" :style="{ '--pv': device === 'phone' ? '24rem' : '35rem' }">
         <div class="min-h-0 lg:overflow-y-auto lg:pl-3" :class="tab === 'edit' ? 'block' : 'hidden lg:block'">
           <BuilderSidebar :active="active" :progress="progress" :keys="sectionKeys" @select="select" />
         </div>
@@ -455,11 +455,11 @@ const goBack = () => {
         </div>
 
         <aside
-          class="flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-line bg-panel/60 p-3 sm:p-4"
+          class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-panel/60 p-3 sm:p-4 max-lg:flex-1"
           :class="tab === 'preview' ? 'block' : 'hidden lg:block'"
           :aria-label="copy.builder.edit.previewRegion"
         >
-          <div class="mx-auto mb-3 hidden w-fit shrink-0 items-center gap-1 rounded-xl border border-line bg-panel p-1 shadow-sm lg:flex" role="radiogroup" :aria-label="copy.builder.edit.previewSize">
+          <div class="mx-auto mb-3 hidden w-fit shrink-0 items-center gap-1 rounded-xl border border-line bg-panel p-1 shadow-sm xl:flex" role="radiogroup" :aria-label="copy.builder.edit.previewSize">
             <button
               v-for="d in ([['phone', copy.builder.edit.phone, Smartphone], ['tablet', copy.builder.edit.tablet, Tablet]] as const)"
               :key="d[0]"
@@ -486,10 +486,10 @@ const goBack = () => {
           </div>
           <div
             class="relative mx-auto w-[min(26rem,100%)] overflow-hidden bg-ink shadow-2xl transition-[width,border-radius] duration-300 max-lg:min-h-0 max-lg:flex-1 max-lg:rounded-[2rem] max-lg:border-[8px] max-lg:border-ink lg:h-[min(calc(100%-4.5rem),46rem)] lg:min-h-96 lg:w-full lg:max-w-[26rem] lg:rounded-[2rem] lg:border-[8px] lg:border-ink xl:h-[min(calc(100%-4.5rem),46rem)]"
-            :class="device === 'phone' ? 'xl:max-w-none xl:rounded-[2.5rem] xl:border-[10px] xl:border-ink' : 'xl:w-[min(32rem,100%)] xl:max-w-none xl:rounded-[1.5rem] xl:border-[10px] xl:border-ink'"
+            :class="device === 'phone' ? 'xl:max-w-none xl:rounded-[2.5rem] xl:border-[10px] xl:border-ink' : 'xl:w-[min(36rem,100%)] xl:max-w-none xl:rounded-[1.5rem] xl:border-[10px] xl:border-ink'"
           >
             <div v-if="device === 'phone'" class="pointer-events-none absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden="true" />
-            <InvitationRenderer v-if="draft" ref="previewRef" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" :messages="sampleMessages" :interactive="previewInteractive" @pick="onPick" @rsvp="blockSubmit" @message="blockSubmit" @gift="blockSubmit" />
+            <InvitationRenderer v-if="draft" ref="previewRef" class="inv-editable" :invitation="draft" mode="preview" :guest="copy.builder.edit.guestSample" :messages="sampleMessages" :interactive="previewInteractive" @pick="onPick" @rsvp="blockSubmit" @message="blockSubmit" @gift="blockSubmit" />
           </div>
           <p class="mt-3 shrink-0 text-center text-xs text-muted lg:hidden">{{ copy.builder.tapHint }}</p>
           <p class="mt-3 hidden shrink-0 text-center text-xs text-muted lg:block">{{ previewInteractive ? copy.builder.edit.tryActive : copy.builder.edit.clickHint }}</p>

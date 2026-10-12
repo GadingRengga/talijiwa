@@ -9,6 +9,7 @@ Tema adalah data. Satu `ThemeDefinition` menghasilkan CSS variables `--inv-*` ya
 | Tema | Dekorasi | Palet |
 |---|---|---|
 | Romantic Floral | petals (kelopak jatuh) | blush, krem, sage, mawar |
+| Adat Jawa | sparkle (debu emas naik di gerbang 3D) | krem batik, krem terang, coklat tua, emas |
 
 ## Menambah tema
 

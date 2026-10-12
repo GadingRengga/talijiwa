@@ -32,11 +32,11 @@ import sprig from '@/assets/images/floral-sprig-1.webp'
     <div class="orn-floral-side orn-floral-side-r">
       <img class="orn-floral-mirror" :src="sprig" alt="" decoding="async" />
     </div>
-    <!-- Bottom corner bouquets (sway) -->
-    <div class="orn-floral orn-floral-bl" style="animation-delay: 0.9s; animation-duration: 5.4s;">
+    <!-- Bottom corner bouquets (sway as a mirrored pair: same period, opposite phase) -->
+    <div class="orn-floral orn-floral-bl" style="animation-duration: 6s;">
       <img :src="bouquet" alt="" decoding="async" />
     </div>
-    <div class="orn-floral orn-floral-br" style="animation-delay: 2.1s; animation-duration: 6.6s;">
+    <div class="orn-floral orn-floral-br" style="animation-delay: 3s; animation-duration: 6s;">
       <img :src="bouquet" alt="" decoding="async" />
     </div>
   </div>
